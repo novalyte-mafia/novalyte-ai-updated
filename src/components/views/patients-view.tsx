@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { SectionShell, SectionHeading } from "@/components/shared/section";
+import { SectionShell } from "@/components/shared/section";
 import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
-import { CTASection } from "@/components/shared/cta";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
 import { TREATMENT_LIST } from "@/lib/treatments";
 import { ASSESSMENTS } from "@/lib/assessment-config";
 import { getTreatmentIcon } from "@/lib/treatment-icons";
@@ -14,88 +16,123 @@ import { navigate } from "@/lib/nav";
 import { IMAGES, ALT_TEXT } from "@/lib/images";
 import type { PlatformData } from "@/components/site/app-shell";
 import {
-  Stethoscope, ClipboardList, BookOpen, MapPin, MessageSquare, Phone,
-  ArrowRight, ShieldCheck, Sparkles, CheckCircle2,
-  Compass, Lock, HeartPulse, Zap, FileText, Video, Building2,
+  Stethoscope, ArrowRight, ShieldCheck, Sparkles, CheckCircle2,
+  Compass, Lock, HeartPulse, FileText, Video, Building2,
+  Zap, Scale, Scissors, Infinity as InfinityIcon, Dumbbell, Clock,
+  ChevronDown, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const AI_CATEGORIES = [
-  { value: "energy", label: "Energy", treatments: ["testosterone-replacement-therapy", "hormone-optimization"] },
-  { value: "weight", label: "Weight management", treatments: ["medical-weight-loss", "glp-1"] },
-  { value: "sexual-health", label: "Sexual health", treatments: ["erectile-dysfunction", "sexual-wellness"] },
-  { value: "hair", label: "Hair loss", treatments: ["hair-restoration"] },
-  { value: "strength", label: "Strength & recovery", treatments: ["performance-recovery", "peptide-therapy"] },
-  { value: "hormones", label: "Hormone health", treatments: ["hormone-optimization", "testosterone-replacement-therapy"] },
-  { value: "sleep", label: "Sleep", treatments: ["hormone-optimization", "longevity-medicine"] },
-  { value: "preventive", label: "Preventive health", treatments: ["longevity-medicine", "preventive-mens-health"] },
-  { value: "longevity", label: "Longevity", treatments: ["longevity-medicine"] },
-  { value: "general", label: "General men's health", treatments: ["preventive-mens-health", "longevity-medicine"] },
+/* ── Treatment finder goals ──────────────────────────────────── */
+const FINDER_GOALS = [
+  { value: "energy", label: "Energy & hormones", icon: Zap, treatments: ["testosterone-replacement-therapy", "hormone-optimization", "preventive-mens-health"] },
+  { value: "weight", label: "Weight management", icon: Scale, treatments: ["medical-weight-loss", "glp-1"] },
+  { value: "sexual", label: "Sexual health", icon: HeartPulse, treatments: ["erectile-dysfunction", "sexual-wellness"] },
+  { value: "hair", label: "Hair loss", icon: Scissors, treatments: ["hair-restoration"] },
+  { value: "strength", label: "Strength & recovery", icon: Dumbbell, treatments: ["performance-recovery", "peptide-therapy"] },
+  { value: "preventive", label: "Preventive health", icon: ShieldCheck, treatments: ["preventive-mens-health", "longevity-medicine"] },
+  { value: "longevity", label: "Longevity", icon: InfinityIcon, treatments: ["longevity-medicine", "preventive-mens-health"] },
+  { value: "unsure", label: "I'm not sure", icon: Compass, treatments: ["preventive-mens-health", "longevity-medicine", "telehealth-services"] },
+];
+
+const FEATURED_SLUGS = [
+  "testosterone-replacement-therapy",
+  "hormone-optimization",
+  "medical-weight-loss",
+  "glp-1",
+  "erectile-dysfunction",
+  "hair-restoration",
+];
+
+const SECONDARY_SLUGS = [
+  "peptide-therapy",
+  "sexual-wellness",
+  "longevity-medicine",
+  "performance-recovery",
+  "preventive-mens-health",
+  "telehealth-services",
 ];
 
 const PROCESS_STEPS = [
-  { icon: Compass, title: "Choose a goal", desc: "Select a treatment or let AI guide you" },
-  { icon: ClipboardList, title: "Complete a short assessment", desc: "Personalized to your treatment interest" },
-  { icon: BookOpen, title: "Review relevant guidance", desc: "Understand what to ask a provider" },
-  { icon: MapPin, title: "Discover matching clinics", desc: "Find verified clinics near you" },
-  { icon: MessageSquare, title: "Request a consultation", desc: "Send a structured request" },
-  { icon: Phone, title: "Speak with a licensed provider", desc: "A professional determines appropriate care" },
+  { icon: Compass, title: "Choose a goal", desc: "Pick a treatment or let us guide you" },
+  { icon: FileText, title: "Complete assessment", desc: "Personalized to your treatment" },
+  { icon: BookOpen, title: "Review options", desc: "Understand what to ask a provider" },
+  { icon: Building2, title: "Discover clinics", desc: "Find verified clinics near you" },
+  { icon: Stethoscope, title: "Request consultation", desc: "Send a structured request" },
+  { icon: ShieldCheck, title: "Speak with a provider", desc: "A professional decides care" },
+];
+
+const VALUE_TOPICS = [
+  { icon: Stethoscope, title: "What treatment may involve", desc: "Understand what a consultation, evaluation, and follow-up typically look like." },
+  { icon: Video, title: "Telehealth vs. in-person care", desc: "Both have their place. Telehealth expands access; some care requires in-person visits." },
+  { icon: FileText, title: "Why labs may be discussed", desc: "Many treatments involve lab work. Understanding why helps you have better conversations." },
+  { icon: ShieldCheck, title: "How self-pay clinics operate", desc: "Many men's health clinics use direct-pay models. Understanding costs helps you plan." },
+  { icon: Building2, title: "Questions to ask a clinic", desc: "Being prepared helps you get the most from your consultation and find the right fit." },
+  { icon: Compass, title: "How clinic matching works", desc: "We use your treatment interest, location, timeline, and preferences to suggest clinics." },
 ];
 
 export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: PlatformData; onGetStarted: () => void }) {
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [showAiResults, setShowAiResults] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const [showAllTreatments, setShowAllTreatments] = useState(false);
 
-  function toggleGoal(value: string) {
-    setSelectedGoals((prev) => prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]);
+  const recommendedTreatments = selectedGoal
+    ? FINDER_GOALS.find((g) => g.value === selectedGoal)?.treatments
+        .map((slug) => TREATMENT_LIST.find((t) => t.slug === slug))
+        .filter(Boolean) ?? []
+    : [];
+
+  // Featured articles (use the articles passed in data)
+  const featuredArticles = data.articles.slice(0, 3);
+
+  function startAssessment(slug: string) {
+    navigate("assessment", undefined, { slug });
   }
 
-  const recommendedTreatments = Array.from(new Set(
-    selectedGoals.flatMap((g) => AI_CATEGORIES.find((c) => c.value === g)?.treatments ?? [])
-  ))
-    .map((slug) => ASSESSMENTS[slug])
-    .filter(Boolean);
+  function startAssessmentIntro() {
+    // From the hero, scroll to the treatment finder so user picks a treatment first
+    document.getElementById("finder")?.scrollIntoView({ behavior: "smooth" });
+  }
 
   return (
-    <>
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-teal-50/50 to-background">
-        <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-          <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 px-3 py-1 text-xs font-semibold text-teal-700 backdrop-blur">
-                <Stethoscope className="h-3.5 w-3.5" /> For Patients
-              </div>
-              <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl">
-                Find the Right Path for Your{" "}
-                <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
-                  Men's Health Goals
-                </span>
-              </h1>
-              <p className="mt-5 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
-                Explore treatment options, understand what may be relevant to your goals, complete a
-                personalized readiness assessment, and connect with qualified men's health clinics.
-              </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => document.getElementById("treatments")?.scrollIntoView({ behavior: "smooth" })}>
-                  Start Your Assessment <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-                <Button size="lg" variant="outline" onClick={() => document.getElementById("treatments")?.scrollIntoView({ behavior: "smooth" })}>
-                  Explore Treatments
-                </Button>
-              </div>
-              <button
-                onClick={() => navigate("directory")}
-                className="mt-3 text-sm font-medium text-teal-700 underline-offset-2 hover:underline"
-              >
-                Find a Clinic →
-              </button>
-              <DisclaimerBanner tone="amber" className="mt-5">
-                Novalyte AI provides educational and technology services only. It does not diagnose medical conditions or provide medical care.
-              </DisclaimerBanner>
+    <div className="bg-background">
+      {/* ── 1. COMPACT HERO ─────────────────────────────────────── */}
+      <section className="border-b border-border bg-gradient-to-b from-teal-50/40 to-background">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-12 lg:px-8 lg:py-16">
+          {/* Left: copy + CTAs */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 px-3 py-1 text-xs font-semibold text-teal-700 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" /> Men's health, made easier
             </div>
+            <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[56px]">
+              Find the Right Men's Health Care—{" "}
+              <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+                Without Guesswork
+              </span>
+            </h1>
+            <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Tell us what you want to improve. We'll help you understand relevant care options and find clinics that match your location and preferences.
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={startAssessmentIntro}>
+                Start My Assessment <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => document.getElementById("featured")?.scrollIntoView({ behavior: "smooth" })}>
+                Explore Treatments
+              </Button>
+              <button onClick={() => navigate("directory")} className="text-sm font-medium text-teal-700 underline-offset-2 hover:underline sm:ml-2">
+                Browse Clinics
+              </button>
+            </div>
+            {/* Compact trust row */}
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-teal-600" /> Private and secure</span>
+              <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-teal-600" /> Takes ~2–3 minutes</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> No diagnosis or treatment guarantee</span>
+            </div>
+          </div>
 
-            {/* Hero image */}
+          {/* Right: image + floating card */}
+          <div className="relative">
             <div className="relative aspect-[5/4] overflow-hidden rounded-2xl shadow-premium-lg">
               <SmartImage
                 src={IMAGES.hero.consultation}
@@ -105,317 +142,428 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 imgClassName="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/30 to-transparent" aria-hidden />
-              <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-xl border border-white/20 bg-white/90 p-3 backdrop-blur-md">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white">
-                  <ShieldCheck className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Private · Trusted · Modern</p>
-                  <p className="text-xs text-muted-foreground">Human-guided men's healthcare</p>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/25 to-transparent" aria-hidden />
+            </div>
+            {/* Floating assessment preview card */}
+            <div className="absolute -bottom-4 -left-4 hidden items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-lg sm:flex">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white">
+                <FileText className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Personalized assessment</p>
+                <p className="text-[10px] text-muted-foreground">2–3 min · Progress saved</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Treatment Categories — directly beneath hero */}
-      <SectionShell id="treatments" className="!pt-14">
-        <SectionHeading
-          eyebrow="Treatment Categories"
-          title="Explore Men's Health Treatment Options"
-          description="Choose the area that best matches your goals. You can learn more, complete a short personalized assessment, or explore clinics that offer the service."
-        />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TREATMENT_LIST.map((t) => {
-            const config = ASSESSMENTS[t.slug];
-            const hasAssessment = !!config;
-            const Icon = getTreatmentIcon(t.slug);
-            const img = IMAGES.treatments[t.slug as keyof typeof IMAGES.treatments] ?? IMAGES.hero.clinicScene;
-            return (
-              <div
-                key={t.slug}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-premium-sm transition hover:border-teal-300 hover:shadow-premium-lg"
-              >
-                {/* Image panel — upper portion */}
-                <div className="relative h-44 overflow-hidden">
-                  <SmartImage
-                    src={img}
-                    alt={`${t.label} treatment category`}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 33vw"
-                    className="transition duration-500 group-hover:scale-105"
-                    imgClassName="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" aria-hidden />
-                  {/* Treatment icon layered near lower edge of image */}
-                  <div className="absolute bottom-3 left-4">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600 text-white shadow-premium-md">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                  </div>
-                  {/* Short label badge */}
-                  <div className="absolute top-3 right-3">
-                    <Badge className="bg-white/90 text-teal-700 backdrop-blur">{t.short}</Badge>
-                  </div>
-                </div>
-                {/* Content area */}
-                <div className="flex flex-1 flex-col p-5">
-                  <h3 className="text-base font-semibold text-foreground">{t.label}</h3>
-                  <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted-foreground">{t.explanation}</p>
-                  <div className="mt-4 flex gap-2">
-                    {hasAssessment && (
-                      <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("assessment", undefined, { slug: t.slug })}>
-                        Take Assessment
-                      </Button>
-                    )}
-                    <Button size="sm" variant="outline" onClick={() => navigate("treatment-detail", undefined, { slug: t.slug })}>
-                      Learn More
-                    </Button>
-                  </div>
-                  <button
-                    onClick={() => navigate("directory")}
-                    className="mt-2 text-left text-xs font-medium text-teal-700 underline-offset-2 hover:underline"
-                  >
-                    Find clinics →
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </SectionShell>
-
-      {/* AI-guided care discovery */}
-      <SectionShell id="ai-discovery" tone="muted">
-        <SectionHeading
-          eyebrow="AI-Guided Care Discovery"
-          title="Not Sure Which Treatment Fits Your Goals?"
-          description="Select the areas you would like to improve. We will organize relevant treatment categories and educational resources."
-        />
-        <div className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-premium-sm">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white">
-              <Sparkles className="h-4.5 w-4.5" />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-foreground">Novalyte AI Assistant</p>
-              <p className="text-xs text-muted-foreground">Informational guidance · Not a diagnosis</p>
-            </div>
+      {/* ── 2. TREATMENT FINDER ────────────────────────────────── */}
+      <section id="finder" className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">What would you like help with?</h2>
+            <p className="mt-2 text-sm text-muted-foreground sm:text-base">Choose the area closest to your goals. You can learn more or begin a personalized assessment.</p>
+          </div>
+          {/* Goal tiles */}
+          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-8">
+            {FINDER_GOALS.map((goal) => {
+              const Icon = goal.icon;
+              const active = selectedGoal === goal.value;
+              return (
+                <button
+                  key={goal.value}
+                  onClick={() => setSelectedGoal(active ? null : goal.value)}
+                  className={cn(
+                    "flex flex-col items-center gap-2 rounded-xl border px-3 py-3.5 text-center transition",
+                    active
+                      ? "border-teal-400 bg-teal-50 text-teal-800 ring-1 ring-teal-200"
+                      : "border-border bg-card text-foreground/70 hover:border-teal-200 hover:bg-teal-50/30",
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5", active ? "text-teal-600" : "text-muted-foreground")} />
+                  <span className="text-xs font-medium leading-tight">{goal.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {!showAiResults ? (
-            <div className="mt-5">
-              <p className="text-sm text-muted-foreground">Select all that apply.</p>
-              {/* Visual selectable chips */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {AI_CATEGORIES.map((cat) => {
-                  const active = selectedGoals.includes(cat.value);
+          {/* Recommended treatments */}
+          {recommendedTreatments.length > 0 && (
+            <div className="mt-5 novalyte-fade-up">
+              <p className="mb-3 text-sm font-medium text-foreground">Based on your selection, these may be relevant:</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {recommendedTreatments.slice(0, 3).map((t) => {
+                  const Icon = getTreatmentIcon(t!.slug);
                   return (
-                    <button
-                      key={cat.value}
-                      onClick={() => toggleGoal(cat.value)}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition",
-                        active
-                          ? "border-teal-400 bg-teal-50 text-teal-800 ring-1 ring-teal-200"
-                          : "border-border bg-card text-foreground/70 hover:border-teal-200 hover:bg-teal-50/30",
-                      )}
-                    >
-                      {active && <CheckCircle2 className="h-3.5 w-3.5" />}
-                      {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-5 flex gap-2">
-                <Button
-                  className="bg-teal-600 text-white hover:bg-teal-700"
-                  disabled={selectedGoals.length === 0}
-                  onClick={() => setShowAiResults(true)}
-                >
-                  See recommendations <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-                {selectedGoals.length > 0 && (
-                  <Button variant="ghost" onClick={() => setSelectedGoals([])}>Clear</Button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 space-y-4">
-              <div className="rounded-lg border border-teal-200 bg-teal-50/50 p-4">
-                <p className="text-sm font-medium text-foreground">
-                  Based on the goals you selected, these treatment categories may be worth discussing with a licensed healthcare professional.
-                </p>
-              </div>
-              <div className="space-y-2">
-                {recommendedTreatments.map((t) => {
-                  const Icon = getTreatmentIcon(t.slug);
-                  return (
-                    <div key={t.slug} className="flex items-center gap-3 rounded-lg border border-border p-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 ring-1 ring-teal-100">
-                        <Icon className="h-4 w-4" />
+                    <div key={t!.slug} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+                        <Icon className="h-5 w-5" />
                       </span>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">{t.treatmentLabel}</p>
-                        <p className="text-xs text-muted-foreground">{t.description}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{t!.label}</p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">{t!.explanation}</p>
                       </div>
-                      <div className="flex gap-1.5">
-                        <Button size="sm" variant="outline" onClick={() => navigate("treatment-detail", undefined, { slug: t.slug })}>Learn</Button>
-                        <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => { navigate("assessment", undefined, { slug: t.slug }); setShowAiResults(false); }}>
-                          Assess
-                        </Button>
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <Button size="sm" className="h-7 bg-teal-600 px-2.5 text-xs text-white hover:bg-teal-700" onClick={() => startAssessment(t!.slug)}>Start</Button>
+                        <button onClick={() => navigate("treatment-detail", undefined, { slug: t!.slug })} className="text-[11px] font-medium text-teal-700 hover:underline">Learn</button>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <DisclaimerBanner tone="amber">
-                This is informational guidance, not a medical diagnosis. Novalyte AI does not determine medical eligibility. Always consult a licensed provider.
-              </DisclaimerBanner>
-              <Button variant="outline" size="sm" onClick={() => { setShowAiResults(false); setSelectedGoals([]); }}>Start over</Button>
             </div>
           )}
         </div>
-      </SectionShell>
+      </section>
 
-      {/* Educational value content */}
-      <SectionShell>
-        <SectionHeading
-          eyebrow="Understanding Your Options"
-          title="What to know before you start"
-          description="Useful, practical information to help you make informed decisions about men's health care."
-        />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { icon: Stethoscope, title: "Understanding treatment options", desc: "Learn what each treatment involves, who it may help, and what to expect during a consultation." },
-            { icon: Video, title: "Telehealth vs. in-person care", desc: "Both have their place. Telehealth expands access; some care requires in-person evaluation. Understand the difference." },
-            { icon: FileText, title: "Common laboratory discussions", desc: "Many treatments involve lab work. Understanding why helps you have better conversations with providers." },
-            { icon: ShieldCheck, title: "How self-pay care typically works", desc: "Many men's health clinics operate on direct-pay models. Understanding costs upfront helps you plan." },
-            { icon: MessageSquare, title: "Questions to ask a clinic", desc: "Being prepared with questions helps you get the most from your consultation and find the right fit." },
-            { icon: Building2, title: "How Novalyte AI matches patients and clinics", desc: "We use your treatment interest, location, timeline, and care preferences to suggest relevant clinics." },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.title} className="rounded-xl border border-border bg-card p-5 shadow-premium-xs">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 ring-1 ring-teal-100">
-                  <Icon className="h-4.5 w-4.5" />
-                </span>
-                <h4 className="mt-3 text-sm font-semibold text-foreground">{item.title}</h4>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.desc}</p>
-              </div>
-            );
-          })}
-        </div>
-      </SectionShell>
-
-      {/* How It Works — connected process illustration */}
-      <SectionShell tone="muted">
-        <SectionHeading eyebrow="How It Works" title="From goal to consultation in six steps" />
-        <div className="mt-10">
-          {/* Desktop: horizontal connected process */}
-          <div className="hidden lg:block">
-            <div className="relative">
-              {/* Connecting line */}
-              <div className="absolute left-0 right-0 top-6 h-0.5 bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-400" aria-hidden />
-              <div className="relative grid grid-cols-6 gap-4">
-                {PROCESS_STEPS.map((step, i) => {
-                  const Icon = step.icon;
-                  return (
-                    <div key={i} className="flex flex-col items-center text-center">
-                      <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-premium-md ring-2 ring-teal-400">
-                        <Icon className="h-5 w-5 text-teal-600" />
-                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">{i + 1}</span>
+      {/* ── 3. FEATURED TREATMENT CATEGORIES ───────────────────── */}
+      <section id="featured" className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Featured treatment categories</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Start with the most common men's health treatments.</p>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURED_SLUGS.map((slug) => {
+              const t = TREATMENT_LIST.find((x) => x.slug === slug);
+              if (!t) return null;
+              const Icon = getTreatmentIcon(slug);
+              const img = IMAGES.treatments[slug as keyof typeof IMAGES.treatments] ?? IMAGES.hero.clinicScene;
+              return (
+                <div
+                  key={slug}
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-premium-xs transition hover:border-teal-200 hover:shadow-premium-sm"
+                >
+                  <div className="relative h-36 overflow-hidden">
+                    <SmartImage
+                      src={img}
+                      alt={`${t.label} treatment category`}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      className="transition duration-500 group-hover:scale-105"
+                      imgClassName="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-card via-card/10 to-transparent" aria-hidden />
+                    <div className="absolute bottom-2.5 left-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white shadow-sm">
+                        <Icon className="h-4 w-4" />
                       </span>
-                      <h4 className="mt-3 text-xs font-semibold text-foreground">{step.title}</h4>
-                      <p className="mt-1 text-[11px] leading-tight text-muted-foreground">{step.desc}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <h3 className="text-base font-semibold text-foreground">{t.label}</h3>
+                    <p className="mt-1 line-clamp-2 flex-1 text-sm text-muted-foreground">{t.explanation}</p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => startAssessment(slug)}>
+                        Start Assessment
+                      </Button>
+                      <button onClick={() => navigate("treatment-detail", undefined, { slug })} className="text-xs font-medium text-teal-700 underline-offset-2 hover:underline">
+                        Learn More →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* View All Treatments */}
+          <div className="mt-5 text-center">
+            <Button variant="outline" onClick={() => setShowAllTreatments(!showAllTreatments)}>
+              {showAllTreatments ? "Show Less" : "View All Men's Health Treatments"} <ChevronDown className={cn("ml-1 h-4 w-4 transition", showAllTreatments && "rotate-180")} />
+            </Button>
+          </div>
+
+          {/* Secondary treatments (expandable) */}
+          {showAllTreatments && (
+            <div className="mt-5 novalyte-fade-up">
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {SECONDARY_SLUGS.map((slug) => {
+                  const t = TREATMENT_LIST.find((x) => x.slug === slug);
+                  if (!t) return null;
+                  const Icon = getTreatmentIcon(slug);
+                  const img = IMAGES.treatments[slug as keyof typeof IMAGES.treatments] ?? IMAGES.hero.clinicScene;
+                  return (
+                    <div key={slug} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition hover:border-teal-200">
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                        <SmartImage src={img} alt={t.label} fill sizes="48px" imgClassName="object-cover" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">{t.label}</p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">{t.explanation}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <Icon className="h-4 w-4 text-teal-600" />
+                        <button onClick={() => navigate("treatment-detail", undefined, { slug })} className="text-xs font-medium text-teal-700 hover:underline">Learn</button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-          </div>
-          {/* Mobile: vertical process */}
-          <div className="lg:hidden">
-            <div className="relative space-y-6">
-              <div className="absolute left-6 top-2 bottom-2 w-0.5 bg-gradient-to-b from-teal-200 via-teal-400 to-emerald-400" aria-hidden />
-              {PROCESS_STEPS.map((step, i) => {
-                const Icon = step.icon;
-                return (
-                  <div key={i} className="relative flex gap-4">
-                    <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-premium-md ring-2 ring-teal-400">
-                      <Icon className="h-5 w-5 text-teal-600" />
-                      <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">{i + 1}</span>
-                    </span>
-                    <div className="pt-1">
-                      <h4 className="text-sm font-semibold text-foreground">{step.title}</h4>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{step.desc}</p>
+          )}
+        </div>
+      </section>
+
+      {/* ── 4. ASSESSMENT PREVIEW ──────────────────────────────── */}
+      <section className="border-b border-border bg-muted/30 py-12 sm:py-14">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:px-8">
+          {/* Left: visual preview */}
+          <div className="order-2 lg:order-1">
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-premium-md">
+              {/* Mock assessment UI */}
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 text-white"><Sparkles className="h-3.5 w-3.5" /></span>
+                  <span className="text-xs font-semibold text-foreground">Novalyte AI Assessment</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Step 2 of 6</span>
+              </div>
+              <div className="space-y-3 p-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-700">Your Goals</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">What would you most like to improve?</p>
+                </div>
+                <div className="space-y-1.5">
+                  {["Energy and motivation", "Sexual health", "Strength and muscle development"].map((opt, i) => (
+                    <div key={i} className={cn("flex items-center justify-between rounded-lg border px-3 py-2.5 text-xs", i === 0 ? "border-teal-400 bg-teal-50 text-teal-800" : "border-border bg-card text-foreground/70")}>
+                      <span>{opt}</span>
+                      {i === 0 && <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />}
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <div className="h-1 flex-1 rounded-full bg-teal-600" />
+                  <div className="h-1 flex-1 rounded-full bg-teal-600" />
+                  <div className="h-1 flex-1 rounded-full bg-muted" />
+                  <div className="h-1 flex-1 rounded-full bg-muted" />
+                  <div className="h-1 flex-1 rounded-full bg-muted" />
+                  <div className="h-1 flex-1 rounded-full bg-muted" />
+                </div>
+                <p className="flex items-center gap-1 text-[10px] text-teal-600"><CheckCircle2 className="h-3 w-3" /> Progress saved</p>
+              </div>
             </div>
           </div>
-          <p className="mt-8 text-center text-xs text-muted-foreground">
-            Licensed healthcare professionals remain responsible for diagnosis, prescribing, and treatment decisions.
-          </p>
+          {/* Right: copy + CTA */}
+          <div className="order-1 lg:order-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 px-3 py-1 text-xs font-semibold text-teal-700">
+              <FileText className="h-3.5 w-3.5" /> Assessment
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">A short assessment built around your goals</h2>
+            <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Answer a few focused questions about what you want to improve, your care preferences, timeline, and location. We'll use your responses to prepare relevant information and potential clinic matches.
+            </p>
+            <ul className="mt-5 space-y-2">
+              {[
+                "Personalized by treatment",
+                "Approximately 2–3 minutes",
+                "Progress saved automatically",
+                "Clear next steps after completion",
+              ].map((b) => (
+                <li key={b} className="flex items-center gap-2 text-sm text-foreground/80">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-teal-600" /> {b}
+                </li>
+              ))}
+            </ul>
+            <Button size="lg" className="mt-6 bg-teal-600 text-white hover:bg-teal-700" onClick={startAssessmentIntro}>
+              Start My Assessment <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </SectionShell>
+      </section>
 
-      {/* Trust section — with supporting image */}
-      <SectionShell id="trust">
-        <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+      {/* ── 5. PATIENT VALUE & EDUCATION ──────────────────────── */}
+      <section className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_1.3fr] lg:px-8">
+          {/* Left: editorial image */}
           <div>
-            <SectionHeading
-              eyebrow="Trust & Transparency"
-              title="Clear guidance without pressure"
-              description="Novalyte AI helps organize your treatment interests, preferences, and consultation goals."
-            />
-            <div className="mt-6 relative aspect-[4/3] overflow-hidden rounded-2xl shadow-premium-md">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-premium-md">
               <SmartImage
                 src={IMAGES.patients.consultation}
-                alt="Healthcare professional speaking privately with a male patient"
+                alt="Healthcare professional speaking with a male patient during a consultation"
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 imgClassName="object-cover"
               />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          {/* Right: accordion */}
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">What you should know before choosing care</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Practical information to help you make informed decisions.</p>
+            <Accordion type="single" collapsible className="mt-4">
+              {VALUE_TOPICS.map((topic, i) => {
+                const Icon = topic.icon;
+                return (
+                  <AccordionItem key={i} value={`item-${i}`} className="border-b border-border">
+                    <AccordionTrigger className="py-3.5 text-left text-sm font-medium hover:no-underline">
+                      <span className="flex items-center gap-2.5">
+                        <Icon className="h-4 w-4 text-teal-600" /> {topic.title}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground">{topic.desc}</AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. HOW IT WORKS ───────────────────────────────────── */}
+      <section className="border-b border-border bg-muted/30 py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">How it works</h2>
+          {/* Desktop: horizontal */}
+          <div className="mt-8 hidden lg:block">
+            <div className="relative">
+              <div className="absolute left-0 right-0 top-5 h-0.5 bg-gradient-to-r from-teal-200 via-teal-400 to-emerald-400" aria-hidden />
+              <div className="relative grid grid-cols-6 gap-3">
+                {PROCESS_STEPS.map((step, i) => {
+                  const Icon = step.icon;
+                  return (
+                    <div key={i} className="flex flex-col items-center text-center">
+                      <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-premium-sm ring-2 ring-teal-400">
+                        <Icon className="h-4 w-4 text-teal-600" />
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[9px] font-bold text-white">{i + 1}</span>
+                      </span>
+                      <h4 className="mt-2.5 text-xs font-semibold text-foreground">{step.title}</h4>
+                      <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{step.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          {/* Mobile: vertical */}
+          <div className="mt-6 lg:hidden">
+            <div className="relative space-y-4">
+              <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-teal-200 via-teal-400 to-emerald-400" aria-hidden />
+              {PROCESS_STEPS.map((step, i) => {
+                const Icon = step.icon;
+                return (
+                  <div key={i} className="relative flex gap-3">
+                    <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white shadow-premium-sm ring-2 ring-teal-400">
+                      <Icon className="h-4 w-4 text-teal-600" />
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[9px] font-bold text-white">{i + 1}</span>
+                    </span>
+                    <div className="pt-1.5">
+                      <h4 className="text-sm font-semibold text-foreground">{step.title}</h4>
+                      <p className="text-xs text-muted-foreground">{step.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Licensed healthcare professionals remain responsible for diagnosis, prescribing, and treatment decisions.
+          </p>
+        </div>
+      </section>
+
+      {/* ── 7. JOURNAL CONTENT ────────────────────────────────── */}
+      <section className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Learn before you decide</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Patient-focused guides from the Novalyte Journal.</p>
+            </div>
+            <button onClick={() => navigate("journal")} className="hidden text-sm font-medium text-teal-700 underline-offset-2 hover:underline sm:block">
+              View All Patient Guides →
+            </button>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {featuredArticles.map((article) => (
+              <button
+                key={article.id}
+                onClick={() => navigate("journal-article", undefined, { slug: article.slug })}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-premium-xs transition hover:border-teal-200 hover:shadow-premium-sm"
+              >
+                <div className="relative h-32 overflow-hidden">
+                  <SmartImage
+                    src={IMAGES.articles[0]}
+                    alt={article.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                    className="transition duration-500 group-hover:scale-105"
+                    imgClassName="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" aria-hidden />
+                  <Badge className="absolute left-3 top-3 bg-white/90 text-[10px] text-teal-700 backdrop-blur">{article.category}</Badge>
+                </div>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">{article.title}</h3>
+                  <p className="mt-1.5 line-clamp-2 flex-1 text-xs text-muted-foreground">{article.excerpt}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground"><Clock className="h-3 w-3" /> {article.readingTime} min read</span>
+                    <span className="text-xs font-medium text-teal-700">Read Article →</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 text-center sm:hidden">
+            <button onClick={() => navigate("journal")} className="text-sm font-medium text-teal-700 underline-offset-2 hover:underline">
+              View All Patient Guides →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 8. TRUST & TRANSPARENCY ───────────────────────────── */}
+      <section className="bg-foreground py-12 text-background sm:py-14">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <h2 className="text-2xl font-semibold tracking-tight text-background sm:text-3xl">Clear guidance. No pressure.</h2>
+            <p className="mt-2 text-sm text-background/70 sm:text-base">
+              Novalyte AI helps you understand options and connect with clinics. Licensed professionals remain responsible for diagnosis, prescribing, and treatment decisions.
+            </p>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { icon: ShieldCheck, title: "Novalyte AI does not diagnose", desc: "We organize information. We do not diagnose or prescribe." },
-              { icon: Lock, title: "Does not prescribe", desc: "Only licensed providers make prescribing decisions." },
-              { icon: CheckCircle2, title: "Treatment is not guaranteed", desc: "A licensed provider decides what's appropriate for you." },
-              { icon: HeartPulse, title: "You choose whether to contact a clinic", desc: "No pressure. No fake urgency. Your decision." },
-              { icon: Building2, title: "Clinics are independently responsible", desc: "Clinics make all clinical decisions independently." },
-              { icon: FileText, title: "Explicit consent", desc: "Separate permissions. Easy opt-out at any time." },
-            ].map((t) => {
-              const Icon = t.icon;
+              { icon: ShieldCheck, label: "No diagnosis from Novalyte AI" },
+              { icon: Lock, label: "No guaranteed prescription" },
+              { icon: CheckCircle2, label: "Transparent contact consent" },
+              { icon: Compass, label: "You decide whether to contact a clinic" },
+            ].map((item) => {
+              const Icon = item.icon;
               return (
-                <div key={t.title} className="rounded-xl border border-border bg-card p-4 shadow-premium-xs">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-600 ring-1 ring-teal-100">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <h4 className="mt-2.5 text-sm font-semibold text-foreground">{t.title}</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">{t.desc}</p>
+                <div key={item.label} className="flex items-start gap-2.5 rounded-xl border border-background/15 bg-background/5 p-3.5">
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-teal-400" />
+                  <span className="text-xs font-medium leading-tight text-background/90">{item.label}</span>
                 </div>
               );
             })}
           </div>
         </div>
-      </SectionShell>
+      </section>
 
-      <CTASection
-        title="Ready to explore your options?"
-        description="Take a personalized assessment and connect with qualified men's health clinics."
-        primaryLabel="Start Your Assessment"
-        onPrimary={() => document.getElementById("treatments")?.scrollIntoView({ behavior: "smooth" })}
-        secondaryLabel="Browse Clinic Directory"
-        secondaryView="directory"
-        tone="dark"
-      />
-      <MedicalDisclaimer className="mx-auto w-full max-w-7xl px-4 pb-10 sm:px-6 lg:px-8" />
-    </>
+      {/* ── 9. FINAL CTA ──────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-teal-600 to-emerald-700 py-12 text-white sm:py-14">
+        <div className="novalyte-dots absolute inset-0 opacity-10" aria-hidden />
+        <div className="relative mx-auto w-full max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">Ready to understand your options?</h2>
+          <p className="mt-3 text-pretty text-sm text-white/90 sm:text-base">
+            Complete a short assessment and receive personalized guidance based on your goals, location, timeline, and care preferences.
+          </p>
+          <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
+            <Button size="lg" className="bg-white text-teal-700 hover:bg-white/90" onClick={startAssessmentIntro}>
+              Start My Assessment <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+            <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" onClick={() => navigate("directory")}>
+              Browse Clinics
+            </Button>
+          </div>
+          <p className="mt-3 text-xs text-white/80">Takes approximately 2–3 minutes · No treatment commitment required</p>
+        </div>
+      </section>
+
+      <MedicalDisclaimer className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8" />
+    </div>
   );
 }

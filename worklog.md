@@ -548,3 +548,37 @@ Stage Summary:
 - Personalized results with routing (high-intent → clinics, research → Journal, insurance → cost resources)
 - Mobile feels native (slim top bar, step counter, full-screen questions)
 - No medical qualification claims
+
+---
+Task ID: 16
+Agent: Main (Z.ai Code)
+Task: Patients page redesign — compact, focused, conversion-oriented with tighter spacing
+
+Work Log:
+- Completely rewrote src/components/views/patients-view.tsx with tighter, more focused design
+- Hero: shorter two-column layout, "Find the Right Men's Health Care—Without Guesswork" headline, Start My Assessment + Explore Treatments + Browse Clinics, compact trust row (Private and secure · Takes ~2–3 min · No diagnosis guarantee), real hero image (verified rendering), floating assessment preview card
+- Treatment finder: compact 8-tile goal selector (Energy & hormones, Weight management, Sexual health, Hair loss, Strength & recovery, Preventive health, Longevity, I'm not sure) with selected state; shows 3 recommended treatments beneath when selected
+- Featured treatments: only 6 primary categories (TRT, Hormone Optimization, Medical Weight Loss, GLP-1, ED, Hair Restoration) in compact cards (h-36 image, 2-line desc, single Start Assessment button + Learn More text link — no more 3 equal buttons)
+- View All Treatments: expandable section showing 6 secondary categories as compact list rows with thumbnails
+- Assessment preview: split layout with mock assessment UI (progress bar, answer cards, "Progress saved") + 4 benefits list + Start My Assessment CTA
+- Patient value content: accordion (not 6 cards) with editorial image — "What you should know before choosing care"
+- How It Works: single compact horizontal process on desktop (6 steps with connecting line), vertical timeline on mobile, one-line disclaimer beneath — fixed duplicate rendering
+- Journal section: 3 featured article cards with images, category, reading time, "View All Patient Guides" link
+- Trust section: compact dark navy band with 4 trust points (not 6 cards)
+- Final CTA: teal gradient with "Ready to understand your options?" + Start My Assessment + Browse Clinics + "Takes ~2–3 min · No treatment commitment"
+- Reduced spacing globally: sections use py-12/py-14 (not py-16/py-24), tighter gaps
+- CTA hierarchy: single dominant filled button per section, text links for secondary actions
+- Verified with Agent Browser: hero image renders (hero-1.jpg, 720px), compact trust row, 6 featured cards, View All expandable, assessment preview with mock UI, accordion value content, compact process, 3 Journal cards, trust band, final CTA, mobile responsive
+
+Stage Summary:
+- Hero is shorter and stronger with real image
+- Treatment finder provides immediate direction
+- Only 6 featured treatments; secondary behind View All
+- Compact cards with single primary CTA
+- Assessment preview is prominent with mock UI
+- Value content uses accordion (not 6 oversized cards)
+- How It Works is compact (no duplicates)
+- Trust is a compact dark band (4 points)
+- Final CTA is focused and concise
+- Mobile significantly shorter and usable
+- All assessment links open the premium full-screen flow
