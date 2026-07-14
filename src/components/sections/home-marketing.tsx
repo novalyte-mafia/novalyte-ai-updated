@@ -100,7 +100,7 @@ export function PillarsSection() {
           return (
             <div
               key={p.key}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-7 transition hover:border-teal-300 hover:shadow-lg hover:shadow-teal-600/5"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-7 shadow-premium-sm transition hover:border-teal-300 hover:shadow-premium-lg"
             >
               <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-teal-50/60 opacity-0 transition group-hover:opacity-100" aria-hidden />
               <div className="relative">

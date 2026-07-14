@@ -263,3 +263,69 @@ Stage Summary:
   - `/home/z/my-project/src/components/views/marketplace-view.tsx` (overwrite)
   - `/home/z/my-project/src/components/views/product-detail-view.tsx` (new)
   - `/home/z/my-project/src/components/views/vendor-profile-view.tsx` (new)
+
+---
+Task ID: 7
+Agent: Main (Z.ai Code)
+Task: Built flagship Clinic Directory + Clinic Profile views, fixed lint errors, polished homepage with premium depth
+
+Work Log:
+- Built completely redesigned `src/components/views/directory-view.tsx` as a flagship search & discovery experience:
+  - Premium hero with breadcrumbs, big search bar, quick stats strip (StatCard grid: clinics/verified/telehealth/states)
+  - Two-column layout: sticky 280px filter sidebar (state, city, treatment, telehealth/in-person/verified toggles) that collapses to a left Sheet on mobile with filter-count badge
+  - Sort control (relevance/verified first/telehealth first/A-Z) + ViewToggle (grid/list/map)
+  - Applied filter chips row (FilterChip with remove buttons) + "Clear all"
+  - Premium clinic cards with colored banner strip, initials avatar, verification badge, SaveButton (useSaved), Compare toggle (useCompare), trust signals row, grid + list variants
+  - Stylized Map view with positioned pins, selected clinic panel, pulse animation
+  - Loading skeleton (CardSkeleton grid via useTransition), EmptyState, pagination (6/page)
+  - Used useTransition for perceived-performance loading (replaced useEffect setState pattern that violated lint rules)
+- Built comprehensive `src/components/views/clinic-profile-view.tsx` — the most detailed page in the platform:
+  - Breadcrumbs (Home > Directory > Clinic)
+  - Premium hero with clinic identity (avatar, name, verification badge, tagline, location/telehealth/hours), specialty chips, trust signals, primary CTAs (Request consultation, View treatments, Save)
+  - Snapshot sidebar card (type, location, service area, telehealth, providers, hours, contact links)
+  - StickyTabNav with 12 tabs: Overview, Treatments, Providers, Locations & Hours, Insurance & Pricing, Telehealth, Eligibility, Gallery, Reviews, FAQ, Contact & Booking, Safety & Compliance
+  - Each tab is a full section with PremiumCards, MetaRows, StatCards, disclaimers
+  - Contact tab has working consultation request form (POST /api/consultation) with success state
+  - Related clinics sidebar (scored by shared specialty + same state)
+  - Safety tab with verification/privacy/transparency/independent-operation cards
+- Fixed lint errors: replaced useEffect+setState with useTransition for filter loading; wrapped scrollToTab in useCallback; moved specs derivation inside useMemo to use primitive deps
+- Polished homepage: upgraded hero shadows to shadow-premium-xl/lg, pillar cards to shadow-premium-sm/lg
+
+Stage Summary:
+- All flagship experiences redesigned and verified compiling cleanly (lint passes, server 200)
+- Directory: enterprise search with map/list/grid views, save+compare, advanced filters, skeletons
+- Clinic Profile: 12-tab comprehensive page with sticky nav, all required sections, working forms
+- Workforce + Job Detail: built by subagent (Task 5) — premium job board with filter sidebar, salary transparency, saved jobs, application tracking
+- Marketplace + Product Detail + Vendor Profile: built by subagent (Task 6) — B2B commerce with category nav, vendor profiles, quote workflows, comparisons
+- Next: full Agent Browser verification of all redesigned flows
+
+---
+Task ID: 8
+Agent: Main (Z.ai Code)
+Task: Agent Browser verification of all redesigned flagship experiences + fix nested button hydration error
+
+Work Log:
+- Verified homepage renders cleanly with premium depth shadows (shadow-premium-xl/lg on hero ecosystem visual + pillar cards)
+- Verified redesigned Clinic Directory: premium hero with breadcrumbs + big search + stats strip; sticky filter sidebar with state/city/treatment/telehealth/verified/in-person filters; sort control; Grid/List/Map view toggle; premium clinic cards with Save + Compare buttons; applied filter chips; pagination; loading skeleton via useTransition; empty state
+- Verified Map view: positioned clinic pins with pulse animation, selected clinic detail panel
+- Verified telehealth filter correctly excludes non-telehealth clinics
+- Verified Clinic Profile view: 12-tab sticky navigation (Overview, Treatments, Providers, Locations & Hours, Insurance & Pricing, Telehealth, Eligibility, Gallery, Reviews, FAQ, Contact & Booking, Safety & Compliance); hero with identity/verification/trust signals; snapshot sidebar; related clinics; working consultation form on Contact tab
+- Verified Workforce redesign (subagent): Browse Jobs + Browse Professionals tabs, filter sidebar, premium job cards with Featured/Verified employer badges, salary transparency ($42k–$52k), remote/on-site labels, Save + Apply buttons
+- Verified Job Detail view: sticky tabs (Overview, Requirements, Compensation & Benefits, Schedule, How to Apply), Apply button, related jobs
+- Verified Marketplace redesign (subagent): B2B commerce hero, category nav bar, filter sidebar, listing cards with Compare + Request Quote + Save, verified supplier toggle
+- Verified Product Detail view: sticky tabs (Overview, Specifications, Pricing & Financing, Shipping & Fulfillment, Vendor, FAQs), Request Quote form, Save/Compare buttons, related products
+- Verified Compare tray: docked bottom tray with item chips, Compare button (disabled until 2+), expanded comparison overlay with table
+- Verified mobile responsiveness: header collapses to hamburger, filter sidebar collapses to left Sheet with filter-count badge, directory cards stack
+- Fixed hydration error: nested <button> inside <Button> in product-detail-view.tsx (SaveButton was wrapped in a Button — removed the wrapping Button, used SaveButton directly)
+- Final state: lint clean (0 errors), server returning 200, no console/hydration errors
+
+Stage Summary:
+- ALL flagship experiences redesigned and browser-verified:
+  - Clinic Directory: enterprise search with map/list/grid, save+compare, advanced filters, skeletons, pagination
+  - Clinic Profile: 12-tab comprehensive page with sticky nav, all required sections, working forms
+  - Workforce + Job Detail: premium job board with salary transparency, saved jobs, application tracking
+  - Marketplace + Product Detail + Vendor Profile: B2B commerce with category nav, vendor profiles, quote workflows, comparisons
+- Enterprise design system applied throughout: premium depth shadows, refined cards, sticky tab navigation, breadcrumbs, filter chips, view toggles, save/bookmark, compare tray
+- All interactive states functional: hover, loading (skeletons), empty, error (toast), success, disabled
+- Fully responsive: mobile sheet filters, collapsing header, stacking grids
+- No fake metrics; no nested button hydration errors; no console errors

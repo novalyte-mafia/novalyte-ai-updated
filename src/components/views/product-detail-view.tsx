@@ -256,9 +256,7 @@ export function ProductDetailView({
               <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setQuoteOpen(true)}>
                 <Quote className="mr-1 h-4 w-4" /> Request Quote
               </Button>
-              <Button variant="outline" onClick={() => toggleSaved("product", listing.id)}>
-                <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} label={isSaved ? "Saved" : "Save"} />
-              </Button>
+              <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} label={isSaved ? "Saved" : "Save"} />
               <Button
                 variant="outline"
                 onClick={() => toggleCompare("product", listing.id)}

@@ -80,7 +80,7 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
 
             {/* center hub */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-xl shadow-teal-600/20">
+              <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-premium-xl">
                 <div className="novalyte-pulse-ring absolute inset-0 rounded-3xl bg-teal-400/40" />
                 <div className="relative text-center">
                   <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Novalyte</div>
@@ -96,7 +96,7 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
               return (
                 <div key={node.label} className={cn("absolute", node.pos)}>
                   <div className="novalyte-float flex flex-col items-center gap-2" style={{ animationDelay: node.delay }}>
-                    <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-lg ring-1", c.ring)}>
+                    <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-premium-lg ring-1", c.ring)}>
                       <Icon className={cn("h-7 w-7", c.text)} />
                     </div>
                     <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
