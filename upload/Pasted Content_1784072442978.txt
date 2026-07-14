@@ -1,0 +1,1332 @@
+You are upgrading the existing Novalyte AI `/clinics` page.
+
+Do not rebuild the website from scratch. Preserve the current navigation, brand identity, typography, colors, routes, responsive behavior, and the strongest parts of the existing Clinics page.
+
+This is a focused redesign with five major objectives:
+
+1. Convert the visible clinic application into a secure gated application flow
+2. Remove the unnecessary “What holds men’s health clinics back” section
+3. Expand the four clinic-growth systems with substantially more value and product depth
+4. Rebuild the revenue section around a dynamic treatment-specific Clinic ROI Calculator
+5. Add a comprehensive clinic FAQ section
+
+The page should make a clinic owner immediately understand that Novalyte AI helps clinics:
+
+- Generate more treatment-ready patient opportunities
+- Improve lead quality
+- Reduce intake and follow-up leakage
+- Increase consultation bookings
+- Improve clinic visibility
+- Expand provider and operational capacity
+- Track the financial impact of patient acquisition
+- Apply for a free clinic directory listing
+
+The page must remain credible and must not guarantee leads, revenue, treatment conversions, prescriptions, or clinical outcomes.
+
+==================================================
+1. REMOVE THE CURRENT OPEN APPLICATION
+==================================================
+
+The full clinic application must no longer be openly visible at the bottom of the page.
+
+Currently, the full questionnaire and all application stages are exposed immediately. This creates several problems:
+
+- The page becomes excessively long
+- The application overwhelms visitors who are still learning about Novalyte AI
+- Automated bots can discover and submit against the form more easily
+- The clinic has not yet identified itself before accessing the full application
+- The application does not feel controlled or exclusive
+- Visitors may abandon because they see too many questions at once
+
+Replace the current visible application with a gated two-part application process.
+
+==================================================
+2. CLINIC APPLICATION ENTRY GATE
+==================================================
+
+At the bottom of the Clinics page, show only a compact application-introduction section and a short initial form.
+
+Recommended eyebrow:
+
+JOIN THE NOVALYTE AI CLINIC NETWORK
+
+Recommended headline:
+
+Apply for a Free Clinic Directory Listing
+
+Supporting copy:
+
+Tell us who you are and which clinic you represent. After we verify your basic information, you can continue to the complete clinic application.
+
+Show these benefits:
+
+- Free application
+- No directory application fee
+- Complete clinic profile
+- Treatment and location visibility
+- Optional patient-acquisition services
+- Optional workforce and marketplace support
+- Application subject to verification and approval
+
+The initial form should collect only:
+
+- Clinic or company name
+- Applicant first name
+- Applicant last name
+- Job title
+- Work email address
+- Direct telephone number
+- Clinic website
+- Primary state
+- Checkbox confirming authority to apply
+
+Primary CTA:
+
+Continue to Clinic Application
+
+Do not show all remaining questions before this initial step is completed successfully.
+
+==================================================
+3. APPLICATION GATING BEHAVIOR
+==================================================
+
+After the applicant submits valid basic information:
+
+1. Validate the submitted fields
+2. Run bot and abuse checks
+3. Create a draft clinic application record
+4. Generate a secure application ID
+5. Send an email verification link or one-time verification code
+6. Optionally verify the telephone number through SMS
+7. Open the full application only after the required verification succeeds
+
+The full application should open as either:
+
+Preferred:
+- A dedicated application route
+
+Example:
+
+`/clinics/apply/[secure-application-token]`
+
+Acceptable:
+- A full-screen application experience
+
+Do not display the full application inline on the marketing page.
+
+Do not place private applicant information in the URL.
+
+Do not expose sequential application IDs.
+
+Use a signed, expiring, non-guessable token.
+
+==================================================
+4. BOT AND ABUSE PROTECTION
+==================================================
+
+Simply hiding the questionnaire after the first form does not fully prevent bots.
+
+Implement layered protection.
+
+Required controls:
+
+- Cloudflare Turnstile, hCaptcha, or an equivalent privacy-conscious challenge
+- Server-side rate limiting by IP and application fingerprint
+- Honeypot field
+- Minimum realistic completion-time validation
+- CSRF protection
+- Server-side validation for every field
+- Email-domain and formatting validation
+- Disposable-email detection where appropriate
+- Phone-number validation
+- Request throttling
+- Duplicate-submission detection
+- Bot-pattern detection
+- Secure application tokens
+- Expiring verification links
+- Audit logging
+- WAF-compatible endpoints
+- File-upload scanning later in the application
+
+Do not rely only on client-side validation.
+
+Do not reveal internal scoring or bot-detection logic to the applicant.
+
+If suspicious activity is detected:
+
+- Do not create a usable application
+- Return a generic error
+- Log the event
+- Apply rate limits
+- Avoid exposing which specific protection was triggered
+
+==================================================
+5. BASIC INFORMATION VERIFICATION
+==================================================
+
+The initial application gate must verify that the person appears to represent a legitimate clinic.
+
+Validate:
+
+Clinic or company name:
+- Minimum length
+- No obvious spam strings
+- Normalize punctuation and spacing
+
+Work email:
+- Valid format
+- No accidental spaces
+- Reject obviously fake values
+- Detect common domain typos
+- Prefer a business-domain email
+- Allow legitimate Gmail or Outlook addresses for small clinics, but flag them internally for additional review
+
+Phone:
+- Format as the user types
+- Validate plausible U.S. telephone number
+- Reject incomplete numbers
+- Store normalized E.164 format
+
+Website:
+- Validate URL structure
+- Normalize protocol
+- Confirm the domain resolves where technically appropriate
+- Do not require a website if the clinic is newly launching, but ask for supporting verification later
+
+Authority checkbox:
+
+“I confirm that I am authorized to submit information on behalf of this clinic or organization.”
+
+Do not preselect this checkbox.
+
+==================================================
+6. OPEN THE COMPLETE APPLICATION AFTER VERIFICATION
+==================================================
+
+Once the applicant completes verification, open the full Clinic Directory and Partnership Application.
+
+Recommended application stages:
+
+1. Organization
+2. Locations
+3. Decision Makers
+4. Providers and Credentials
+5. Treatments and Services
+6. Patient Operations
+7. Patient-Acquisition Interest
+8. Growth Services
+9. Workforce and Marketplace
+10. Directory Profile
+11. Verification
+12. Review and Submit
+
+The full application must support:
+
+- Auto-save
+- Save and exit
+- Resume later
+- Secure session recovery
+- Progress indicator
+- Section completion states
+- Conditional questions
+- Add multiple locations
+- Add multiple providers
+- Add multiple decision makers
+- Review before submission
+- Mobile responsiveness
+- Accessible controls
+
+Do not show all 12 stages as one long page.
+
+==================================================
+7. REMOVE THE “WHAT HOLDS MEN’S HEALTH CLINICS BACK” SECTION
+==================================================
+
+Remove the entire section titled:
+
+“What holds men’s health clinics back”
+
+Remove its five static challenge items:
+
+- Unpredictable patient demand
+- Low-intent or unstructured inquiries
+- Intake and follow-up leakage
+- Limited capacity to scale
+- Weak performance visibility
+
+This section is repetitive and does not provide enough interactive or commercial value.
+
+Do not replace it with another generic problems grid.
+
+Use the reclaimed space to strengthen:
+
+- Patient Growth
+- Intake and Conversion
+- Clinic Visibility
+- Clinic Operations
+- Revenue-growth explanation
+- Clinic ROI Calculator
+- Clinic FAQ
+
+==================================================
+8. EXPAND THE FOUR CLINIC-GROWTH SYSTEMS
+==================================================
+
+The existing four systems are the strongest strategic structure on the page:
+
+- Patient Growth
+- Intake and Conversion
+- Clinic Visibility
+- Clinic Operations
+
+Expand them into a more sophisticated interactive section.
+
+Recommended heading:
+
+Four Connected Systems for Clinic Growth
+
+Supporting copy:
+
+Novalyte AI connects patient demand, structured intake, clinic discovery, consultation workflows, staffing, and operational resources through one men’s health ecosystem.
+
+Use large interactive tabs or a segmented selector.
+
+When a system is selected, update:
+
+- Main value proposition
+- Relevant product preview
+- Workflow
+- Business outcome
+- Key capabilities
+- Metrics the clinic may track
+- Relevant CTA
+
+Do not present the systems as four identical static cards.
+
+==================================================
+9. SYSTEM 1 — PATIENT GROWTH
+==================================================
+
+Recommended headline:
+
+Generate More Relevant Patient Opportunities
+
+Recommended explanation:
+
+Novalyte AI helps clinics become discoverable when men are actively researching specific treatments and looking for the right provider.
+
+Capabilities:
+
+- Treatment-specific patient landing pages
+- Long-form patient education
+- Treatment-specific assessments
+- Structured patient-intent capture
+- Location and telehealth matching
+- Clinic directory discovery
+- Organic search pathways
+- Paid acquisition pathway support
+- Referral-source attribution
+- Campaign and UTM tracking
+- Patient-opportunity routing
+- Treatment-demand reporting
+
+Show a visual workflow:
+
+Patient Searches for Care
+→
+Treatment Education
+→
+Personalized Assessment
+→
+Intent and Readiness Captured
+→
+Clinic Match
+→
+Consultation Request
+
+Show business outcomes:
+
+- More relevant inquiries
+- Better treatment alignment
+- Improved local and telehealth discovery
+- More measurable acquisition channels
+- Less dependence on generic lead forms
+
+Show metrics the clinic may track:
+
+- Patient inquiries
+- Assessments started
+- Assessments completed
+- Validated contacts
+- Consultation requests
+- Cost per inquiry
+- Cost per completed assessment
+- Cost per consultation request
+- Treatment demand by market
+- Source attribution
+
+Add CTA:
+
+Explore Patient-Acquisition Services
+
+==================================================
+10. SYSTEM 2 — INTAKE AND CONVERSION
+==================================================
+
+Recommended headline:
+
+Turn Patient Interest Into Booked Consultations
+
+Recommended explanation:
+
+Novalyte AI organizes patient information before clinic follow-up so teams can respond with clearer context and reduce lead leakage.
+
+Capabilities:
+
+- Validated contact information
+- Treatment-interest capture
+- Patient goals
+- Preferred care format
+- Consultation timeline
+- Location
+- Telehealth preference
+- Self-pay openness
+- Budget comfort where appropriate
+- Previous treatment experience
+- Lab availability where relevant
+- Consent tracking
+- Staff assignment
+- Follow-up stages
+- Appointment status
+- Automated reminders
+- Pipeline visibility
+- Response-time tracking
+
+Show a visual conversion pipeline:
+
+New Inquiry
+→
+Contact Validated
+→
+Assessment Completed
+→
+Assigned to Clinic
+→
+Patient Contacted
+→
+Consultation Scheduled
+→
+Consultation Completed
+
+Show clinic value:
+
+- Reduce incomplete inquiries
+- Prioritize high-intent opportunities
+- Improve staff response time
+- Track every patient opportunity
+- Reduce missed follow-up
+- Identify conversion bottlenecks
+
+Show metrics:
+
+- Contact rate
+- Average first-response time
+- Consultation booking rate
+- Show rate
+- Follow-up completion
+- Inquiry-to-consultation conversion
+- Conversion by treatment
+- Conversion by source
+
+Add CTA:
+
+See the Patient Intake Workflow
+
+==================================================
+11. SYSTEM 3 — CLINIC VISIBILITY
+==================================================
+
+Recommended headline:
+
+Help Patients Understand Why They Should Choose Your Clinic
+
+Recommended explanation:
+
+A complete clinic profile gives patients the information they need before requesting a consultation.
+
+Capabilities:
+
+- Verified clinic profile
+- Clinic logo
+- Cover photography
+- Clinic gallery
+- Treatment categories
+- Provider profiles
+- Provider credentials
+- Locations
+- Hours
+- Telehealth availability
+- States served
+- Pricing approach
+- Insurance and self-pay information
+- Financing information
+- Consultation process
+- Patient eligibility information
+- FAQs
+- Educational resources
+- Appointment link
+- Request-consultation CTA
+- Search visibility
+- Treatment-specific directory placement
+
+Show a sophisticated clinic-profile preview.
+
+Show desktop and mobile versions.
+
+Show business outcomes:
+
+- Stronger patient trust
+- Better local discovery
+- Better treatment-specific discovery
+- Fewer repetitive pre-consultation questions
+- More informed consultation requests
+- More professional digital presence
+
+Show metrics:
+
+- Directory profile views
+- Treatment-page views
+- Consultation CTA clicks
+- Appointment-link clicks
+- Calls
+- Saved profiles
+- Source locations
+- Search terms
+- Conversion by clinic location
+
+Add CTA:
+
+Preview a Clinic Profile
+
+==================================================
+12. SYSTEM 4 — CLINIC OPERATIONS
+==================================================
+
+Recommended headline:
+
+Increase the Capacity Required to Grow
+
+Recommended explanation:
+
+Patient demand only creates revenue when the clinic has the people, technology, vendors, and workflows required to support it.
+
+Capabilities:
+
+Workforce:
+- Medical directors
+- Physicians
+- Nurse practitioners
+- Physician assistants
+- Registered nurses
+- Medical assistants
+- Phlebotomists
+- Patient coordinators
+- Clinic operations professionals
+- Telehealth clinicians
+- Credentialing specialists
+
+Marketplace:
+- Laboratory partners
+- Medical equipment
+- Diagnostic equipment
+- Phlebotomy supplies
+- Telehealth technology
+- EHR software
+- CRM software
+- Medical refrigeration
+- Clinic furniture
+- Medical waste services
+- Recovery equipment
+- Hyperbaric equipment
+- Credentialing services
+- Marketing services
+- Payment and financing solutions
+
+Operations:
+- Multi-location visibility
+- Capacity tracking
+- Staff assignment
+- Vendor discovery
+- Quote requests
+- Expansion planning
+- Treatment-launch support
+- Geographic demand analysis
+
+Show business outcomes:
+
+- Faster staffing
+- Better capacity planning
+- Easier vendor discovery
+- Reduced operational fragmentation
+- Improved expansion readiness
+- Better coordination across locations
+
+Add CTAs:
+
+Explore Workforce
+
+Browse Marketplace
+
+==================================================
+13. ENHANCE THE CLINIC REVENUE SECTION
+==================================================
+
+Replace the current simple seven-step revenue section with a more commercially useful growth model.
+
+Recommended heading:
+
+How Novalyte AI Helps Clinics Create More Revenue Opportunities
+
+Supporting copy:
+
+Clinic revenue growth depends on the full patient journey—not simply generating more names and telephone numbers.
+
+Show a connected revenue engine:
+
+1. More Treatment-Specific Visibility
+2. More Relevant Patient Interest
+3. Better Contact and Intake Data
+4. Faster Follow-Up
+5. More Consultation Bookings
+6. Higher Show Rates
+7. More Treatment Opportunities
+8. Increased Clinic Capacity
+9. Improved Retention and Expansion
+
+For every stage, show:
+
+- What Novalyte AI supports
+- Which clinic metric is affected
+- Which clinic team owns the next action
+- Where revenue leakage may occur
+
+Example:
+
+Treatment-Specific Visibility
+
+Novalyte AI helps patients discover clinics through treatment pages, directory listings, educational content, and targeted pathways.
+
+Potential metrics:
+
+- Page views
+- Directory impressions
+- Assessment starts
+- Cost per visitor
+
+Clinic responsibility:
+
+- Maintain accurate clinic details
+- Maintain availability
+- Respond to treatment demand
+
+Example:
+
+Faster Follow-Up
+
+Structured patient opportunities and centralized status tracking help clinic teams respond more quickly.
+
+Potential metrics:
+
+- First-response time
+- Contact rate
+- Consultation booking rate
+
+Clinic responsibility:
+
+- Staff coverage
+- Follow-up quality
+- Scheduling availability
+
+Add a clear disclaimer:
+
+“Novalyte AI supports patient discovery, intake, visibility, and operational workflows. Actual revenue depends on clinic pricing, market conditions, treatment demand, capacity, response time, clinical eligibility, consultation performance, and patient decisions.”
+
+==================================================
+14. REPLACE THE CURRENT ROI SECTION
+==================================================
+
+Remove the current generic section titled:
+
+“Understand the economics of your growth”
+
+Replace it with:
+
+Clinic ROI Calculator
+
+Recommended headline:
+
+Estimate the Revenue Opportunity for Your Treatment Vertical
+
+Supporting copy:
+
+Choose the treatment services your clinic offers, enter your own operating assumptions, and estimate the potential return from additional patient opportunities.
+
+This calculator must be dynamic and treatment-specific.
+
+It must not use one generic model for every clinic.
+
+==================================================
+15. CLINIC ROI CALCULATOR — TREATMENT SELECTION
+==================================================
+
+The calculator should begin by asking:
+
+Which treatment vertical do you want to model?
+
+Include:
+
+- Testosterone Replacement Therapy
+- Hormone Optimization
+- Erectile Dysfunction Care
+- Sexual Wellness
+- Medical Weight Loss
+- GLP-1 Programs
+- Peptide Therapy
+- Hair Restoration
+- Longevity Medicine
+- Performance and Recovery
+- Preventive Men’s Health
+- Telehealth Men’s Health
+- IV Therapy
+- Fertility Services
+- Other
+
+Allow the clinic to choose one treatment per calculation.
+
+Optionally allow multiple saved scenarios.
+
+After selecting the treatment, dynamically update:
+
+- Relevant input labels
+- Default example values
+- Relevant revenue model
+- Treatment-specific explanation
+- Conversion funnel
+- Output summary
+
+Clearly label all default values as illustrative.
+
+Do not imply the defaults represent Novalyte AI customer results.
+
+==================================================
+16. CLINIC ROI CALCULATOR — INPUTS
+==================================================
+
+Collect:
+
+Patient acquisition assumptions:
+- Additional patient leads per month
+- Cost per lead
+- Percentage of leads with valid contact information
+- Percentage who complete intake
+- Percentage the clinic contacts
+- Consultation booking rate
+- Consultation show rate
+- Treatment-start conversion rate
+
+Revenue assumptions:
+- Initial consultation revenue
+- Initial treatment or setup revenue
+- Monthly recurring patient revenue
+- Average patient retention in months
+- Additional upsell or ancillary revenue
+- Gross margin percentage where the clinic chooses to enter it
+
+Operational assumptions:
+- Staff cost per new lead
+- Cost of laboratory testing absorbed by clinic
+- Sales or consultation commission
+- Payment-processing cost
+- Other acquisition costs
+
+Allow clinics to leave optional fields blank.
+
+Use sliders and numeric inputs together.
+
+Do not force unrealistic minimum values.
+
+==================================================
+17. TREATMENT-SPECIFIC ROI LOGIC
+==================================================
+
+The model should adapt based on treatment economics.
+
+A. TRT and Hormone Optimization
+
+Relevant model:
+
+Lead
+→
+Consultation
+→
+Lab Evaluation
+→
+Treatment Start
+→
+Monthly Recurring Program
+
+Inputs may include:
+
+- Cost per lead
+- Consultation booking rate
+- Treatment-start conversion
+- Initial program fee
+- Monthly recurring revenue
+- Average retention
+- Lab or fulfillment cost
+
+B. Medical Weight Loss and GLP-1
+
+Relevant model:
+
+Lead
+→
+Consultation
+→
+Eligibility Review
+→
+Program Enrollment
+→
+Monthly Program Revenue
+
+Inputs may include:
+
+- Cost per lead
+- Enrollment rate
+- Initial consultation revenue
+- Monthly program revenue
+- Average patient duration
+- Medication-related clinic margin only where appropriate
+- Follow-up revenue
+
+Do not assume the clinic earns medication revenue.
+
+C. Erectile Dysfunction and Sexual Wellness
+
+Relevant model:
+
+Lead
+→
+Private Consultation
+→
+Treatment Plan
+→
+Initial Purchase or Program
+→
+Follow-Up
+
+Inputs may include:
+
+- Consultation rate
+- Treatment-start rate
+- Average first purchase
+- Recurring revenue
+- Follow-up frequency
+
+D. Peptide Therapy
+
+Relevant model:
+
+Lead
+→
+Consultation
+→
+Provider Review
+→
+Program Enrollment
+→
+Recurring Monitoring
+
+Use careful language because treatment availability and evidence vary.
+
+E. Hair Restoration
+
+Relevant model:
+
+Lead
+→
+Consultation
+→
+Treatment Selection
+→
+Procedure or Program
+
+Allow:
+
+- Medical program model
+- Procedure model
+- Hybrid model
+
+F. Longevity, Performance, and Preventive Health
+
+Relevant model:
+
+Lead
+→
+Advanced Consultation
+→
+Diagnostic Package
+→
+Membership or Program
+→
+Ongoing Services
+
+==================================================
+18. ROI CALCULATOR — OUTPUTS
+==================================================
+
+Show:
+
+- Total estimated monthly lead cost
+- Estimated valid contacts
+- Estimated completed intakes
+- Estimated consultations booked
+- Estimated consultations attended
+- Estimated treatment starts
+- Estimated first-month revenue
+- Estimated recurring revenue
+- Estimated total revenue across the selected retention period
+- Estimated acquisition cost per treatment start
+- Estimated gross contribution
+- Estimated return on acquisition spend
+- Estimated break-even point
+
+Show the funnel visually.
+
+Example:
+
+100 Leads
+→
+75 Valid Contacts
+→
+52 Completed Intakes
+→
+31 Consultations
+→
+24 Shows
+→
+10 Treatment Starts
+
+Show a transparent calculation explanation.
+
+Allow the clinic to:
+
+- Edit assumptions
+- Reset scenario
+- Save scenario
+- Compare treatments
+- Print or download a scenario summary later
+- Continue to patient-acquisition inquiry
+
+Primary CTA after calculation:
+
+Discuss Patient-Acquisition Options
+
+Secondary CTA:
+
+Apply for a Free Clinic Listing
+
+==================================================
+19. ROI CALCULATOR DISCLAIMERS
+==================================================
+
+Display:
+
+“This calculator provides illustrative estimates based entirely on the assumptions entered. It does not predict or guarantee lead volume, patient eligibility, consultation bookings, treatment starts, retention, revenue, profit, or return on investment.”
+
+Also clarify:
+
+- Licensed providers determine clinical eligibility
+- Not every lead will be medically eligible
+- Actual costs vary by market and treatment
+- Treatment economics differ by clinic
+- The calculator is not financial or legal advice
+- Clinics must enter their own pricing and operating costs
+- Novalyte AI does not guarantee the input assumptions
+
+Do not display exaggerated default outputs.
+
+==================================================
+20. ADD A CLINIC FAQ SECTION
+==================================================
+
+Add a comprehensive FAQ section near the bottom of the Clinics page, before the application-entry gate.
+
+Recommended heading:
+
+Frequently Asked Questions From Clinic Owners
+
+Use an accessible accordion.
+
+Include at least the following questions:
+
+1. What is Novalyte AI?
+
+Answer direction:
+
+Novalyte AI is a healthcare technology ecosystem connecting men seeking care with clinics, healthcare professionals, educational resources, and operational services.
+
+2. Is applying for the Clinic Directory free?
+
+Answer direction:
+
+Applying is free. Approval and listing are subject to verification. Optional patient-acquisition, enhanced visibility, workforce, marketplace, or software services may have separate fees.
+
+3. Does applying guarantee that my clinic will be listed?
+
+Answer direction:
+
+No. Novalyte AI reviews clinic information, credentials, treatment offerings, and submitted content before publication.
+
+4. What information is required to apply?
+
+Answer direction:
+
+Organization details, locations, decision-maker information, provider credentials, treatments, patient operations, directory content, and verification information.
+
+5. Why must I verify my email or telephone number before accessing the full application?
+
+Answer direction:
+
+Verification helps protect the application process, reduce automated abuse, save the application securely, and confirm that Novalyte AI is communicating with a legitimate clinic representative.
+
+6. Does Novalyte AI provide medical care?
+
+Answer direction:
+
+No. Novalyte AI is a technology platform. Clinics and licensed professionals remain responsible for diagnosis, prescribing, and treatment.
+
+7. What is a treatment-ready patient opportunity?
+
+Answer direction:
+
+A patient opportunity may include treatment interest, goals, location, care preference, timeline, self-pay openness, validated contact information, and consent. It does not mean the patient is medically eligible.
+
+8. Does Novalyte AI guarantee leads or revenue?
+
+Answer direction:
+
+No. Patient demand, lead volume, conversion, and revenue vary by treatment, market, clinic capacity, pricing, response time, and many other factors.
+
+9. Can we choose which treatments we want patient opportunities for?
+
+Answer direction:
+
+Yes. Clinics may specify treatments, locations, states, telehealth coverage, patient capacity, and operational preferences.
+
+10. Can telehealth clinics join?
+
+Answer direction:
+
+Yes, subject to verification, licensure, state coverage, and directory requirements.
+
+11. Can multi-location clinics apply?
+
+Answer direction:
+
+Yes. The application supports multiple clinic locations, providers, services, and telehealth states.
+
+12. What happens after the application is submitted?
+
+Answer direction:
+
+Novalyte AI reviews completeness, verifies information where appropriate, requests missing information if needed, prepares the clinic profile, and communicates approval or next steps.
+
+13. How does clinic matching work?
+
+Answer direction:
+
+Potential matches may consider treatment interest, location, telehealth preference, clinic services, availability, and other operational factors. Matching does not determine medical suitability.
+
+14. Can our clinic receive patient opportunities without purchasing an enhanced listing?
+
+Answer direction:
+
+Explain that directory listing and optional patient-acquisition programs are separate. Availability and commercial terms may differ by market and launch phase.
+
+15. Can we update our profile after publication?
+
+Answer direction:
+
+Yes. Approved clinics should be able to request updates to providers, locations, treatments, hours, pricing information, and media.
+
+16. What security controls protect our application?
+
+Answer direction:
+
+Explain secure transmission, verification, access controls, application tokens, rate limiting, secure uploads, and responsible data handling without making unsupported compliance claims.
+
+==================================================
+21. FAQ STRUCTURED DATA
+==================================================
+
+Add FAQ structured data only for questions and answers visibly rendered on the page.
+
+Do not include hidden or unrelated FAQ schema.
+
+Ensure each answer in structured data matches the visible answer.
+
+==================================================
+22. REVISED PAGE STRUCTURE
+==================================================
+
+Use this updated order:
+
+1. Clinic-growth hero
+2. Unified clinic-growth journey
+3. What clinic owners need
+4. Four connected clinic-growth systems
+5. Expanded Patient Growth
+6. Expanded Intake and Conversion
+7. Expanded Clinic Visibility
+8. Expanded Clinic Operations
+9. Structured patient-opportunity preview
+10. Clinic command-center preview
+11. How Novalyte AI supports clinic revenue
+12. Treatment-specific pathways
+13. Clinic Directory value
+14. Workforce value
+15. Marketplace value
+16. Clinic use cases
+17. Dynamic Clinic ROI Calculator
+18. Implementation process
+19. Trust and responsible growth
+20. Clinic FAQ
+21. Free clinic listing explanation
+22. Basic application-entry gate
+23. Final CTA
+
+Remove:
+
+- “What holds men’s health clinics back”
+- The full publicly visible clinic questionnaire
+- The generic ROI section
+- Repetitive sections that explain identical points
+
+==================================================
+23. APPLICATION ENTRY DESIGN
+==================================================
+
+Design the basic application-entry gate as a premium section.
+
+Desktop layout:
+
+LEFT:
+- Free listing explanation
+- Benefits
+- Verification process
+- Estimated full-application time
+- Privacy and security reassurance
+
+RIGHT:
+- Basic applicant form
+
+Recommended form heading:
+
+Start Your Clinic Application
+
+Supporting copy:
+
+Enter your clinic and contact information to create a secure application. After verification, you can continue the full directory and partnership application.
+
+Fields:
+
+- Clinic name
+- First name
+- Last name
+- Job title
+- Work email
+- Direct telephone number
+- Clinic website
+- Primary state
+- Authority confirmation
+
+Primary CTA:
+
+Continue Securely
+
+Below CTA:
+
+“Applying is free. Submission does not guarantee approval or publication.”
+
+Trust indicators:
+
+- Email verification
+- Secure application link
+- Save and resume
+- Bot-protected submission
+
+==================================================
+24. APPLICATION RESUME FLOW
+==================================================
+
+After the initial submission:
+
+Show a verification screen.
+
+Recommended headline:
+
+Verify Your Information to Continue
+
+Copy:
+
+“We sent a secure verification link to your work email. Open the link to continue your clinic application.”
+
+Support:
+
+- Resend verification email
+- Change email address
+- Verify by code
+- Contact support
+- Display masked email address
+- Rate-limit resend attempts
+
+After successful verification:
+
+- Redirect into the full application
+- Load the saved clinic and applicant information
+- Mark the first stage partially complete
+- Do not ask the same information again unless confirmation is needed
+
+==================================================
+25. MOBILE EXPERIENCE
+==================================================
+
+On mobile:
+
+- Keep the four growth systems easy to navigate
+- Use horizontal treatment-system tabs or a dropdown
+- Stack product previews cleanly
+- Make calculator controls touch-friendly
+- Keep charts readable
+- Use one question per application screen where helpful
+- Do not render the full application on the marketing page
+- Ensure verification screens fit within the viewport
+- Use correct mobile keyboard types
+- Maintain large touch targets
+- Prevent sticky CTAs from covering form fields
+
+==================================================
+26. ACCESSIBILITY
+==================================================
+
+Ensure:
+
+- Keyboard-operable tabs
+- Accessible calculator controls
+- Proper slider labels
+- Visible focus states
+- Screen-reader announcements for recalculated ROI
+- Accessible FAQ accordion
+- Form labels
+- Error summaries
+- Inline validation
+- Semantic headings
+- Sufficient color contrast
+- Reduced-motion support
+- No color-only status indicators
+
+==================================================
+27. TECHNICAL ARCHITECTURE
+==================================================
+
+Build reusable components for:
+
+- Clinic growth-system selector
+- Growth-system detail panel
+- Patient-growth workflow
+- Intake conversion pipeline
+- Directory profile preview
+- Clinic operations preview
+- Revenue-growth engine
+- Treatment selector
+- ROI calculator
+- Treatment-specific calculator configuration
+- ROI funnel
+- FAQ accordion
+- Application-entry gate
+- Email verification screen
+- Secure application shell
+- Save-and-resume logic
+- Bot-protection wrapper
+
+Use configuration-driven data for:
+
+- Treatments
+- Calculator defaults
+- Calculator input fields
+- Funnel stages
+- FAQ content
+- Application stages
+- Clinic growth systems
+
+Do not build one large hardcoded component.
+
+==================================================
+28. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+Before finishing, verify:
+
+- The “What holds men’s health clinics back” section is removed
+- The four clinic-growth systems are expanded
+- Patient Growth clearly explains how clinics receive more relevant patient opportunities
+- Intake and Conversion clearly explains how clinics improve consultation bookings
+- Clinic Visibility clearly explains directory and profile value
+- Clinic Operations clearly explains workforce, marketplace, and capacity
+- The clinic-revenue section provides more commercial value
+- The generic growth calculator is removed
+- The new calculator requires treatment selection
+- The calculator supports all major men’s health verticals
+- Cost per lead is included
+- Conversion assumptions are editable
+- Recurring revenue and patient retention are supported
+- Outputs are transparent
+- No ROI guarantee is implied
+- The Clinics page contains a useful FAQ
+- The complete application is no longer publicly visible
+- Only the short basic-information form appears initially
+- The applicant must verify before continuing
+- The application opens through a secure dedicated route
+- Secure non-guessable tokens are used
+- CAPTCHA or equivalent bot protection is implemented
+- Server-side rate limiting is implemented
+- Honeypot and duplicate detection are implemented
+- Application progress can be saved
+- Applicants do not repeat previously entered information
+- Applying is clearly described as free
+- Listing approval is not guaranteed
+- Optional patient-acquisition services are clearly separated from the free listing application
+- Mobile and accessibility requirements work
+- Existing navigation and routes remain functional
+
+==================================================
+FINAL EXPECTATION
+==================================================
+
+The upgraded Clinics page should feel like a serious clinic-growth and patient-acquisition platform.
+
+A clinic owner should immediately understand:
+
+- How Novalyte AI can create more treatment-specific patient opportunities
+- How structured intake can improve lead quality
+- How faster follow-up can improve consultation conversion
+- How a complete clinic profile can increase trust and visibility
+- How workforce and marketplace services can increase clinic capacity
+- How treatment-specific economics affect patient-acquisition ROI
+- How to apply for a free directory listing
+- Why the full clinic application is protected behind verification
+
+The clinic application must no longer appear like an exposed public questionnaire.
+
+It must feel controlled, secure, credible, and appropriate for a verified healthcare network.

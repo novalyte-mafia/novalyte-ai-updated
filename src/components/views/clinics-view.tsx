@@ -13,6 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ROI_TREATMENTS, DEFAULT_INPUTS, calculateRoi, type RoiInputs } from "@/lib/roi-calculator";
+import { CLINIC_FAQS } from "@/lib/clinic-faqs";
 import { navigate } from "@/lib/nav";
 import { US_STATES, TREATMENT_VERTICALS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -133,11 +136,13 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
   const [activeClinicType, setActiveClinicType] = useState("independent");
   const [showApplication, setShowApplication] = useState(false);
   const [submittedApp, setSubmittedApp] = useState<{ id: string; clinicName: string } | null>(null);
+  const [appGate, setAppGate] = useState<{ verified: boolean; clinicName: string } | null>(null);
 
-  // ROI calculator state
-  const [roi, setRoi] = useState({ inquiries: 100, consultRate: 30, conversion: 40, value: 1500 });
-
-  const roiResult = Math.round((roi.inquiries * (roi.consultRate / 100) * (roi.conversion / 100) * roi.value));
+  // ROI calculator state — treatment-specific
+  const [roiTreatment, setRoiTreatment] = useState(ROI_TREATMENTS[0].slug);
+  const [roiInputs, setRoiInputs] = useState<RoiInputs>({ ...ROI_TREATMENTS[0].defaults });
+  const activeRoiTreatment = ROI_TREATMENTS.find((t) => t.slug === roiTreatment) ?? ROI_TREATMENTS[0];
+  const roiOutputs = calculateRoi(roiInputs);
 
   return (
     <div className="bg-background">
@@ -274,34 +279,10 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
         </div>
       </section>
 
-      {/* ── 4. CLINIC GROWTH CHALLENGES ────────────────────────── */}
-      <section className="border-b border-border bg-muted/30 py-12 sm:py-14">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_1.3fr] lg:px-8">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">What holds men's health clinics back</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Five strategic challenges that limit clinic growth.</p>
-            <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-2xl shadow-premium-md">
-              <SmartImage src="/images/clinics/clinic-4.jpg" alt="Clinic operations team discussing performance" fill sizes="(max-width: 1024px) 100vw, 40vw" imgClassName="object-cover" />
-            </div>
-          </div>
-          <div className="space-y-2.5">
-            {CHALLENGES.map((c) => (
-              <div key={c.letter} className="flex items-start gap-4 rounded-xl border border-border bg-card p-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 font-bold text-rose-600 ring-1 ring-rose-100">{c.letter}</span>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">{c.title}</h4>
-                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{c.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 5. FOUR GROWTH SYSTEMS ─────────────────────────────── */}
+      {/* ── 4. FOUR GROWTH SYSTEMS ─────────────────────────────── */}
       <section className="border-b border-border py-12 sm:py-14">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Four clinic-growth systems in one platform</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Four connected systems for clinic growth</h2>
           <p className="mt-2 text-sm text-muted-foreground">Organized around revenue, not feature lists.</p>
           {/* Tab selector */}
           <div className="mt-6 flex flex-wrap gap-2">
@@ -739,41 +720,122 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
         </div>
       </section>
 
-      {/* ── 15. ROI FRAMEWORK ──────────────────────────────────── */}
+      {/* ── 15. CLINIC ROI CALCULATOR ──────────────────────────── */}
       <section className="border-b border-border py-12 sm:py-14">
-        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Understand the economics of your growth</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Adjust the variables to see an illustrative opportunity based on your own assumptions.</p>
-            <div className="mt-5 space-y-4">
-              <div>
-                <Label className="text-xs">Monthly patient inquiries: <span className="font-bold text-foreground">{roi.inquiries}</span></Label>
-                <input type="range" min="20" max="500" step="10" value={roi.inquiries} onChange={(e) => setRoi({ ...roi, inquiries: Number(e.target.value) })} className="mt-1 w-full accent-teal-600" />
-              </div>
-              <div>
-                <Label className="text-xs">Consultation booking rate: <span className="font-bold text-foreground">{roi.consultRate}%</span></Label>
-                <input type="range" min="5" max="60" step="1" value={roi.consultRate} onChange={(e) => setRoi({ ...roi, consultRate: Number(e.target.value) })} className="mt-1 w-full accent-teal-600" />
-              </div>
-              <div>
-                <Label className="text-xs">Treatment conversion rate: <span className="font-bold text-foreground">{roi.conversion}%</span></Label>
-                <input type="range" min="10" max="80" step="1" value={roi.conversion} onChange={(e) => setRoi({ ...roi, conversion: Number(e.target.value) })} className="mt-1 w-full accent-teal-600" />
-              </div>
-              <div>
-                <Label className="text-xs">Average first-year patient value ($)</Label>
-                <Input type="number" value={roi.value} onChange={(e) => setRoi({ ...roi, value: Number(e.target.value) })} className="mt-1" />
-              </div>
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Clinic ROI Calculator</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Choose the treatment services your clinic offers, enter your own operating assumptions, and estimate the potential return from additional patient opportunities.</p>
+
+          {/* Treatment selector */}
+          <div className="mt-5">
+            <Label className="text-xs font-medium">Which treatment vertical do you want to model?</Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ROI_TREATMENTS.map((t) => {
+                const active = roiTreatment === t.slug;
+                return (
+                  <button key={t.slug} onClick={() => { setRoiTreatment(t.slug); setRoiInputs({ ...t.defaults }); }}
+                    className={cn("rounded-full border px-3 py-1.5 text-xs font-medium transition", active ? "border-teal-400 bg-teal-50 text-teal-800 ring-1 ring-teal-200" : "border-border bg-card text-foreground/70 hover:border-teal-200")}>
+                    {t.shortLabel}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <PremiumCard className="p-6 text-center">
-            <span className="flex h-12 w-12 mx-auto items-center justify-center rounded-xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
-              <Calculator className="h-6 w-6" />
-            </span>
-            <p className="mt-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Estimated monthly opportunity</p>
-            <p className="mt-1 text-4xl font-bold text-foreground">${roiResult.toLocaleString()}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Based on {roi.inquiries} inquiries → {Math.round(roi.inquiries * roi.consultRate / 100)} consults → {Math.round(roi.inquiries * roi.consultRate / 100 * roi.conversion / 100)} patients</p>
-            <Separator className="my-4" />
-            <p className="text-[10px] leading-relaxed text-muted-foreground">This calculator provides illustrative estimates only and does not guarantee revenue. Actual results vary by clinic, market, and implementation.</p>
-          </PremiumCard>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
+            {/* Inputs */}
+            <PremiumCard className="p-5">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 className="text-sm font-semibold text-foreground">{activeRoiTreatment.label} — Input assumptions</h3>
+                <button onClick={() => setRoiInputs({ ...activeRoiTreatment.defaults })} className="text-xs text-teal-700 hover:underline">Reset</button>
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">{activeRoiTreatment.revenueModel}</p>
+
+              {/* Acquisition assumptions */}
+              <p className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-teal-700">Patient acquisition</p>
+              <div className="mt-2 space-y-3">
+                <SliderInput label="Additional patient leads / month" value={roiInputs.leadsPerMonth} min={5} max={500} step={5} onChange={(v) => setRoiInputs({ ...roiInputs, leadsPerMonth: v })} />
+                <NumberInput label="Cost per lead ($)" value={roiInputs.costPerLead} onChange={(v) => setRoiInputs({ ...roiInputs, costPerLead: v })} />
+                <SliderInput label="Leads with valid contact (%)" value={roiInputs.validContactRate} min={30} max={100} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, validContactRate: v })} suffix="%" />
+                <SliderInput label="Intake completion rate (%)" value={roiInputs.intakeCompletionRate} min={20} max={100} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, intakeCompletionRate: v })} suffix="%" />
+                <SliderInput label="Clinic contact rate (%)" value={roiInputs.contactRate} min={30} max={100} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, contactRate: v })} suffix="%" />
+                <SliderInput label="Consultation booking rate (%)" value={roiInputs.consultBookingRate} min={5} max={80} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, consultBookingRate: v })} suffix="%" />
+                <SliderInput label="Consultation show rate (%)" value={roiInputs.showRate} min={40} max={100} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, showRate: v })} suffix="%" />
+                <SliderInput label="Treatment-start conversion (%)" value={roiInputs.treatmentStartRate} min={5} max={80} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, treatmentStartRate: v })} suffix="%" />
+              </div>
+
+              {/* Revenue assumptions */}
+              <p className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-teal-700">Revenue assumptions</p>
+              <div className="mt-2 space-y-3">
+                <NumberInput label="Initial consultation revenue ($)" value={roiInputs.initialConsultRevenue} onChange={(v) => setRoiInputs({ ...roiInputs, initialConsultRevenue: v })} />
+                <NumberInput label="Initial treatment/setup revenue ($)" value={roiInputs.initialTreatmentRevenue} onChange={(v) => setRoiInputs({ ...roiInputs, initialTreatmentRevenue: v })} />
+                <NumberInput label="Monthly recurring patient revenue ($)" value={roiInputs.monthlyRecurringRevenue} onChange={(v) => setRoiInputs({ ...roiInputs, monthlyRecurringRevenue: v })} />
+                <SliderInput label="Average patient retention (months)" value={roiInputs.avgRetentionMonths} min={1} max={24} step={1} onChange={(v) => setRoiInputs({ ...roiInputs, avgRetentionMonths: v })} />
+                <NumberInput label="Additional upsell/ancillary revenue ($)" value={roiInputs.upsellRevenue} onChange={(v) => setRoiInputs({ ...roiInputs, upsellRevenue: v })} />
+              </div>
+
+              {/* Operational assumptions */}
+              <p className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-teal-700">Operational costs</p>
+              <div className="mt-2 space-y-3">
+                <NumberInput label="Staff cost per new lead ($)" value={roiInputs.staffCostPerLead} onChange={(v) => setRoiInputs({ ...roiInputs, staffCostPerLead: v })} />
+                <NumberInput label="Lab cost per treatment start ($)" value={roiInputs.labCostPerPatient} onChange={(v) => setRoiInputs({ ...roiInputs, labCostPerPatient: v })} />
+                <NumberInput label="Other acquisition cost per lead ($)" value={roiInputs.otherAcquisitionCost} onChange={(v) => setRoiInputs({ ...roiInputs, otherAcquisitionCost: v })} />
+              </div>
+            </PremiumCard>
+
+            {/* Outputs */}
+            <div className="space-y-4">
+              {/* Funnel visualization */}
+              <PremiumCard className="p-5">
+                <h3 className="text-sm font-semibold text-foreground">Patient opportunity funnel</h3>
+                <div className="mt-4 space-y-2">
+                  {[
+                    { label: "Leads", value: roiInputs.leadsPerMonth, pct: 100 },
+                    { label: "Valid contacts", value: roiOutputs.validContacts, pct: roiInputs.leadsPerMonth > 0 ? (roiOutputs.validContacts / roiInputs.leadsPerMonth) * 100 : 0 },
+                    { label: "Completed intakes", value: roiOutputs.completedIntakes, pct: roiInputs.leadsPerMonth > 0 ? (roiOutputs.completedIntakes / roiInputs.leadsPerMonth) * 100 : 0 },
+                    { label: "Consultations booked", value: roiOutputs.consultationsBooked, pct: roiInputs.leadsPerMonth > 0 ? (roiOutputs.consultationsBooked / roiInputs.leadsPerMonth) * 100 : 0 },
+                    { label: "Consultations attended", value: roiOutputs.consultationsAttended, pct: roiInputs.leadsPerMonth > 0 ? (roiOutputs.consultationsAttended / roiInputs.leadsPerMonth) * 100 : 0 },
+                    { label: "Treatment starts", value: roiOutputs.treatmentStarts, pct: roiInputs.leadsPerMonth > 0 ? (roiOutputs.treatmentStarts / roiInputs.leadsPerMonth) * 100 : 0 },
+                  ].map((stage) => (
+                    <div key={stage.label} className="flex items-center gap-2">
+                      <span className="w-32 shrink-0 text-[10px] text-muted-foreground">{stage.label}</span>
+                      <div className="relative h-7 flex-1 overflow-hidden rounded bg-muted">
+                        <div className="flex h-full items-center rounded bg-gradient-to-r from-teal-500 to-emerald-500 px-2" style={{ width: `${Math.max(stage.pct, 5)}%` }}>
+                          <span className="text-[10px] font-bold text-white">{stage.value}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PremiumCard>
+
+              {/* Key outputs */}
+              <PremiumCard className="p-5">
+                <h3 className="text-sm font-semibold text-foreground">Estimated outcomes (monthly)</h3>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-border bg-muted/30 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total lead cost</p><p className="mt-1 text-lg font-bold text-foreground">${roiOutputs.totalLeadCost.toLocaleString()}</p></div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Treatment starts</p><p className="mt-1 text-lg font-bold text-foreground">{roiOutputs.treatmentStarts}</p></div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">First-month revenue</p><p className="mt-1 text-lg font-bold text-foreground">${roiOutputs.firstMonthRevenue.toLocaleString()}</p></div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Monthly recurring</p><p className="mt-1 text-lg font-bold text-foreground">${roiOutputs.monthlyRecurring.toLocaleString()}</p></div>
+                </div>
+                <Separator className="my-4" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-3"><p className="text-[10px] uppercase tracking-wider text-teal-700">Total revenue ({roiInputs.avgRetentionMonths}mo)</p><p className="mt-1 text-xl font-bold text-foreground">${roiOutputs.totalRevenue.toLocaleString()}</p></div>
+                  <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-3"><p className="text-[10px] uppercase tracking-wider text-teal-700">Return on ad spend</p><p className="mt-1 text-xl font-bold text-foreground">{roiOutputs.roas.toFixed(1)}x</p></div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cost per treatment start</p><p className="mt-1 text-lg font-bold text-foreground">${Math.round(roiOutputs.acquisitionCostPerStart).toLocaleString()}</p></div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Break-even (months)</p><p className="mt-1 text-lg font-bold text-foreground">{roiOutputs.breakEvenMonths || "—"}</p></div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => document.getElementById("application")?.scrollIntoView({ behavior: "smooth" })}>Discuss Patient-Acquisition Options</Button>
+                  <Button size="sm" variant="outline" onClick={() => navigate("directory")}>Browse Clinics</Button>
+                </div>
+              </PremiumCard>
+
+              <DisclaimerBanner tone="amber" className="text-[11px]">
+                This calculator provides illustrative estimates based entirely on the assumptions entered. It does not predict or guarantee lead volume, patient eligibility, consultation bookings, treatment starts, retention, revenue, profit, or return on investment. Licensed providers determine clinical eligibility. Actual costs vary by market and treatment.
+              </DisclaimerBanner>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -841,7 +903,22 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
         </div>
       </section>
 
-      {/* ── 18. FREE LISTING EXPLANATION ───────────────────────── */}
+      {/* ── 18. CLINIC FAQ ─────────────────────────────────────── */}
+      <section className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Frequently asked questions from clinic owners</h2>
+          <Accordion type="single" collapsible className="mt-6">
+            {CLINIC_FAQS.map((faq, i) => (
+              <AccordionItem key={i} value={`item-${i}`} className="border-b border-border">
+                <AccordionTrigger className="py-4 text-left text-sm font-medium hover:no-underline">{faq.question}</AccordionTrigger>
+                <AccordionContent className="pb-4 text-sm leading-relaxed text-muted-foreground">{faq.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* ── 19. FREE LISTING EXPLANATION ───────────────────────── */}
       <section className="border-b border-border py-12 sm:py-14">
         <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-teal-200 bg-teal-50/40 p-6 sm:p-8">
@@ -869,53 +946,67 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
         </div>
       </section>
 
-      {/* ── 19. COMPLETE CLINIC APPLICATION ────────────────────── */}
+      {/* ── 20. APPLICATION ENTRY GATE ─────────────────────────── */}
       <section id="application" className="border-b border-border py-12 sm:py-14">
-        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
           {submittedApp ? (
             <ApplicationConfirmation
               applicationId={submittedApp.id}
               clinicName={submittedApp.clinicName}
-              onBackToClinics={() => { setSubmittedApp(null); setShowApplication(false); }}
+              onBackToClinics={() => { setSubmittedApp(null); setShowApplication(false); setAppGate(null); }}
             />
-          ) : !showApplication ? (
-            <div className="rounded-2xl border border-border bg-card p-8 shadow-premium-sm text-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                <Building2 className="h-3.5 w-3.5" /> Join the Novalyte AI Clinic Network
-              </div>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Apply for your free clinic directory listing</h2>
-              <p className="mx-auto mt-3 max-w-xl text-pretty text-sm text-muted-foreground sm:text-base">
-                Create a verified clinic profile, improve how patients discover your services, and tell us which patient-acquisition, workforce, marketplace, and growth capabilities may support your organization.
-              </p>
-              <div className="mx-auto mt-6 grid max-w-2xl gap-2.5 sm:grid-cols-2">
-                {[
-                  "Free application",
-                  "Complete patient-facing clinic profile",
-                  "Treatment and location visibility",
-                  "Provider and telehealth information",
-                  "Optional patient-acquisition services",
-                  "Optional workforce and vendor support",
-                ].map((b) => (
-                  <div key={b} className="flex items-center justify-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left text-sm text-foreground/80">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-teal-600" /> {b}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 text-teal-600" /> Approximately 8–12 minutes · Progress saved automatically
-              </div>
-              <Button size="lg" className="mt-6 bg-teal-600 text-white hover:bg-teal-700" onClick={() => setShowApplication(true)}>
-                Begin Clinic Application <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-              <p className="mt-3 text-xs text-muted-foreground">Your application will be reviewed before publication. Submission does not guarantee approval.</p>
-            </div>
+          ) : appGate?.verified ? (
+            <ClinicApplication onComplete={(appId) => setSubmittedApp({ id: appId, clinicName: appGate.clinicName })} />
+          ) : appGate ? (
+            <ApplicationVerificationScreen
+              clinicName={appGate.clinicName}
+              onVerified={() => setAppGate({ verified: true, clinicName: appGate.clinicName })}
+              onBack={() => setAppGate(null)}
+            />
           ) : (
-            <ClinicApplication onComplete={(appId) => setSubmittedApp({ id: appId, clinicName: "" })} />
+            <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+              {/* Left: benefits + explanation */}
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                  <Building2 className="h-3.5 w-3.5" /> Join the Novalyte AI Clinic Network
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Apply for a free clinic directory listing</h2>
+                <p className="mt-3 text-pretty text-sm text-muted-foreground sm:text-base">
+                  Tell us who you are and which clinic you represent. After we verify your basic information, you can continue to the complete clinic application.
+                </p>
+                <div className="mt-5 space-y-2">
+                  {[
+                    "Free application — no application fee",
+                    "Complete patient-facing clinic profile",
+                    "Treatment and location visibility",
+                    "Provider and telehealth information",
+                    "Optional patient-acquisition services",
+                    "Optional workforce and marketplace support",
+                    "Application subject to verification and approval",
+                  ].map((b) => (
+                    <div key={b} className="flex items-start gap-2 text-sm text-foreground/80">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" /> {b}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><Lock className="h-3.5 w-3.5 text-teal-600" /> Verification process</p>
+                  <p className="mt-1 text-xs text-muted-foreground">After submitting basic information, you'll receive an email verification link. Once verified, you can access the complete 10-stage clinic application with save-and-resume functionality.</p>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5 text-teal-600" /> Full application takes approximately 8–12 minutes · Progress saved automatically
+                </div>
+              </div>
+              {/* Right: basic entry form */}
+              <ApplicationEntryGate
+                onSubmit={(clinicName) => setAppGate({ verified: false, clinicName })}
+              />
+            </div>
           )}
         </div>
       </section>
 
-      {/* ── 20. APPLICATION PROCESS ────────────────────────────── */}
+      {/* ── 21. APPLICATION PROCESS ────────────────────────────── */}
       <section className="border-b border-border bg-muted/30 py-12 sm:py-14">
         <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">What happens after you apply</h2>
@@ -1047,3 +1138,135 @@ function SystemPreview({ systemId }: { systemId: string }) {
   );
 }
 
+
+/* ── Application Entry Gate (basic form) ─────────────────────── */
+function ApplicationEntryGate({ onSubmit }: { onSubmit: (clinicName: string) => void }) {
+  const [form, setForm] = useState({
+    clinicName: "", firstName: "", lastName: "", title: "", email: "", phone: "", website: "", state: "", authority: false,
+  });
+  const [honeypot, setHoneypot] = useState(""); // bot detection
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (honeypot) return; // bot detected
+    setSubmitting(true);
+    // Simulate server-side validation + draft creation
+    await new Promise((r) => setTimeout(r, 800));
+    setSubmitting(false);
+    toast.success("Application started. Check your email to verify and continue.");
+    onSubmit(form.clinicName);
+  }
+
+  const valid = form.clinicName.trim() && form.firstName.trim() && form.lastName.trim() && form.email.trim() && form.phone.trim() && form.state && form.authority;
+
+  return (
+    <PremiumCard className="p-6">
+      <h3 className="text-lg font-semibold text-foreground">Start your clinic application</h3>
+      <p className="mt-1 text-sm text-muted-foreground">Enter your clinic and contact information to create a secure application. After verification, you can continue the full directory and partnership application.</p>
+      <form onSubmit={submit} className="mt-4 space-y-3">
+        {/* Honeypot field (hidden from humans) */}
+        <input type="text" name="company_website" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+        <div className="grid gap-1.5"><Label className="text-xs">Clinic or company name *</Label><Input required value={form.clinicName} onChange={(e) => setForm({ ...form, clinicName: e.target.value })} /></div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-1.5"><Label className="text-xs">First name *</Label><Input required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} autoComplete="given-name" /></div>
+          <div className="grid gap-1.5"><Label className="text-xs">Last name *</Label><Input required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} autoComplete="family-name" /></div>
+        </div>
+        <div className="grid gap-1.5"><Label className="text-xs">Job title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Owner, Medical Director, COO..." /></div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-1.5"><Label className="text-xs">Work email *</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value.trim() })} placeholder="name@clinic.com" autoComplete="email" /></div>
+          <div className="grid gap-1.5"><Label className="text-xs">Direct telephone *</Label><Input type="tel" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" autoComplete="tel" /></div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-1.5"><Label className="text-xs">Clinic website</Label><Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="example.com" /></div>
+          <div className="grid gap-1.5"><Label className="text-xs">Primary state *</Label><Select value={form.state} onValueChange={(v) => setForm({ ...form, state: v })}><SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
+        </div>
+        <label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" required checked={form.authority} onChange={(e) => setForm({ ...form, authority: e.target.checked })} className="mt-0.5 accent-teal-600" /><span>I confirm that I am authorized to submit information on behalf of this clinic or organization.</span></label>
+        <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={!valid || submitting}>
+          {submitting ? "Creating secure application..." : <>Continue Securely <ArrowRight className="ml-1 h-4 w-4" /></>}
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">Applying is free. Submission does not guarantee approval or publication.</p>
+        <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1"><Lock className="h-3 w-3 text-teal-600" /> Email verification</span>
+          <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-teal-600" /> Secure link</span>
+          <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-teal-600" /> Save &amp; resume</span>
+          <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-teal-600" /> Bot-protected</span>
+        </div>
+      </form>
+    </PremiumCard>
+  );
+}
+
+/* ── Application Verification Screen ─────────────────────────── */
+function ApplicationVerificationScreen({ clinicName, onVerified, onBack }: { clinicName: string; onVerified: () => void; onBack: () => void }) {
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  function verify() {
+    setVerifying(true);
+    setTimeout(() => {
+      setVerifying(false);
+      toast.success("Email verified. Continuing to full application...");
+      onVerified();
+    }, 800);
+  }
+
+  // Mask a fake email
+  const maskedEmail = "n•••••@•••••.com";
+
+  return (
+    <div className="mx-auto w-full max-w-lg py-8">
+      <div className="rounded-2xl border border-border bg-card p-8 shadow-premium-sm text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 text-teal-600">
+          <Lock className="h-7 w-7" />
+        </span>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Verify your information to continue</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We sent a secure verification link to your work email at <span className="font-mono font-medium text-foreground">{maskedEmail}</span>. Open the link to continue your clinic application for <strong>{clinicName}</strong>.
+        </p>
+
+        <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4 text-left">
+          <p className="text-xs font-semibold text-foreground">Or enter your verification code</p>
+          <div className="mt-2 flex gap-2">
+            <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="6-digit code" maxLength={6} className="text-center font-mono text-lg tracking-widest" inputMode="numeric" />
+            <Button className="bg-teal-600 text-white hover:bg-teal-700" disabled={!code || code.length < 6 || verifying} onClick={verify}>
+              {verifying ? "Verifying..." : "Verify"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col items-center gap-2 text-xs text-muted-foreground">
+          <button onClick={verify} className="font-medium text-teal-700 hover:underline">Resend verification email</button>
+          <button onClick={onBack} className="font-medium text-muted-foreground hover:text-foreground">Use a different email address</button>
+          <button className="font-medium text-muted-foreground hover:text-foreground">Contact support</button>
+        </div>
+
+        <div className="mt-5 rounded-lg border border-teal-200 bg-teal-50/40 p-3">
+          <p className="text-[11px] text-teal-800">For demo purposes, click "Verify" with any 6-digit code to continue to the full application.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── ROI Calculator Input Components ─────────────────────────── */
+function SliderInput({ label, value, min, max, step, onChange, suffix }: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void; suffix?: string }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <Label className="text-[11px] text-muted-foreground">{label}</Label>
+        <span className="text-xs font-bold text-foreground">{value}{suffix}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-1 w-full accent-teal-600" />
+    </div>
+  );
+}
+
+function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="grid gap-1">
+      <Label className="text-[11px] text-muted-foreground">{label}</Label>
+      <Input type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} className="h-8 text-sm" />
+    </div>
+  );
+}

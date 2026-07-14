@@ -663,3 +663,38 @@ Stage Summary:
 - All consent checkboxes explicit, none pre-selected
 - API persists complete application to DB with unique reference ID
 - Application status system ready (draft/submitted/under_review/approved/declined/waitlisted)
+
+---
+Task ID: 19
+Agent: Main (Z.ai Code)
+Task: Advanced clinics page upgrade — gated application, treatment-specific ROI calculator, FAQ, removed challenges section
+
+Work Log:
+- REMOVED "What holds men's health clinics back" section entirely
+- Built treatment-specific ROI Calculator (src/lib/roi-calculator.ts):
+  - 12 treatment verticals with unique funnel stages, default values, revenue models
+  - Treatment-specific defaults for TRT, hormones, ED, weight loss, GLP-1, peptides, hair, longevity, performance, preventive, telehealth, sexual wellness
+  - calculateRoi() function computing valid contacts, intakes, consultations, treatment starts, revenue, ROAS, break-even
+  - Dynamic treatment selector chips that update all inputs and outputs
+  - Full input panel: leads, cost per lead, valid contact rate, intake completion, contact rate, booking rate, show rate, treatment-start conversion, initial consult revenue, initial treatment revenue, monthly recurring, retention months, upsell, staff cost, lab cost, other costs
+  - Funnel visualization with percentage bars
+  - Output cards: total lead cost, treatment starts, first-month revenue, monthly recurring, total revenue (over retention), ROAS, cost per treatment start, break-even months
+  - Comprehensive disclaimer about illustrative estimates
+- Built clinic FAQ (src/lib/clinic-faqs.ts) with 16 Q&As covering: what is Novalyte, free application, guarantee, required info, email verification, medical care, treatment-ready opportunity, leads/revenue guarantee, treatment selection, telehealth, multi-location, post-submission, matching, enhanced listing, profile updates, security
+- GATED the clinic application behind a two-part flow:
+  - ApplicationEntryGate: basic form (clinic name, first/last name, title, work email, phone, website, state, authority checkbox) with honeypot bot detection
+  - ApplicationVerificationScreen: email verification with 6-digit code entry, resend, change email, contact support
+  - Only after verification does the full 10-stage ClinicApplication open
+  - Full application no longer publicly visible on the marketing page
+- Updated hero CTAs to "Apply for a Free Clinic Listing" + "Explore Clinic Growth Services"
+- Added SliderInput and NumberInput helper components for the ROI calculator
+- Verified with Agent Browser: challenges section removed, ROI calculator with treatment-specific inputs/funnel/outputs, FAQ accordion (16 questions), gated application (basic form → verification screen → full 10-stage application), all working end-to-end
+
+Stage Summary:
+- "What holds clinics back" section completely removed
+- Treatment-specific ROI calculator with 12 verticals, dynamic inputs, funnel visualization, transparent outputs
+- 16-question clinic FAQ accordion
+- Application is now gated: basic entry form → email verification → full 10-stage application
+- Full application no longer exposed on the marketing page
+- Bot protection (honeypot), verification flow, save-and-resume messaging
+- All disclaimers present: no guarantee of leads/revenue/outcomes, illustrative estimates only
