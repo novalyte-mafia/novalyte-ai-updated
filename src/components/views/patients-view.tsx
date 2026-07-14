@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import { CTASection } from "@/components/shared/cta";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AssessmentEngine } from "@/components/views/assessment-engine";
 import { TREATMENT_LIST } from "@/lib/treatments";
-import { ASSESSMENTS, type AssessmentConfig } from "@/lib/assessment-config";
+import { ASSESSMENTS } from "@/lib/assessment-config";
 import { getTreatmentIcon } from "@/lib/treatment-icons";
 import { navigate } from "@/lib/nav";
 import { IMAGES, ALT_TEXT } from "@/lib/images";
@@ -44,20 +43,8 @@ const PROCESS_STEPS = [
 ];
 
 export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: PlatformData; onGetStarted: () => void }) {
-  const [activeAssessment, setActiveAssessment] = useState<AssessmentConfig | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [showAiResults, setShowAiResults] = useState(false);
-
-  // Listen for assessment trigger from treatment detail page
-  useEffect(() => {
-    function handler(e: Event) {
-      const slug = (e as CustomEvent).detail as string;
-      const config = ASSESSMENTS[slug];
-      if (config) setActiveAssessment(config);
-    }
-    window.addEventListener("novalyte-start-assessment", handler);
-    return () => window.removeEventListener("novalyte-start-assessment", handler);
-  }, []);
 
   function toggleGoal(value: string) {
     setSelectedGoals((prev) => prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]);
@@ -179,7 +166,7 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
                   <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted-foreground">{t.explanation}</p>
                   <div className="mt-4 flex gap-2">
                     {hasAssessment && (
-                      <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={() => setActiveAssessment(config)}>
+                      <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("assessment", undefined, { slug: t.slug })}>
                         Take Assessment
                       </Button>
                     )}
@@ -276,7 +263,7 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
                       </div>
                       <div className="flex gap-1.5">
                         <Button size="sm" variant="outline" onClick={() => navigate("treatment-detail", undefined, { slug: t.slug })}>Learn</Button>
-                        <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => { setActiveAssessment(t); setShowAiResults(false); }}>
+                        <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => { navigate("assessment", undefined, { slug: t.slug }); setShowAiResults(false); }}>
                           Assess
                         </Button>
                       </div>
@@ -418,19 +405,6 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
           </div>
         </div>
       </SectionShell>
-
-      {/* Assessment modal */}
-      {activeAssessment && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm sm:items-center sm:p-6" onClick={() => setActiveAssessment(null)}>
-          <div className="my-auto w-full max-w-2xl novalyte-scale-in" onClick={(e) => e.stopPropagation()}>
-            <AssessmentEngine
-              config={activeAssessment}
-              clinics={data.clinics}
-              onClose={() => setActiveAssessment(null)}
-            />
-          </div>
-        </div>
-      )}
 
       <CTASection
         title="Ready to explore your options?"

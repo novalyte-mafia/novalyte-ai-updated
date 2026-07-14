@@ -501,3 +501,50 @@ Stage Summary:
 - Routing respects user intent (high-intent → clinics; research → Journal; insurance → cost resources)
 - No "not qualified" language; respectful throughout
 - Mobile responsive with connected vertical process illustration
+
+---
+Task ID: 15
+Agent: Main (Z.ai Code)
+Task: Complete assessment redesign — full-screen premium experience replacing the small modal
+
+Work Log:
+- Added "assessment" view key to nav store; wired AssessmentExperience into AppShell as a dedicated full-screen route
+- Extended AssessmentConfig type with: intro (eyebrow/headline/supporting/estimatedTime/whatHappensNext), context (privacyNote/stageDescriptions), stages array, whyWeAsk per question, showIf conditional logic, insuranceTitle/insuranceDesc results
+- Rewrote entire assessment-config.ts (948 lines) with:
+  - 6 shared stages: Your Information / Your Goals / Your Experience / Care Preferences / Timing & Readiness / Review
+  - Contact split into 3 steps: contact-name (first+last), contact-email (email+phone), contact-location (zip+state)
+  - TRAVEL_Q with showIf conditional (only shows if care_format !== telehealth)
+  - All 8 treatment assessments rebuilt with intro, context, stages, whyWeAsk fields
+  - buildConfig helper to reduce repetition
+- Built src/components/views/assessment-experience.tsx — full-screen premium assessment:
+  - LEFT PANEL (38% desktop): logo, treatment image, stage context, "Why we ask" microcopy (updates dynamically), "Progress saved" indicator, privacy note
+  - RIGHT PANEL (62% desktop): stage progress rail (6 stages with complete/current/upcoming states), large question heading, large interactive answer cards
+  - MOBILE: slim top bar (logo + step counter + save-and-exit), progress bar, full-screen questions, large touch targets
+  - Intro screen: eyebrow, headline, supporting copy, selected treatment, estimated time, what happens next, disclaimer, Begin Assessment + Choose Different Treatment
+  - Contact capture first (Steps 1-3): name, email/phone, zip/state — NOT age
+  - Single-choice: large premium cards with auto-advance (300ms), no Continue button
+  - Multi-select: large cards with check indicators, Continue button after selection
+  - Contact fields: large labeled inputs, smart autofill, ZIP validation (numeric, 5 digits), phone formatting
+  - Review screen: summary of all sections with edit links, consent checkboxes, submit
+  - Results screen: personalized summary, clinic matches (high-intent), Journal resources (research-stage), cost education (insurance-dependent), respectful language throughout
+  - Conditional logic: TRAVEL_Q only shows if not telehealth-only
+  - Progress saved indicator after each answer
+  - Back navigation always available
+  - Respectful language — no "not qualified" messaging
+- Updated PatientsView: removed modal entirely, all "Take Assessment" buttons navigate to full-screen assessment view
+- Updated TreatmentDetailView: onStartAssessment navigates to assessment view
+- Verified with Agent Browser: full-screen layout, left context panel with treatment image + why-we-ask, right question area with large cards, intro screen, contact capture first (not age), auto-advance on single-choice, progress rail with 6 stages, "Progress saved" indicator, mobile responsive with slim top bar + step counter
+
+Stage Summary:
+- Small modal completely removed
+- Full-screen premium assessment experience implemented
+- Left context panel with treatment image + dynamic "Why we ask" microcopy
+- Right question area with large interactive answer cards (not radio buttons)
+- Contact info captured first (Steps 1-3), not age
+- Single-choice auto-advances (300ms)
+- 6-stage progress rail (not "Step 1 of 12")
+- Treatment-specific images and copy
+- Review screen with edit links + explicit consent
+- Personalized results with routing (high-intent → clinics, research → Journal, insurance → cost resources)
+- Mobile feels native (slim top bar, step counter, full-screen questions)
+- No medical qualification claims

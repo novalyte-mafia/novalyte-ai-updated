@@ -11,10 +11,12 @@
  */
 
 export type QuestionType =
-  | "single" // single-choice (radio)
-  | "multi" // multi-select (checkbox)
+  | "single" // single-choice (auto-advance)
+  | "multi" // multi-select (Continue button)
   | "text" // short text
-  | "contact" // contact info capture (name, email, phone, zip, state)
+  | "contact-name" // first + last name
+  | "contact-email" // email + phone
+  | "contact-location" // zip + state
   | "consent"; // consent checkboxes
 
 export type Question = {
@@ -23,10 +25,21 @@ export type Question = {
   title: string;
   desc?: string;
   required?: boolean;
-  options?: { value: string; label: string }[];
+  options?: { value: string; label: string; desc?: string; icon?: string }[];
   placeholder?: string;
+  /** which stage this question belongs to */
+  stage?: string;
+  /** contextual "why we ask" microcopy for the left panel */
+  whyWeAsk?: string;
   /** scoring signal weight for readiness classification */
   signal?: "timeline" | "selfpay" | "experience" | "consent" | "contact";
+  /** conditional: only show if this predicate matches answers */
+  showIf?: (answers: Record<string, string | string[] | Record<string, unknown>>) => boolean;
+};
+
+export type Stage = {
+  id: string;
+  label: string;
 };
 
 export type AssessmentConfig = {
@@ -36,6 +49,20 @@ export type AssessmentConfig = {
   heroImage: string;
   heroImageAlt: string;
   description: string;
+  /** intro screen copy */
+  intro: {
+    eyebrow: string;
+    headline: string;
+    supporting: string;
+    estimatedTime: string;
+    whatHappensNext: string;
+  };
+  /** context panel microcopy */
+  context: {
+    privacyNote: string;
+    stageDescriptions: Record<string, string>;
+  };
+  stages: Stage[];
   questions: Question[];
   /** result messaging templates */
   results: {
@@ -43,16 +70,30 @@ export type AssessmentConfig = {
     readyDesc: string;
     researchingTitle: string;
     researchingDesc: string;
+    insuranceTitle: string;
+    insuranceDesc: string;
   };
 };
+
+/* ── Shared stages ───────────────────────────────────────────── */
+const STAGES: Stage[] = [
+  { id: "info", label: "Your Information" },
+  { id: "goals", label: "Your Goals" },
+  { id: "experience", label: "Your Experience" },
+  { id: "preferences", label: "Care Preferences" },
+  { id: "timing", label: "Timing & Readiness" },
+  { id: "review", label: "Review" },
+];
 
 /* ── Shared question blocks ──────────────────────────────────── */
 
 const TIMELINE_Q: Question = {
   id: "timeline",
   type: "single",
-  title: "When would you ideally like to begin speaking with a provider?",
+  stage: "timing",
+  title: "How soon would you like to speak with a provider?",
   desc: "This helps us show clinics that match your timing.",
+  whyWeAsk: "Understanding your timeline helps us prioritize clinics with matching availability and avoid showing options that don't fit your schedule.",
   required: true,
   signal: "timeline",
   options: [
@@ -67,50 +108,96 @@ const TIMELINE_Q: Question = {
 const CARE_FORMAT_Q: Question = {
   id: "care_format",
   type: "single",
-  title: "Are you open to telehealth, in-person care, or either?",
+  stage: "preferences",
+  title: "Which type of care would you prefer?",
+  whyWeAsk: "Your care format preference helps us filter clinics by whether they offer telehealth, in-person visits, or both.",
   required: true,
   options: [
-    { value: "in-person", label: "In-person care" },
     { value: "telehealth", label: "Telehealth (remote)" },
+    { value: "in-person", label: "In-person care" },
     { value: "either", label: "Either — open to both" },
+  ],
+};
+
+const TRAVEL_Q: Question = {
+  id: "travel_distance",
+  type: "single",
+  stage: "preferences",
+  title: "How far would you be willing to travel for in-person care?",
+  whyWeAsk: "This helps us surface clinics within a realistic distance of your location.",
+  required: false,
+  showIf: (a) => (a["care_format"] as string) !== "telehealth",
+  options: [
+    { value: "under-10", label: "Less than 10 miles" },
+    { value: "10-25", label: "10–25 miles" },
+    { value: "25-50", label: "25–50 miles" },
+    { value: "telehealth-only", label: "Telehealth only" },
   ],
 };
 
 const SELFPAY_Q: Question = {
   id: "self_pay",
   type: "single",
-  title: "Some men's health services may not be fully covered by insurance. Are you open to discussing self-pay options with a clinic?",
-  desc: "This helps us show clinics and care options that better match your preferences. It does not determine whether treatment is medically appropriate.",
+  stage: "timing",
+  title: "Are you open to discussing self-pay care?",
+  desc: "Many specialized men's-health clinics use self-pay models. This helps us show options that match your preferences.",
+  whyWeAsk: "Many specialized men's-health clinics use self-pay models. This helps us avoid showing options that may not match your preferences.",
   required: true,
   signal: "selfpay",
   options: [
     { value: "yes", label: "Yes" },
     { value: "possibly", label: "Possibly, depending on cost" },
-    { value: "insurance-only", label: "I need insurance-covered options only" },
-    { value: "not-sure", label: "I am not sure" },
+    { value: "insurance-only", label: "Insurance-covered options only" },
+    { value: "not-sure", label: "I need more information" },
   ],
 };
 
 const BUDGET_Q: Question = {
   id: "budget",
   type: "single",
-  title: "What monthly budget range would you be comfortable discussing?",
-  desc: "Optional. This helps surface clinics that fit your preferences. It does not affect medical suitability.",
+  stage: "timing",
+  title: "Which monthly price range would you be comfortable discussing?",
+  desc: "Optional. This helps surface clinics that fit your preferences.",
+  whyWeAsk: "This helps us surface clinics that fit your preferences. It does not affect medical suitability.",
   required: false,
   options: [
     { value: "under-100", label: "Under $100" },
     { value: "100-199", label: "$100–$199" },
     { value: "200-299", label: "$200–$299" },
     { value: "300-plus", label: "$300+" },
-    { value: "not-sure", label: "Not sure yet" },
+    { value: "not-sure", label: "I need pricing information first" },
   ],
 };
 
-const CONTACT_Q: Question = {
-  id: "contact",
-  type: "contact",
-  title: "Where should we send your results?",
-  desc: "We use this only to share your informational results and support your care navigation. We do not provide medical advice.",
+const CONTACT_NAME_Q: Question = {
+  id: "contact_name",
+  type: "contact-name",
+  stage: "info",
+  title: "Let's save your assessment",
+  desc: "We'll use this information to save your progress, prepare your results, and help connect you with relevant clinics. You are not required to book treatment.",
+  whyWeAsk: "We collect your name to personalize your experience and save your assessment progress securely.",
+  required: true,
+  signal: "contact",
+};
+
+const CONTACT_EMAIL_Q: Question = {
+  id: "contact_email",
+  type: "contact-email",
+  stage: "info",
+  title: "How can we reach you?",
+  desc: "We use this to share your results and support your care navigation. We do not share your information without consent.",
+  whyWeAsk: "Your email and phone allow us to send your personalized results and connect you with clinics if you choose to proceed.",
+  required: true,
+  signal: "contact",
+};
+
+const CONTACT_LOCATION_Q: Question = {
+  id: "contact_location",
+  type: "contact-location",
+  stage: "info",
+  title: "Where are you located?",
+  desc: "Your location helps us surface clinics in your area or licensed for telehealth in your state.",
+  whyWeAsk: "Your ZIP code and state help us match you with nearby clinics and verify telehealth licensure in your state.",
   required: true,
   signal: "contact",
 };
@@ -118,8 +205,10 @@ const CONTACT_Q: Question = {
 const CONSENT_Q: Question = {
   id: "consent",
   type: "consent",
-  title: "Consent to be contacted",
-  desc: "Please review and accept the following. You can opt out at any time.",
+  stage: "review",
+  title: "Review and consent",
+  desc: "Please review your responses and provide consent to complete your assessment.",
+  whyWeAsk: "Consent ensures you understand how your information will be used and agree to be contacted about your consultation request.",
   required: true,
   signal: "consent",
 };
@@ -127,7 +216,9 @@ const CONSENT_Q: Question = {
 const AGE_Q: Question = {
   id: "age_range",
   type: "single",
+  stage: "goals",
   title: "What is your age range?",
+  whyWeAsk: "Age helps providers understand general health context. It does not determine treatment eligibility.",
   required: true,
   options: [
     { value: "18-29", label: "18–29" },
@@ -138,10 +229,36 @@ const AGE_Q: Question = {
   ],
 };
 
+
+/* ── Helper to build assessment configs with shared defaults ─── */
+function buildConfig(
+  base: Omit<AssessmentConfig, "stages" | "intro" | "context">,
+  intro: AssessmentConfig["intro"],
+  contextNotes?: Partial<AssessmentConfig["context"]["stageDescriptions"]>,
+): AssessmentConfig {
+  return {
+    ...base,
+    stages: STAGES,
+    intro,
+    context: {
+      privacyNote: "Your responses are stored securely. Novalyte AI does not diagnose medical conditions or determine medical eligibility. A licensed provider determines whether any treatment is appropriate.",
+      stageDescriptions: {
+        info: "We collect basic contact information to save your progress and connect you with relevant clinics.",
+        goals: "Understanding your goals helps us personalize your results and educational recommendations.",
+        experience: "Your prior experience helps us route you to the right level of care and prepare relevant questions for your provider.",
+        preferences: "Care preferences help us filter clinics by format, location, and specialty.",
+        timing: "Timing and financial preferences help us match you with clinics that fit your schedule and budget.",
+        review: "Review your responses and provide consent to complete your assessment.",
+        ...contextNotes,
+      },
+    },
+  };
+}
+
 /* ── Treatment-specific assessments ──────────────────────────── */
 
 export const ASSESSMENTS: Record<string, AssessmentConfig> = {
-  "testosterone-replacement-therapy": {
+  "testosterone-replacement-therapy": buildConfig({
     slug: "testosterone-replacement-therapy",
     treatmentLabel: "Testosterone Replacement Therapy",
     shortLabel: "TRT",
@@ -149,41 +266,47 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
     heroImageAlt: "Clinician reviewing laboratory blood test results with a male patient",
     description: "An informational assessment to help you explore whether TRT is worth discussing with a licensed provider.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
-      CONTACT_Q,
       {
         id: "goal",
         type: "multi",
+        stage: "goals",
         title: "What would you most like to improve?",
-        desc: "Select all that apply.",
+        desc: "Choose the area that matters most right now. You can select more than one.",
+        whyWeAsk: "Your goals help us personalize educational content and match you with clinics that specialize in your areas of interest.",
         required: true,
         options: [
-          { value: "energy", label: "Energy" },
-          { value: "motivation", label: "Motivation" },
-          { value: "strength", label: "Strength" },
-          { value: "muscle", label: "Muscle mass" },
+          { value: "energy", label: "Energy and motivation" },
           { value: "sexual", label: "Sexual health" },
-          { value: "mood", label: "Mood" },
+          { value: "strength", label: "Strength and muscle development" },
+          { value: "mood", label: "Mood and focus" },
           { value: "recovery", label: "Recovery" },
-          { value: "wellness", label: "General wellness" },
+          { value: "general-hormone", label: "General hormone health" },
         ],
       },
       {
         id: "duration",
         type: "single",
-        title: "How long have you experienced these concerns?",
+        stage: "goals",
+        title: "How long have you noticed these concerns?",
+        whyWeAsk: "Duration helps providers understand the context of your concerns. It does not determine eligibility.",
         required: true,
         options: [
           { value: "under-3m", label: "Less than 3 months" },
           { value: "3-6m", label: "3–6 months" },
           { value: "6-12m", label: "6–12 months" },
-          { value: "over-1y", label: "Over a year" },
+          { value: "over-1y", label: "More than 1 year" },
         ],
       },
       {
         id: "recent_labs",
         type: "single",
-        title: "Have you had testosterone or hormone lab work completed recently?",
+        stage: "experience",
+        title: "Have you completed hormone or testosterone lab work recently?",
+        whyWeAsk: "Prior lab work helps a provider understand your starting point. If you have recent labs, a provider can review them during your consultation.",
         required: true,
         signal: "experience",
         options: [
@@ -196,26 +319,33 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "prior_discussion",
         type: "single",
-        title: "Have you previously discussed testosterone treatment with a licensed provider?",
+        stage: "experience",
+        title: "Have you discussed these concerns with a licensed provider?",
+        whyWeAsk: "Knowing whether you've discussed this before helps us prepare the right context for your consultation.",
         required: true,
         signal: "experience",
         options: [
           { value: "yes", label: "Yes" },
           { value: "no", label: "No" },
+          { value: "scheduled", label: "I have an appointment scheduled" },
         ],
       },
       {
         id: "current_use",
         type: "single",
-        title: "Are you currently using testosterone, hormone therapy, or related medication?",
+        stage: "experience",
+        title: "Have you previously used testosterone therapy?",
+        whyWeAsk: "Prior treatment experience helps a provider understand your history and plan appropriately.",
         required: true,
         options: [
-          { value: "yes", label: "Yes" },
+          { value: "yes-current", label: "Yes, currently" },
+          { value: "yes-past", label: "Yes, previously" },
           { value: "no", label: "No" },
         ],
       },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
       CONSENT_Q,
@@ -225,22 +355,38 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "Based on your responses, we can now show clinics that match your treatment interest, location, timing, and care preferences.",
       researchingTitle: "Thanks for exploring — take your time.",
       researchingDesc: "When you're ready to speak with a provider, Novalyte AI can connect you with clinics matching your preferences.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Review cost and insurance resources before deciding which care options fit your situation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }, {
+    goals: "Understanding your energy, performance, and hormone goals helps us personalize your TRT educational content and clinic matches.",
+    experience: "Your lab history and prior treatment experience help us route you to providers who can build on your existing context.",
+  }),
 
-  "erectile-dysfunction": {
+  "erectile-dysfunction": buildConfig({
     slug: "erectile-dysfunction",
     treatmentLabel: "Erectile Dysfunction Care",
     shortLabel: "ED Care",
     heroImage: "/images/hero/hero-1.jpg",
-    heroImageAlt: "Private consultation between a patient and healthcare provider",
+    heroImageAlt: "Private, discreet consultation between a patient and healthcare provider",
     description: "A discreet, informational assessment to help you explore ED care options with a licensed provider.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "primary_concern",
         type: "single",
+        stage: "goals",
         title: "What is your primary concern?",
+        whyWeAsk: "Understanding your primary concern helps us route you to the right type of provider and educational resources.",
         required: true,
         options: [
           { value: "difficulty", label: "Difficulty achieving or maintaining erections" },
@@ -252,19 +398,23 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "duration",
         type: "single",
+        stage: "goals",
         title: "How long has this been a concern?",
+        whyWeAsk: "Duration helps providers understand the context. It does not determine eligibility.",
         required: true,
         options: [
           { value: "under-3m", label: "Less than 3 months" },
           { value: "3-6m", label: "3–6 months" },
           { value: "6-12m", label: "6–12 months" },
-          { value: "over-1y", label: "Over a year" },
+          { value: "over-1y", label: "More than 1 year" },
         ],
       },
       {
         id: "prior_treatment",
         type: "single",
+        stage: "experience",
         title: "Have you previously tried any treatment for this concern?",
+        whyWeAsk: "Prior treatment experience helps a provider understand what has or hasn't worked for you.",
         required: true,
         signal: "experience",
         options: [
@@ -275,7 +425,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "prior_provider",
         type: "single",
+        stage: "experience",
         title: "Have you discussed this with a licensed provider before?",
+        whyWeAsk: "Knowing whether this is a new conversation helps us prepare the right context.",
         required: true,
         signal: "experience",
         options: [
@@ -283,21 +435,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
           { value: "no", label: "No" },
         ],
       },
-      {
-        id: "privacy_pref",
-        type: "single",
-        title: "Do you have a preference for telehealth or in-person care for this concern?",
-        required: true,
-        options: [
-          { value: "telehealth", label: "I prefer telehealth for privacy" },
-          { value: "in-person", label: "I prefer in-person care" },
-          { value: "either", label: "I am open to either" },
-        ],
-      },
+      CARE_FORMAT_Q,
+      TRAVEL_Q,
       TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -305,22 +447,38 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can now connect you with clinics experienced in discreet, professional ED care.",
       researchingTitle: "Thanks for exploring your options.",
       researchingDesc: "When you're ready, Novalyte AI can connect you with a licensed provider for a confidential consultation.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Review cost and insurance resources before deciding which care options fit your situation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }, {
+    goals: "Understanding your concerns helps us route you to providers who offer discreet, confidential care.",
+    preferences: "Your privacy preferences help us match you with clinics that offer telehealth or private in-person care.",
+  }),
 
-  "medical-weight-loss": {
+  "medical-weight-loss": buildConfig({
     slug: "medical-weight-loss",
     treatmentLabel: "Medical Weight Loss",
     shortLabel: "Weight Loss",
     heroImage: "/images/treatments/weight-1.jpg",
-    heroImageAlt: "Clinician-guided weight management consultation",
+    heroImageAlt: "Clinician-guided weight management consultation with a patient",
     description: "An informational assessment to help you explore medically supervised weight loss options.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "goal",
         type: "single",
+        stage: "goals",
         title: "What is your primary weight-loss goal?",
+        whyWeAsk: "Your goal helps us match you with programs designed for your specific targets.",
         required: true,
         options: [
           { value: "lose-10", label: "Lose up to 10 lbs" },
@@ -333,7 +491,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "previous_attempts",
         type: "single",
+        stage: "experience",
         title: "Have you tried medical or structured weight loss before?",
+        whyWeAsk: "Prior experience helps a provider understand what approaches you've already tried.",
         required: true,
         signal: "experience",
         options: [
@@ -345,7 +505,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "medication_interest",
         type: "single",
+        stage: "experience",
         title: "Are you interested in medication-assisted programs if a provider recommends one?",
+        whyWeAsk: "This helps us match you with clinics that offer the type of program you're open to.",
         required: true,
         options: [
           { value: "yes", label: "Yes" },
@@ -353,22 +515,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
           { value: "no", label: "I prefer non-medication approaches" },
         ],
       },
-      {
-        id: "structured_program",
-        type: "single",
-        title: "Are you ready to follow a structured program with regular check-ins?",
-        required: true,
-        options: [
-          { value: "yes", label: "Yes" },
-          { value: "maybe", label: "Possibly" },
-          { value: "no", label: "Not sure yet" },
-        ],
-      },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -376,22 +527,35 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can now show clinics offering supervised weight loss programs matching your goals and preferences.",
       researchingTitle: "Thanks for exploring medical weight loss.",
       researchingDesc: "When you're ready, Novalyte AI can connect you with clinics offering supervised programs.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Review cost and insurance resources before deciding which care options fit your situation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }),
 
-  "glp-1": {
+  "glp-1": buildConfig({
     slug: "glp-1",
     treatmentLabel: "GLP-1 Programs",
     shortLabel: "GLP-1",
     heroImage: "/images/treatments/weight-2.jpg",
-    heroImageAlt: "Health tracking and metabolic health consultation",
+    heroImageAlt: "Clinician reviewing a structured treatment program with a patient",
     description: "An informational assessment to help you explore GLP-1 medication programs with a licensed provider.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "interest",
         type: "single",
+        stage: "goals",
         title: "What is your interest level in GLP-1 care?",
+        whyWeAsk: "Your interest level helps us tailor educational content and match you with appropriate providers.",
         required: true,
         options: [
           { value: "very-interested", label: "Very interested" },
@@ -402,7 +566,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "previous_use",
         type: "single",
+        stage: "experience",
         title: "Have you previously used a GLP-1 medication?",
+        whyWeAsk: "Prior experience helps a provider understand your history with this class of medication.",
         required: true,
         signal: "experience",
         options: [
@@ -414,7 +580,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "prior_provider",
         type: "single",
+        stage: "experience",
         title: "Have you discussed GLP-1 medications with a provider before?",
+        whyWeAsk: "Knowing whether you've discussed this before helps us prepare the right context for your consultation.",
         required: true,
         signal: "experience",
         options: [
@@ -423,20 +591,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
         ],
       },
       {
-        id: "outcome",
-        type: "single",
-        title: "What outcome are you hoping for?",
-        required: true,
-        options: [
-          { value: "weight-loss", label: "Weight loss" },
-          { value: "metabolic", label: "Metabolic health" },
-          { value: "both", label: "Both" },
-        ],
-      },
-      {
         id: "labs_willingness",
         type: "single",
+        stage: "experience",
         title: "Are you willing to complete provider-requested lab work if recommended?",
+        whyWeAsk: "GLP-1 programs typically require lab monitoring. Understanding your willingness helps us match you with programs that fit.",
         required: true,
         options: [
           { value: "yes", label: "Yes" },
@@ -444,11 +603,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
           { value: "no", label: "I'd prefer to discuss first" },
         ],
       },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -456,22 +615,36 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can connect you with clinics offering GLP-1 programs. A licensed provider determines whether medication is appropriate for you.",
       researchingTitle: "Thanks for exploring GLP-1 programs.",
       researchingDesc: "When you're ready, a licensed provider can determine if a GLP-1 program is appropriate for your health profile.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Review cost and insurance resources before deciding which care options fit your situation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }),
 
-  "peptide-therapy": {
+  "peptide-therapy": buildConfig({
     slug: "peptide-therapy",
     treatmentLabel: "Peptide Therapy",
     shortLabel: "Peptides",
     heroImage: "/images/marketplace/inject-3.jpg",
-    heroImageAlt: "Clinical consultation in a wellness setting",
+    heroImageAlt: "Clinical consultation in a modern wellness setting",
     description: "An informational assessment to help you explore peptide therapy with a knowledgeable provider.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "goal",
         type: "multi",
+        stage: "goals",
         title: "What are your goals?",
+        desc: "Select all that apply.",
+        whyWeAsk: "Your goals help us match you with providers who have experience in your areas of interest.",
         required: true,
         options: [
           { value: "recovery", label: "Recovery" },
@@ -484,7 +657,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "previous_use",
         type: "single",
+        stage: "experience",
         title: "Have you previously used peptide therapy?",
+        whyWeAsk: "Prior experience helps a provider understand your history and plan appropriately.",
         required: true,
         signal: "experience",
         options: [
@@ -493,30 +668,22 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
         ],
       },
       {
-        id: "current_provider",
-        type: "single",
-        title: "Do you currently have a provider who discusses peptides with you?",
-        required: true,
-        options: [
-          { value: "yes", label: "Yes" },
-          { value: "no", label: "No" },
-        ],
-      },
-      {
         id: "understanding",
         type: "single",
+        stage: "experience",
         title: "Do you understand that peptide therapy is an evolving area of medicine?",
+        whyWeAsk: "Setting expectations about this evolving field helps ensure you can have an informed conversation with a provider.",
         required: true,
         options: [
           { value: "yes", label: "Yes, I understand" },
           { value: "learning", label: "I'm still learning" },
         ],
       },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -524,22 +691,35 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can connect you with providers experienced in peptide protocols who can discuss evidence, risks, and monitoring.",
       researchingTitle: "Thanks for exploring peptide therapy.",
       researchingDesc: "When you're ready, Novalyte AI can connect you with a provider who can discuss this evolving area responsibly.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Review cost and insurance resources before deciding which care options fit your situation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }),
 
-  "hair-restoration": {
+  "hair-restoration": buildConfig({
     slug: "hair-restoration",
     treatmentLabel: "Hair Restoration",
     shortLabel: "Hair",
     heroImage: "/images/treatments/hair-1.jpg",
-    heroImageAlt: "Hair and scalp health consultation",
+    heroImageAlt: "Hair and scalp health consultation with a clinician",
     description: "An informational assessment to help you explore hair restoration options with a licensed provider.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "concern",
         type: "single",
+        stage: "goals",
         title: "What is your primary hair concern?",
+        whyWeAsk: "Understanding your concern helps us match you with the right type of hair restoration provider.",
         required: true,
         options: [
           { value: "thinning", label: "Thinning hair" },
@@ -551,7 +731,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "duration",
         type: "single",
+        stage: "goals",
         title: "How long has this been a concern?",
+        whyWeAsk: "Duration helps providers understand the stage and potential treatment options.",
         required: true,
         options: [
           { value: "under-6m", label: "Less than 6 months" },
@@ -563,8 +745,10 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "previous_treatments",
         type: "multi",
+        stage: "experience",
         title: "Have you tried any hair restoration approaches before?",
         desc: "Select all that apply.",
+        whyWeAsk: "Prior treatments help a provider understand what has or hasn't worked for you.",
         required: false,
         signal: "experience",
         options: [
@@ -574,23 +758,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
           { value: "none", label: "None" },
         ],
       },
-      {
-        id: "approach_interest",
-        type: "single",
-        title: "What type of approach interests you most?",
-        required: true,
-        options: [
-          { value: "medical", label: "Medical (medication-based)" },
-          { value: "topical", label: "Topical" },
-          { value: "procedural", label: "Procedural" },
-          { value: "guidance", label: "General guidance first" },
-        ],
-      },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -598,22 +770,36 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can connect you with clinics offering medical, topical, and procedural hair restoration options.",
       researchingTitle: "Thanks for exploring hair restoration.",
       researchingDesc: "When you're ready, Novalyte AI can connect you with a provider to discuss your options.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Most hair restoration treatments are considered cosmetic. Review costs with the clinic during your consultation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }),
 
-  "hormone-optimization": {
+  "hormone-optimization": buildConfig({
     slug: "hormone-optimization",
     treatmentLabel: "Hormone Optimization",
     shortLabel: "Hormones",
-    heroImage: "/images/hero/hero-3.jpg",
-    heroImageAlt: "Patient consultation about hormone health",
+    heroImage: "/images/treatments/trt-2.jpg",
+    heroImageAlt: "Clinician reviewing biomarker and hormone data with a patient",
     description: "An informational assessment to help you explore hormone optimization with a knowledgeable provider.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "goal",
         type: "multi",
+        stage: "goals",
         title: "What are your primary goals?",
+        desc: "Select all that apply.",
+        whyWeAsk: "Your goals help us match you with providers who offer comprehensive hormone evaluation.",
         required: true,
         options: [
           { value: "energy", label: "Energy" },
@@ -627,7 +813,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "existing_labs",
         type: "single",
+        stage: "experience",
         title: "Do you have existing hormone lab work?",
+        whyWeAsk: "Prior lab work helps a provider understand your starting point.",
         required: true,
         signal: "experience",
         options: [
@@ -637,19 +825,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
         ],
       },
       {
-        id: "current_meds",
-        type: "single",
-        title: "Are you currently on any hormone-related medications?",
-        required: true,
-        options: [
-          { value: "yes", label: "Yes" },
-          { value: "no", label: "No" },
-        ],
-      },
-      {
         id: "prior_treatment",
         type: "single",
+        stage: "experience",
         title: "Have you previously tried hormone-related treatment?",
+        whyWeAsk: "Prior treatment experience helps a provider understand your history.",
         required: true,
         signal: "experience",
         options: [
@@ -657,11 +837,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
           { value: "no", label: "No" },
         ],
       },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -669,22 +849,36 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can connect you with providers who offer comprehensive hormone evaluation and individualized protocols.",
       researchingTitle: "Thanks for exploring hormone optimization.",
       researchingDesc: "When you're ready, Novalyte AI can connect you with a provider for a comprehensive evaluation.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Review cost and insurance resources before deciding which care options fit your situation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }),
 
-  "longevity-medicine": {
+  "longevity-medicine": buildConfig({
     slug: "longevity-medicine",
     treatmentLabel: "Longevity & Preventive Health",
     shortLabel: "Longevity",
-    heroImage: "/images/hero/hero-6.jpg",
-    heroImageAlt: "Healthy mature man focused on preventive health",
+    heroImage: "/images/treatments/preventive-3.jpg",
+    heroImageAlt: "Healthy mature man focused on preventive health and longevity",
     description: "An informational assessment to help you explore longevity and preventive health options.",
     questions: [
+      CONTACT_NAME_Q,
+      CONTACT_EMAIL_Q,
+      CONTACT_LOCATION_Q,
       AGE_Q,
       {
         id: "goals",
         type: "multi",
+        stage: "goals",
         title: "What are your primary health goals?",
+        desc: "Select all that apply.",
+        whyWeAsk: "Your goals help us match you with providers who focus on your areas of interest.",
         required: true,
         options: [
           { value: "healthspan", label: "Healthspan" },
@@ -697,7 +891,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "screenings",
         type: "single",
+        stage: "experience",
         title: "Are you up to date on routine preventive screenings?",
+        whyWeAsk: "Screening history helps a provider understand your preventive care baseline.",
         required: true,
         options: [
           { value: "yes", label: "Yes" },
@@ -709,7 +905,9 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       {
         id: "biomarker_interest",
         type: "single",
+        stage: "experience",
         title: "Are you interested in advanced biomarker testing?",
+        whyWeAsk: "Interest in advanced testing helps us match you with providers who offer comprehensive diagnostics.",
         required: true,
         options: [
           { value: "yes", label: "Yes" },
@@ -717,23 +915,11 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
           { value: "no", label: "No" },
         ],
       },
-      {
-        id: "lifestyle",
-        type: "single",
-        title: "How would you describe your current lifestyle?",
-        required: true,
-        options: [
-          { value: "active", label: "Very active" },
-          { value: "moderate", label: "Moderately active" },
-          { value: "improving", label: "Working on it" },
-          { value: "sedentary", label: "Mostly sedentary" },
-        ],
-      },
-      TIMELINE_Q,
       CARE_FORMAT_Q,
+      TRAVEL_Q,
+      TIMELINE_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {
@@ -741,8 +927,16 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       readyDesc: "We can connect you with providers offering comprehensive longevity assessments and personalized prevention plans.",
       researchingTitle: "Thanks for exploring longevity medicine.",
       researchingDesc: "When you're ready, Novalyte AI can connect you with a provider for a comprehensive assessment.",
+      insuranceTitle: "Coverage and pricing vary by clinic.",
+      insuranceDesc: "Advanced testing is often self-pay. Review costs with the clinic during your consultation.",
     },
-  },
+  }, {
+    eyebrow: "PERSONALIZED MEN'S HEALTH ASSESSMENT",
+    headline: "Let's understand what you're looking for",
+    supporting: "Answer a few short questions about your goals, preferences, timeline, and consultation readiness. Your responses help Novalyte AI organize relevant educational resources and potential clinic matches.",
+    estimatedTime: "Approximately 2–3 minutes",
+    whatHappensNext: "You'll receive a personalized summary, relevant educational guidance, and potential clinic matches based on your location and preferences.",
+  }),
 };
 
 /** List of all assessment slugs for iteration. */
