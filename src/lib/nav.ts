@@ -11,6 +11,7 @@ export type ViewKey =
   | "marketplace"
   | "product-detail"
   | "vendor-profile"
+  | "treatment-detail"
   | "journal"
   | "journal-article"
   | "journal-category"

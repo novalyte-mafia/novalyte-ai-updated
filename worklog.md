@@ -456,3 +456,48 @@ Stage Summary:
 - Assessment engine: configuration-driven, 8 treatment-specific assessments, contact+consent capture, readiness scoring, personalized results
 - Data model: backend-ready with all required fields
 - All disclaimers present: no diagnosis, no guarantee, educational only
+
+---
+Task ID: 14
+Agent: Main (Z.ai Code)
+Task: Patients page redesign — hero image, remove Path A/B, treatment cards with images+icons, AI-guided discovery chips, connected process illustration, assessment auto-advance, treatment detail pages
+
+Work Log:
+- Downloaded 13 additional treatment-specific images (TRT labs, telehealth, performance/recovery, preventive care) via z-ai image-search
+- Updated src/lib/images.ts: each treatment category now has its own relevant image (no repeats)
+- Created src/lib/treatment-icons.ts: consistent Lucide icon per treatment category (TestTube2 for TRT, Activity for hormones, HeartPulse for ED, Scale for weight loss, Pill for GLP-1, etc.)
+- Added "treatment-detail" to ViewKey in nav store; wired TreatmentDetailView into AppShell with custom event for assessment triggering
+- Created src/lib/treatment-content.ts: rich educational content for 12 treatment pages (overview, who may consider, common goals, consultation process, possible testing, potential benefits, risks/limitations, questions to ask, FAQs, references)
+- Built src/components/views/treatment-detail-view.tsx: dedicated treatment education page with hero image, sticky tabs (Overview/Consultation/Benefits & Risks/FAQ/Resources & Clinics), related clinics, related Journal articles, references, assessment CTA, medical disclaimer
+- Redesigned src/components/views/patients-view.tsx:
+  - Hero with real consultation image (verified rendering), headline, CTAs, disclaimer
+  - REMOVED Path A and Path B sections entirely
+  - Treatment Categories moved directly beneath hero
+  - Treatment cards redesigned: image panel (upper 40%), treatment icon layered on image, name, description, Take Assessment + Learn More + Find clinics
+  - AI-guided discovery redesigned as visual selectable chips (not a long checklist)
+  - Educational value content section (6 cards: treatment options, telehealth vs in-person, labs, self-pay, questions to ask, how matching works)
+  - How It Works redesigned as connected process illustration (horizontal on desktop with connecting line + numbered milestones, vertical on mobile)
+  - Trust section with supporting healthcare image + 6 trust points in compact cards
+  - Listens for "novalyte-start-assessment" custom event from treatment detail page
+- Rebuilt src/components/views/assessment-engine.tsx:
+  - Auto-advance for single-choice questions (350ms transition, no Continue button needed)
+  - Contact capture moved early in the flow (Step 2, right after age)
+  - Contact capture has transparent explanation: "We use this information to save your progress, prepare your results, and help connect you with relevant clinics."
+  - Separate consent checkboxes (contact + SMS, not pre-checked)
+  - Routing logic: high-intent → clinic matches + consultation CTA; research-stage → Journal resources; insurance-dependent → cost education
+  - Respectful language throughout — no "not qualified" messaging
+- Updated TRT assessment config: contact capture at Step 2, updated hero image to TRT-specific lab image
+- Fixed lint: stable TreatmentIcon component using switch statement for React compiler compatibility
+- Verified with Agent Browser: hero image renders (confirmed real clinical consultation photo), Path A/B removed, treatment categories under hero, Learn More opens dedicated treatment page, assessment auto-advance works (selecting age → auto-advances to contact step), mobile responsive
+
+Stage Summary:
+- Patients page is now visual, conversion-focused, and premium
+- Real hero image confirmed rendering
+- Path A/B removed; treatment categories directly under hero
+- Treatment cards have relevant images + treatment-specific icons
+- Learn More opens dedicated indexable treatment pages with full educational content
+- Assessment captures contact info early (Step 2) with transparent explanation
+- Single-choice questions auto-advance (premium onboarding flow feel)
+- Routing respects user intent (high-intent → clinics; research → Journal; insurance → cost resources)
+- No "not qualified" language; respectful throughout
+- Mobile responsive with connected vertical process illustration

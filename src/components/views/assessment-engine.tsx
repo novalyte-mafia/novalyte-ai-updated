@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { VerificationBadge, StatusPill } from "@/components/shared/badges";
+import { VerificationBadge } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
@@ -18,10 +18,10 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, MapPin, Video, AlertCircle,
-  Sparkles, ShieldCheck, Phone, Mail, User, Calendar, DollarSign,
+  Sparkles, ShieldCheck, User, Lock,
 } from "lucide-react";
 
-type Answers = Record<string, string | string[] | { name: string; email: string; phone: string; zip: string; state: string; preferredContact: string; bestTime: string } | { consentContact: boolean; consentSms: boolean }>;
+type Answers = Record<string, string | string[] | Record<string, unknown>>;
 
 export function AssessmentEngine({
   config,
@@ -35,7 +35,8 @@ export function AssessmentEngine({
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [submitting, setSubmitting] = useState(false);
-  const [results, setResults] = useState<{ readiness: string; matchedClinicIds: string[]; saved: boolean } | null>(null);
+  const [results, setResults] = useState<{ readiness: string; matchedClinicIds: string[] } | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
 
   const total = config.questions.length;
   const progress = ((step + 1) / total) * 100;
@@ -44,6 +45,21 @@ export function AssessmentEngine({
   const setAnswer = useCallback((id: string, value: string | string[] | Record<string, unknown>) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
   }, []);
+
+  // Auto-advance for single-choice questions
+  function handleSingleSelect(id: string, value: string) {
+    setAnswer(id, value);
+    // Auto-advance after a brief delay for visual feedback
+    setTransitioning(true);
+    setTimeout(() => {
+      if (step < total - 1) {
+        setStep((s) => s + 1);
+      } else {
+        finish();
+      }
+      setTransitioning(false);
+    }, 350);
+  }
 
   function canProceed(): boolean {
     if (!question.required) return true;
@@ -69,14 +85,13 @@ export function AssessmentEngine({
     const careFormat = answers["care_format"] as string | undefined;
     const consent = answers["consent"] as { consentContact?: boolean } | undefined;
 
-    // Match clinics based on treatment + state + telehealth
     const matched = clinics
       .filter((c) => {
         const specs = splitCsv(c.specialties);
         const specMatch = specs.some((s) => s.toLowerCase().includes(config.treatmentLabel.toLowerCase().split(" ")[0])) ||
           config.treatmentLabel.toLowerCase().includes(s.toLowerCase().split(" ")[0]);
         const stateMatch = !contact?.state || c.state === contact.state;
-        const teleMatch = careFormat !== "in-person" || c.telehealth || careFormat !== "in-person";
+        const teleMatch = careFormat !== "in-person" || c.telehealth;
         return (specMatch || stateMatch) && teleMatch;
       })
       .sort((a, b) => {
@@ -87,7 +102,6 @@ export function AssessmentEngine({
       .slice(0, 4)
       .map((c) => c.id);
 
-    // Determine readiness status
     let status = "researching";
     if (timeline && timeline !== "researching" && timeline !== "within-3-months") {
       if (selfPay === "yes" || selfPay === "possibly") status = "consultation-ready";
@@ -141,7 +155,7 @@ export function AssessmentEngine({
         }),
       });
       if (!res.ok) throw new Error();
-      setResults({ readiness: status, matchedClinicIds: matched, saved: true });
+      setResults({ readiness: status, matchedClinicIds: matched });
       toast.success("Assessment complete. Review your personalized results below.");
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -177,7 +191,7 @@ export function AssessmentEngine({
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-premium-sm">
-      {/* Header with treatment + progress */}
+      {/* Header */}
       <div className="border-b border-border p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -196,36 +210,51 @@ export function AssessmentEngine({
 
       {/* Question */}
       <div className="p-5 sm:p-8">
-        <div className="min-h-[260px]">
-          <QuestionRenderer question={question} value={answers[question.id]} onChange={(v) => setAnswer(question.id, v)} />
+        <div className={cn("min-h-[260px]", transitioning && "novalyte-fade-up")}>
+          <QuestionRenderer
+            question={question}
+            value={answers[question.id]}
+            onChange={(v) => {
+              if (question.type === "single") {
+                handleSingleSelect(question.id, v as string);
+              } else {
+                setAnswer(question.id, v);
+              }
+            }}
+          />
         </div>
 
-        {/* Nav */}
+        {/* Nav — hide Continue for single-choice (auto-advances) */}
         <div className="mt-6 flex items-center justify-between border-t pt-5">
           <Button variant="ghost" size="sm" onClick={back}>
             <ArrowLeft className="mr-1 h-4 w-4" /> {step === 0 ? "Cancel" : "Back"}
           </Button>
-          <div className="flex items-center gap-2">
-            {!canProceed() && question.required && (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <AlertCircle className="h-3 w-3" /> Required
-              </span>
-            )}
-            <Button
-              size="sm"
-              className="bg-teal-600 text-white hover:bg-teal-700"
-              onClick={next}
-              disabled={!canProceed() || submitting}
-            >
-              {step < total - 1 ? (
-                <>Continue <ArrowRight className="ml-1 h-4 w-4" /></>
-              ) : submitting ? (
-                "Saving..."
-              ) : (
-                <>See my results <CheckCircle2 className="ml-1 h-4 w-4" /></>
+          {question.type !== "single" && (
+            <div className="flex items-center gap-2">
+              {!canProceed() && question.required && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <AlertCircle className="h-3 w-3" /> Required
+                </span>
               )}
-            </Button>
-          </div>
+              <Button
+                size="sm"
+                className="bg-teal-600 text-white hover:bg-teal-700"
+                onClick={next}
+                disabled={!canProceed() || submitting}
+              >
+                {step < total - 1 ? (
+                  <>Continue <ArrowRight className="ml-1 h-4 w-4" /></>
+                ) : submitting ? (
+                  "Saving..."
+                ) : (
+                  <>See my results <CheckCircle2 className="ml-1 h-4 w-4" /></>
+                )}
+              </Button>
+            </div>
+          )}
+          {question.type === "single" && (
+            <span className="text-xs text-muted-foreground">Select an option to continue</span>
+          )}
         </div>
       </div>
     </div>
@@ -294,12 +323,7 @@ function QuestionRenderer({
                     : "border-border hover:border-teal-200 hover:bg-teal-50/30",
                 )}
               >
-                <input
-                  type="checkbox"
-                  checked={active}
-                  onChange={() => toggle(opt.value)}
-                  className="accent-teal-600"
-                />
+                <input type="checkbox" checked={active} onChange={() => toggle(opt.value)} className="accent-teal-600" />
                 <span className="font-medium">{opt.label}</span>
               </label>
             );
@@ -331,6 +355,10 @@ function QuestionRenderer({
       <div>
         <h3 className="text-lg font-semibold text-foreground">{question.title}</h3>
         {question.desc && <p className="mt-1.5 text-sm text-muted-foreground">{question.desc}</p>}
+        <div className="mt-3 flex items-start gap-2 rounded-lg border border-teal-200 bg-teal-50/40 p-3 text-xs text-muted-foreground">
+          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600" />
+          <span>We use this information to save your progress, prepare your results, and help connect you with relevant clinics. Submitting your information does not require you to book treatment.</span>
+        </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label className="text-xs">Full name *</Label>
@@ -435,8 +463,17 @@ function AssessmentResults({
   onClose: () => void;
 }) {
   const isReady = readiness === "consultation-ready" || readiness === "high-intent";
-  const title = isReady ? config.results.readyTitle : config.results.researchingTitle;
-  const desc = isReady ? config.results.readyDesc : config.results.researchingDesc;
+  const isInsurance = readiness === "insurance-dependent";
+  const title = isReady
+    ? config.results.readyTitle
+    : isInsurance
+    ? "Coverage and pricing vary by clinic."
+    : config.results.researchingTitle;
+  const desc = isReady
+    ? config.results.readyDesc
+    : isInsurance
+    ? "Review cost and insurance resources before deciding which care options fit your situation."
+    : config.results.researchingDesc;
   const goals = Array.isArray(answers["goal"]) ? answers["goal"] as string[] : [];
   const timeline = answers["timeline"] as string | undefined;
   const careFormat = answers["care_format"] as string | undefined;
@@ -445,7 +482,7 @@ function AssessmentResults({
     <div className="space-y-5">
       {/* Hero result */}
       <div className="overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-b from-teal-50/60 to-card shadow-premium-sm">
-        <div className="relative h-32">
+        <div className="relative h-28">
           <SmartImage src={config.heroImage} alt={config.heroImageAlt} fill sizes="(max-width: 768px) 100vw, 768px" imgClassName="object-cover" className="rounded-t-2xl" />
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
           <div className="absolute bottom-3 left-5 flex items-center gap-2">
@@ -479,7 +516,7 @@ function AssessmentResults({
           )}
           {timeline && (
             <div className="flex items-start gap-2">
-              <Calendar className="mt-0.5 h-4 w-4 text-teal-600" />
+              <Sparkles className="mt-0.5 h-4 w-4 text-teal-600" />
               <div><span className="text-muted-foreground">Timeline: </span><span className="font-medium text-foreground capitalize">{timeline.replace(/-/g, " ")}</span></div>
             </div>
           )}
@@ -492,43 +529,58 @@ function AssessmentResults({
         </div>
       </div>
 
-      {/* Clinic matches */}
-      <div>
-        <h4 className="text-sm font-semibold text-foreground">Clinics that may be worth exploring</h4>
-        {matchedClinics.length === 0 ? (
-          <div className="mt-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            No clinics matched your exact preferences yet. Try browsing the full directory.
-            <div className="mt-3"><Button variant="outline" size="sm" onClick={() => navigate("directory")}>Browse directory</Button></div>
+      {/* Clinic matches — only for high-intent users */}
+      {isReady && (
+        <div>
+          <h4 className="text-sm font-semibold text-foreground">Clinics that match your preferences</h4>
+          {matchedClinics.length === 0 ? (
+            <div className="mt-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              No clinics matched your exact preferences yet. Try browsing the full directory.
+              <div className="mt-3"><Button variant="outline" size="sm" onClick={() => navigate("directory")}>Browse directory</Button></div>
+            </div>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {matchedClinics.map((c) => {
+                const col = colorClasses(c.logoColor);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => navigate("clinic-profile", undefined, { id: c.id })}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-200 hover:shadow-sm"
+                  >
+                    <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white", col.bg)}>{initials(c.name)}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">{c.name}</p>
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> {c.city}, {c.state}</p>
+                    </div>
+                    <VerificationBadge verified={c.verified} status={c.verificationStatus} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Journal resources — for research-stage users */}
+      {!isReady && (
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h4 className="text-sm font-semibold text-foreground">Recommended next steps</h4>
+          <p className="mt-1 text-xs text-muted-foreground">You may benefit from reviewing additional information before requesting a consultation.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => navigate("journal")}>Read Journal articles</Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("treatment-detail", undefined, { slug: config.slug })}>View treatment guide</Button>
           </div>
-        ) : (
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {matchedClinics.map((c) => {
-              const col = colorClasses(c.logoColor);
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => navigate("clinic-profile", undefined, { id: c.id })}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-200 hover:shadow-sm"
-                >
-                  <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white", col.bg)}>{initials(c.name)}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">{c.name}</p>
-                    <p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> {c.city}, {c.state}</p>
-                  </div>
-                  <VerificationBadge verified={c.verified} status={c.verificationStatus} />
-                </button>
-              );
-            })}
-          </div>
-        )}
-        <p className="mt-2 text-xs text-muted-foreground">Do not claim clinical suitability unless confirmed by a licensed provider.</p>
-      </div>
+        </div>
+      )}
 
       {/* Next steps */}
       <div className="flex flex-wrap gap-2">
-        <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("directory")}>
-          View Matching Clinics <ArrowRight className="ml-1 h-4 w-4" />
-        </Button>
+        {isReady && (
+          <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("directory")}>
+            View Matching Clinics <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        )}
         <Button variant="outline" onClick={onRetake}>Retake assessment</Button>
         <Button variant="ghost" onClick={onClose}>Close</Button>
       </div>

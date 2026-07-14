@@ -1,0 +1,1172 @@
+     1→```text
+     2→You are upgrading the existing Novalyte AI Patients page. Do not rebuild the website from scratch. Preserve the current light-first design system, typography, colors, navigation, responsive behavior, and existing route structure.
+     3→
+     4→This is a focused redesign of the Patients page, treatment-category experience, treatment education pages, and assessment flow.
+     5→
+     6→The current page is structurally solid, but it is not visually credible enough because major sections contain empty white space, missing images, generic image placeholders, and overly card-based layouts.
+     7→
+     8→The Patients page must become more visual, more useful, easier to complete, and substantially more conversion-focused.
+     9→
+    10→==================================================
+    11→PRIMARY OBJECTIVE
+    12→==================================================
+    13→
+    14→Transform the Patients page into a premium men’s-health discovery and consultation-readiness experience that:
+    15→
+    16→- Immediately shows a real, high-quality patient-care image
+    17→- Helps visitors understand available treatment categories
+    18→- Provides useful educational information
+    19→- Makes the correct assessment easy to begin
+    20→- Captures valid contact information early and transparently
+    21→- Uses treatment-specific imagery and icons
+    22→- Automatically advances through simple assessment questions
+    23→- Routes high-intent users toward relevant clinics
+    24→- Routes research-stage users toward useful Journal content
+    25→- Does not imply diagnosis, medical qualification, or guaranteed treatment
+    26→
+    27→High-quality imagery is mandatory.
+    28→
+    29→Do not leave large empty image areas, blank cards, broken image placeholders, generic gray boxes, or repeated stock photographs anywhere on this page.
+    30→
+    31→==================================================
+    32→1. FIX THE PATIENT HERO IMAGE
+    33→==================================================
+    34→
+    35→The current Patients hero contains image markup, but no meaningful image is visibly rendering.
+    36→
+    37→Fix this immediately.
+    38→
+    39→Add a real, high-resolution hero image showing:
+    40→
+    41→- An adult male patient between approximately 35 and 60
+    42→- A private conversation with a licensed healthcare professional
+    43→- A modern, premium clinic or consultation room
+    44→- A calm, trustworthy interaction
+    45→- Natural expressions and realistic clinical context
+    46→- Appropriate lighting and composition for a premium healthcare website
+    47→
+    48→The image must not feel like:
+    49→
+    50→- A generic hospital advertisement
+    51→- An emergency-room scene
+    52→- A staged doctor pointing at a clipboard
+    53→- A bodybuilding advertisement
+    54→- A pharmaceutical promotion
+    55→- An unrelated wellness lifestyle photo
+    56→
+    57→Recommended layout:
+    58→
+    59→Desktop:
+    60→- Split hero layout
+    61→- Text on the left
+    62→- Large editorial image on the right
+    63→- Slightly rounded image container
+    64→- Subtle depth or shadow
+    65→- Optional small trust badge layered near the image
+    66→
+    67→Mobile:
+    68→- Text first
+    69→- Image directly below the CTAs
+    70→- Correctly cropped around the patient and clinician
+    71→- No important face cut off
+    72→- No horizontal overflow
+    73→
+    74→Technical image requirements:
+    75→
+    76→- Use a real working image asset
+    77→- Do not use `src="image"` or a fake placeholder value
+    78→- Store the image locally in the project or use the project’s approved image pipeline
+    79→- Use the framework’s optimized image component
+    80→- Add width and height
+    81→- Use responsive sizes
+    82→- Use AVIF or WebP where supported
+    83→- Use a meaningful filename
+    84→- Include accurate alt text
+    85→- Confirm that the image visibly renders in production
+    86→- Add a fallback image if the primary asset fails
+    87→
+    88→Example alt text:
+    89→
+    90→“Male patient discussing treatment goals with a healthcare professional in a private modern clinic”
+    91→
+    92→==================================================
+    93→2. REMOVE PATH A AND PATH B
+    94→==================================================
+    95→
+    96→Remove the entire section containing:
+    97→
+    98→- Path A
+    99→- I know what I’m looking for
+   100→- Path B
+   101→- Not sure where to start?
+   102→
+   103→This section is unnecessary and adds visual friction.
+   104→
+   105→Do not replace it with another pair of cards.
+   106→
+   107→Move the Treatment Categories section directly upward so it follows the hero.
+   108→
+   109→Recommended order:
+   110→
+   111→1. Hero
+   112→2. Treatment Categories
+   113→3. Guided care discovery
+   114→4. Treatment education and trust content
+   115→5. Assessment explanation
+   116→6. How the process works
+   117→7. Journal resources
+   118→8. Final CTA
+   119→
+   120→The user should see the treatment categories quickly without scrolling through unnecessary pathway cards.
+   121→
+   122→==================================================
+   123→3. TREATMENT CATEGORY SECTION
+   124→==================================================
+   125→
+   126→Move the Treatment Categories section directly beneath the hero.
+   127→
+   128→Recommended heading:
+   129→
+   130→Explore Men’s Health Treatment Options
+   131→
+   132→Supporting copy:
+   133→
+   134→“Choose the area that best matches your goals. You can learn more, complete a short personalized assessment, or explore clinics that offer the service.”
+   135→
+   136→The treatment categories should include:
+   137→
+   138→- Testosterone Replacement Therapy
+   139→- Hormone Optimization
+   140→- Erectile Dysfunction Care
+   141→- Medical Weight Loss
+   142→- GLP-1 Programs
+   143→- Peptide Therapy
+   144→- Hair Restoration
+   145→- Sexual Wellness
+   146→- Longevity Medicine
+   147→- Performance & Recovery
+   148→- Preventive Men’s Health
+   149→- Telehealth Services
+   150→
+   151→==================================================
+   152→4. TREATMENT CARD REDESIGN
+   153→==================================================
+   154→
+   155→The existing treatment cards contain too much blank white space and do not visually establish credibility.
+   156→
+   157→Redesign them as premium visual treatment cards.
+   158→
+   159→Each treatment card must include:
+   160→
+   161→- A high-quality, relevant image
+   162→- A treatment-specific icon
+   163→- Treatment name
+   164→- Concise description
+   165→- “Take Assessment” CTA where an assessment exists
+   166→- “Learn More” CTA
+   167→- Optional “Find Clinics” link
+   168→- Clear hover state
+   169→- Clear focus state
+   170→- Responsive mobile layout
+   171→
+   172→Do not use icons as a replacement for photography.
+   173→
+   174→Use both:
+   175→
+   176→1. A meaningful visual image
+   177→2. A small treatment-specific icon or symbol
+   178→
+   179→Recommended card structure:
+   180→
+   181→- Image occupying the upper 40%–50% of the card
+   182→- Treatment icon layered near the lower edge of the image
+   183→- Treatment name
+   184→- Two- or three-line description
+   185→- Primary and secondary actions
+   186→- Consistent card heights where practical
+   187→
+   188→Do not use full photographic backgrounds behind long text because readability may suffer.
+   189→
+   190→Prefer:
+   191→
+   192→- Image panel at the top
+   193→- Clean content area beneath it
+   194→- Optional subtle image gradient
+   195→- Refined border and shadow
+   196→
+   197→==================================================
+   198→5. TREATMENT-SPECIFIC IMAGE DIRECTION
+   199→==================================================
+   200→
+   201→Use different, contextually relevant images for each treatment category.
+   202→
+   203→Do not repeat the same doctor-patient image across all cards.
+   204→
+   205→A. Testosterone Replacement Therapy
+   206→
+   207→Use:
+   208→
+   209→- Male patient reviewing laboratory results with a clinician
+   210→- Hormone consultation
+   211→- Bloodwork review
+   212→- Private men’s-health consultation
+   213→
+   214→Avoid:
+   215→
+   216→- Syringe close-ups
+   217→- Bodybuilders
+   218→- Unsupervised testosterone imagery
+   219→- Medication product promotion
+   220→
+   221→B. Hormone Optimization
+   222→
+   223→Use:
+   224→
+   225→- Clinician reviewing biomarker or hormone data
+   226→- Adult patient discussing energy, sleep, and wellness goals
+   227→- Modern diagnostic consultation
+   228→
+   229→C. Erectile Dysfunction Care
+   230→
+   231→Use:
+   232→
+   233→- Discreet private consultation
+   234→- Mature male patient speaking with a clinician
+   235→- Professional and respectful imagery
+   236→
+   237→Avoid:
+   238→
+   239→- Explicit imagery
+   240→- Embarrassing or comedic visuals
+   241→- Suggestive stock photography
+   242→
+   243→D. Medical Weight Loss
+   244→
+   245→Use:
+   246→
+   247→- Clinician-guided weight-management consultation
+   248→- Patient reviewing progress data
+   249→- Nutrition or metabolic-health discussion
+   250→
+   251→Avoid:
+   252→
+   253→- Shame-based body imagery
+   254→- Tape measures around stomachs
+   255→- Extreme before-and-after photography
+   256→
+   257→E. GLP-1 Programs
+   258→
+   259→Use:
+   260→
+   261→- Medical weight-management consultation
+   262→- Clinician reviewing a structured treatment program
+   263→- Patient monitoring health progress
+   264→
+   265→Avoid:
+   266→
+   267→- Branded medication packaging
+   268→- Guaranteed weight-loss claims
+   269→- Needle-focused imagery
+   270→
+   271→F. Peptide Therapy
+   272→
+   273→Use:
+   274→
+   275→- Research-informed consultation
+   276→- Clinician reviewing treatment information
+   277→- Modern laboratory or clinical environment
+   278→
+   279→Avoid:
+   280→
+   281→- Fake molecular graphics
+   282→- Unverified scientific claims
+   283→- Dramatic anti-aging visuals
+   284→
+   285→G. Hair Restoration
+   286→
+   287→Use:
+   288→
+   289→- Hair and scalp consultation
+   290→- Clinician examining hair density
+   291→- Modern hair-restoration clinic
+   292→
+   293→H. Sexual Wellness
+   294→
+   295→Use:
+   296→
+   297→- Discreet consultation
+   298→- Confidential provider-patient discussion
+   299→- Mature, respectful lifestyle image
+   300→
+   301→I. Longevity Medicine
+   302→
+   303→Use:
+   304→
+   305→- Biomarker review
+   306→- Preventive-health consultation
+   307→- Healthy mature male lifestyle
+   308→- Advanced diagnostics
+   309→
+   310→J. Performance & Recovery
+   311→
+   312→Use:
+   313→
+   314→- Recovery consultation
+   315→- Movement or performance assessment
+   316→- Clinical recovery technology
+   317→- Athlete meeting with a healthcare professional
+   318→
+   319→Avoid:
+   320→
+   321→- Gym-only bodybuilding imagery
+   322→- Influencer-style fitness content
+   323→
+   324→K. Preventive Men’s Health
+   325→
+   326→Use:
+   327→
+   328→- Routine checkup
+   329→- Preventive screening
+   330→- Blood-pressure or wellness consultation
+   331→
+   332→L. Telehealth Services
+   333→
+   334→Use:
+   335→
+   336→- Male patient speaking with a clinician through a laptop or tablet
+   337→- Private home environment
+   338→- Professional telehealth interface
+   339→
+   340→==================================================
+   341→6. IMAGE QUALITY RULES
+   342→==================================================
+   343→
+   344→High-quality imagery is non-negotiable.
+   345→
+   346→Every visual asset must be:
+   347→
+   348→- Relevant to its treatment category
+   349→- High resolution
+   350→- Professionally composed
+   351→- Properly cropped
+   352→- Visually consistent with the overall website
+   353→- Legally usable
+   354→- Optimized for web performance
+   355→- Accessible
+   356→- Responsive
+   357→
+   358→Do not use:
+   359→
+   360→- Fake image URLs
+   361→- Broken placeholders
+   362→- Low-resolution assets
+   363→- Watermarked images
+   364→- Visible competitor branding
+   365→- Repeated photos across unrelated sections
+   366→- Random medical equipment unrelated to the treatment
+   367→- AI-generated imagery with inaccurate anatomy
+   368→- Images where hands, faces, medical devices, or text appear distorted
+   369→
+   370→Use real licensed photography where possible.
+   371→
+   372→If temporary development imagery is needed, use approved sources such as Unsplash or Pexels, but organize the code so assets can be replaced easily before production.
+   373→
+   374→==================================================
+   375→7. TREATMENT ICON SYSTEM
+   376→==================================================
+   377→
+   378→Add a consistent icon system to reinforce each treatment category.
+   379→
+   380→Examples:
+   381→
+   382→- TRT: laboratory vial, hormone graph, or biomarker icon
+   383→- Hormone Optimization: connected biomarker nodes
+   384→- ED Care: discreet heart and wellness symbol
+   385→- Medical Weight Loss: metabolic-health or progress icon
+   386→- GLP-1: structured care pathway icon
+   387→- Peptides: clinical molecular or sequence symbol
+   388→- Hair Restoration: hair follicle icon
+   389→- Sexual Wellness: privacy and wellness icon
+   390→- Longevity: healthspan or circular vitality icon
+   391→- Performance & Recovery: recovery pulse icon
+   392→- Preventive Health: shield and check icon
+   393→- Telehealth: video consultation icon
+   394→
+   395→Icons must:
+   396→
+   397→- Share one consistent style
+   398→- Use the Novalyte AI color system
+   399→- Be simple and premium
+   400→- Remain legible at small sizes
+   401→- Not imply medical diagnosis
+   402→- Not rely on emoji
+   403→
+   404→==================================================
+   405→8. LEARN MORE PAGES
+   406→==================================================
+   407→
+   408→Every “Learn More” action must open a dedicated treatment education page.
+   409→
+   410→Do not open a popup modal.
+   411→
+   412→Use dedicated indexable URLs such as:
+   413→
+   414→- `/treatments/testosterone-replacement-therapy`
+   415→- `/treatments/hormone-optimization`
+   416→- `/treatments/erectile-dysfunction`
+   417→- `/treatments/medical-weight-loss`
+   418→- `/treatments/glp-1-programs`
+   419→- `/treatments/peptide-therapy`
+   420→- `/treatments/hair-restoration`
+   421→- `/treatments/longevity-medicine`
+   422→
+   423→Each treatment page should include:
+   424→
+   425→1. Treatment-specific hero image
+   426→2. Clear explanation of the treatment
+   427→3. Who may consider discussing it with a provider
+   428→4. Common goals or concerns
+   429→5. What a consultation may involve
+   430→6. Possible testing or evaluation
+   431→7. Potential benefits discussed responsibly
+   432→8. Risks, limitations, or uncertainties
+   433→9. Questions to ask a provider
+   434→10. Frequently asked questions
+   435→11. Relevant Journal articles
+   436→12. Relevant clinic listings
+   437→13. “Take Assessment” CTA
+   438→14. Medical disclaimer
+   439→15. Sources and references where medical claims are included
+   440→
+   441→The page must not promise treatment eligibility or outcomes.
+   442→
+   443→==================================================
+   444→9. EXPAND THE JOURNAL CONNECTION
+   445→==================================================
+   446→
+   447→Connect treatment categories to relevant Journal content.
+   448→
+   449→Each category should show two to four related articles.
+   450→
+   451→Examples for TRT:
+   452→
+   453→- What Are Common Signs of Low Testosterone?
+   454→- What Happens During a Testosterone Consultation?
+   455→- What Lab Tests Are Commonly Discussed Before TRT?
+   456→- How Much Does TRT Typically Cost?
+   457→- Telehealth vs. In-Person TRT Care
+   458→- Questions to Ask a Men’s Health Provider
+   459→
+   460→Examples for GLP-1:
+   461→
+   462→- How Clinician-Guided GLP-1 Programs Work
+   463→- What to Discuss Before Starting a Medical Weight-Loss Program
+   464→- GLP-1 Costs and Self-Pay Considerations
+   465→- Why Ongoing Monitoring Matters
+   466→
+   467→Examples for ED Care:
+   468→
+   469→- When to Speak With a Provider About Erectile Dysfunction
+   470→- Common Causes Providers May Evaluate
+   471→- Telehealth Options for Sexual-Wellness Care
+   472→- Questions to Ask During a Private Consultation
+   473→
+   474→Journal requirements:
+   475→
+   476→- Dedicated article URLs
+   477→- No modal articles
+   478→- Long-form, useful content
+   479→- High-quality hero image
+   480→- Relevant inline images
+   481→- Clear heading structure
+   482→- Related articles
+   483→- Sources and references
+   484→- Medical-review field where applicable
+   485→- Published and updated dates
+   486→- Relevant clinic CTA
+   487→- Relevant assessment CTA
+   488→- No fabricated claims
+   489→
+   490→==================================================
+   491→10. ASSESSMENT EXPERIENCE REDESIGN
+   492→==================================================
+   493→
+   494→The assessment must feel effortless and fast while still collecting meaningful intent and contact information.
+   495→
+   496→Use a one-question-at-a-time experience.
+   497→
+   498→For simple single-choice questions:
+   499→
+   500→- The user clicks an answer
+   501→- The selected answer animates briefly
+   502→- The interface automatically advances to the next question
+   503→- No separate “Continue” button is required
+   504→
+   505→For multi-select questions:
+   506→
+   507→- Allow the user to choose multiple answers
+   508→- Show a small “Continue” button only when required
+   509→- Make the distinction between single-select and multi-select clear
+   510→
+   511→For typed fields:
+   512→
+   513→- Use a Continue button or keyboard Enter
+   514→- Validate before advancing
+   515→
+   516→Animation requirements:
+   517→
+   518→- Smooth horizontal or fade transition
+   519→- Approximately 200–350 milliseconds
+   520→- No distracting motion
+   521→- Preserve browser back behavior
+   522→- Respect `prefers-reduced-motion`
+   523→- Do not lose previously entered answers
+   524→
+   525→==================================================
+   526→11. CAPTURE CONTACT INFORMATION EARLY
+   527→==================================================
+   528→
+   529→Capture contact information near the beginning of the assessment, but do so transparently.
+   530→
+   531→Do not collect a full street address unless it is operationally necessary.
+   532→
+   533→For clinic matching, use:
+   534→
+   535→- First name
+   536→- Last name
+   537→- Email address
+   538→- Mobile phone number
+   539→- ZIP code
+   540→- State
+   541→
+   542→Recommended assessment sequence:
+   543→
+   544→Step 1:
+   545→Treatment selected
+   546→
+   547→Step 2:
+   548→First name and last name
+   549→
+   550→Step 3:
+   551→Email address
+   552→
+   553→Step 4:
+   554→Mobile phone number
+   555→
+   556→Step 5:
+   557→ZIP code and state
+   558→
+   559→Step 6 onward:
+   560→Treatment-specific questions
+   561→
+   562→Final step:
+   563→Consent and review
+   564→
+   565→Add a short explanation above the contact fields:
+   566→
+   567→“We use this information to save your progress, prepare your results, and help connect you with relevant clinics. Submitting your information does not require you to book treatment.”
+   568→
+   569→Do not disguise the lead-capture purpose.
+   570→
+   571→Do not tell users the information is required for medical evaluation unless that is actually true.
+   572→
+   573→==================================================
+   574→12. CONTACT VALIDATION
+   575→==================================================
+   576→
+   577→Email:
+   578→
+   579→- Validate format
+   580→- Remove accidental leading or trailing spaces
+   581→- Reject obviously invalid addresses
+   582→- Prevent multiple `@` characters
+   583→- Suggest corrections for common domain typos where possible
+   584→- Ask the user to confirm the address before final submission
+   585→
+   586→Phone:
+   587→
+   588→- Format as the user types
+   589→- Validate plausible U.S. numbers
+   590→- Reject incomplete values
+   591→- Support mobile autofill
+   592→- Do not assume phone consent equals SMS marketing consent
+   593→
+   594→ZIP code:
+   595→
+   596→- Validate five-digit U.S. ZIP code
+   597→- Use ZIP code to support clinic matching
+   598→- Do not ask for full home address unless necessary
+   599→
+   600→Consent:
+   601→
+   602→Use separate checkboxes for:
+   603→
+   604→- Contact regarding the consultation request
+   605→- SMS communication
+   606→- Marketing communication, if included
+   607→
+   608→Do not preselect consent boxes.
+   609→
+   610→==================================================
+   611→13. TREATMENT-SPECIFIC QUESTIONS
+   612→==================================================
+   613→
+   614→Keep most treatment assessments between approximately 7 and 10 meaningful questions after contact capture.
+   615→
+   616→Questions should determine:
+   617→
+   618→- What the user is interested in
+   619→- What they want to improve
+   620→- How long the concern has existed
+   621→- Whether they have spoken with a provider
+   622→- Whether they have recent labs where relevant
+   623→- Whether they prefer telehealth or in-person care
+   624→- How soon they want to act
+   625→- Whether they are open to self-pay care
+   626→- General budget comfort where appropriate
+   627→- Whether they are ready for a consultation
+   628→
+   629→Do not ask unnecessary medical-history questions merely to make the form appear clinical.
+   630→
+   631→Novalyte AI must not make clinical eligibility decisions.
+   632→
+   633→==================================================
+   634→14. EXAMPLE TRT ASSESSMENT FLOW
+   635→==================================================
+   636→
+   637→Question 1:
+   638→What would you most like to improve?
+   639→
+   640→- Energy
+   641→- Motivation
+   642→- Strength
+   643→- Muscle development
+   644→- Sexual health
+   645→- Mood
+   646→- Recovery
+   647→- General wellness
+   648→
+   649→Question 2:
+   650→How long have you noticed these concerns?
+   651→
+   652→- Less than 3 months
+   653→- 3–6 months
+   654→- 6–12 months
+   655→- More than 1 year
+   656→
+   657→Question 3:
+   658→Have you had testosterone or hormone lab work recently?
+   659→
+   660→- Yes, within the last 3 months
+   661→- Yes, within the last year
+   662→- No
+   663→- I am not sure
+   664→
+   665→Question 4:
+   666→Have you discussed these concerns with a healthcare professional?
+   667→
+   668→- Yes
+   669→- No
+   670→- I have an appointment scheduled
+   671→
+   672→Question 5:
+   673→Have you previously used testosterone therapy?
+   674→
+   675→- Yes, currently
+   676→- Yes, previously
+   677→- No
+   678→- Prefer not to say
+   679→
+   680→Question 6:
+   681→What type of care would you prefer?
+   682→
+   683→- Telehealth
+   684→- In-person
+   685→- Either
+   686→
+   687→Question 7:
+   688→How soon would you like to speak with a provider?
+   689→
+   690→- Within 7 days
+   691→- Within 2 weeks
+   692→- Within 30 days
+   693→- Within 1–3 months
+   694→- I am researching
+   695→
+   696→Question 8:
+   697→Some men’s-health services may require direct payment. Are you open to discussing self-pay care?
+   698→
+   699→- Yes
+   700→- Possibly, depending on cost
+   701→- I need insurance-covered care only
+   702→- I am not sure
+   703→
+   704→Question 9:
+   705→What monthly cost range would you be comfortable discussing?
+   706→
+   707→- Under $100
+   708→- $100–$199
+   709→- $200–$299
+   710→- $300+
+   711→- I need more information first
+   712→
+   713→Final:
+   714→Review information and provide consent
+   715→
+   716→Do not show the user a message stating that they “qualify for TRT.”
+   717→
+   718→==================================================
+   719→15. AUTO-ADVANCE BEHAVIOR
+   720→==================================================
+   721→
+   722→For all single-choice questions:
+   723→
+   724→1. User clicks an option
+   725→2. Option receives a selected state
+   726→3. Answer is saved immediately
+   727→4. A subtle transition begins
+   728→5. The next question appears automatically
+   729→
+   730→The experience should feel fast, similar to a premium onboarding flow.
+   731→
+   732→Include:
+   733→
+   734→- Back button
+   735→- Progress indicator
+   736→- Save progress
+   737→- Resume later
+   738→- Keyboard selection
+   739→- Mobile tap optimization
+   740→- Error recovery
+   741→- Session persistence
+   742→
+   743→Do not auto-advance when:
+   744→
+   745→- Multiple selections are permitted
+   746→- The user must enter text
+   747→- Consent is required
+   748→- The answer requires confirmation
+   749→- Validation fails
+   750→
+   751→==================================================
+   752→16. RESULT AND ROUTING LOGIC
+   753→==================================================
+   754→
+   755→After completion, route users based on their intent and readiness signals.
+   756→
+   757→Do not tell users they are medically qualified or disqualified.
+   758→
+   759→Possible internal routing statuses:
+   760→
+   761→- High consultation intent
+   762→- Ready within 30 days
+   763→- Research stage
+   764→- Insurance-dependent
+   765→- Self-pay open
+   766→- Needs more education
+   767→- Incomplete
+   768→- Invalid contact data
+   769→
+   770→A. HIGH-INTENT USER
+   771→
+   772→Show:
+   773→
+   774→- Personalized summary
+   775→- Relevant clinics
+   776→- Request consultation CTA
+   777→- Treatment education
+   778→- Next steps
+   779→- Expected contact process
+   780→
+   781→Suggested message:
+   782→
+   783→“Your responses indicate that you are ready to explore a provider consultation. Review clinics that match your treatment interest, location, timing, and care preferences.”
+   784→
+   785→B. RESEARCH-STAGE USER
+   786→
+   787→Show:
+   788→
+   789→- Relevant treatment guide
+   790→- Recommended Journal articles
+   791→- Questions to ask a provider
+   792→- Option to save results
+   793→- Option to return later
+   794→- Clinic directory link
+   795→
+   796→Suggested message:
+   797→
+   798→“You may benefit from reviewing additional information before requesting a consultation. We selected several resources based on your interests.”
+   799→
+   800→C. INSURANCE-DEPENDENT OR COST-CONCERNED USER
+   801→
+   802→Do not treat this user disrespectfully or describe them as unqualified.
+   803→
+   804→Show:
+   805→
+   806→- Cost education
+   807→- Insurance guidance
+   808→- Self-pay explanation
+   809→- Lower-cost or financing information where legitimate
+   810→- Relevant clinics that publish pricing or accept insurance
+   811→- Journal content
+   812→
+   813→Suggested message:
+   814→
+   815→“Coverage and pricing vary by clinic. Review cost and insurance resources before deciding which care options fit your situation.”
+   816→
+   817→D. USER OUTSIDE AN AVAILABLE SERVICE AREA
+   818→
+   819→Show:
+   820→
+   821→- Telehealth options if legally and operationally available
+   822→- Journal resources
+   823→- Notify-me option
+   824→- General provider-search guidance
+   825→
+   826→==================================================
+   827→17. “NOT QUALIFIED” LANGUAGE
+   828→==================================================
+   829→
+   830→Do not display:
+   831→
+   832→- You are not qualified
+   833→- You failed the assessment
+   834→- You are not eligible for care
+   835→- You cannot afford treatment
+   836→- Treatment is not for you
+   837→
+   838→Use respectful routing language.
+   839→
+   840→Preferred language:
+   841→
+   842→- “You may benefit from learning more before requesting a consultation.”
+   843→- “Based on your timeline, these resources may be a better next step.”
+   844→- “Coverage and pricing vary, so review these options before continuing.”
+   845→- “A licensed provider determines whether any treatment is appropriate.”
+   846→
+   847→==================================================
+   848→18. AI-GUIDED CARE DISCOVERY
+   849→==================================================
+   850→
+   851→Keep the guided care discovery feature, but improve its presentation.
+   852→
+   853→It should not appear as a long checklist inside a generic card.
+   854→
+   855→Create a refined interactive section with:
+   856→
+   857→- A conversational heading
+   858→- Short prompt
+   859→- Selectable goals
+   860→- Treatment recommendations
+   861→- Explanation of each recommendation
+   862→- Related articles
+   863→- Relevant assessment CTA
+   864→
+   865→Possible heading:
+   866→
+   867→Not Sure Which Treatment Fits Your Goals?
+   868→
+   869→Prompt:
+   870→
+   871→“Select the areas you would like to improve. We will organize relevant treatment categories and educational resources.”
+   872→
+   873→Use visual selectable chips or tiles for:
+   874→
+   875→- Energy
+   876→- Weight management
+   877→- Sexual health
+   878→- Hair loss
+   879→- Strength and recovery
+   880→- Hormone health
+   881→- Sleep
+   882→- Preventive health
+   883→- Longevity
+   884→- General men’s health
+   885→
+   886→After selection, show:
+   887→
+   888→- Two or three relevant categories
+   889→- Short explanation
+   890→- Relevant article
+   891→- Take assessment CTA
+   892→
+   893→Always show:
+   894→
+   895→“This guidance is educational and is not a diagnosis.”
+   896→
+   897→==================================================
+   898→19. HOW IT WORKS REDESIGN
+   899→==================================================
+   900→
+   901→Remove the current six-step card grid.
+   902→
+   903→Do not place every step inside a separate box.
+   904→
+   905→Redesign “How It Works” as a connected visual process similar to the ecosystem logic used on the homepage.
+   906→
+   907→Create a horizontal process illustration on desktop and vertical process on mobile.
+   908→
+   909→Suggested steps:
+   910→
+   911→1. Choose a goal
+   912→2. Complete a short assessment
+   913→3. Review relevant guidance
+   914→4. Discover matching clinics
+   915→5. Request a consultation
+   916→6. Speak with a licensed provider
+   917→
+   918→Visual direction:
+   919→
+   920→- Connected line or pathway
+   921→- Numbered milestones
+   922→- Small supporting icons
+   923→- Subtle animated progress
+   924→- Clean background
+   925→- Strong central flow
+   926→- No excessive card borders
+   927→
+   928→The illustration should explain how information moves through the Novalyte AI process.
+   929→
+   930→Add a short note beneath the final step:
+   931→
+   932→“Licensed healthcare professionals remain responsible for diagnosis, prescribing, and treatment decisions.”
+   933→
+   934→==================================================
+   935→20. PATIENT VALUE CONTENT
+   936→==================================================
+   937→
+   938→The page must provide real value before asking the visitor to submit information.
+   939→
+   940→Add short educational sections such as:
+   941→
+   942→- Understanding treatment options
+   943→- What to expect during a men’s-health consultation
+   944→- Telehealth versus in-person care
+   945→- Common laboratory discussions
+   946→- How self-pay care typically works
+   947→- Questions to ask a clinic
+   948→- How Novalyte AI matches patients and clinics
+   949→- What Novalyte AI does and does not do
+   950→
+   951→Use:
+   952→
+   953→- Relevant imagery
+   954→- Short explanations
+   955→- Links to deeper Journal content
+   956→- Clear disclaimers
+   957→- No unsupported medical claims
+   958→
+   959→==================================================
+   960→21. TRUST AND TRANSPARENCY
+   961→==================================================
+   962→
+   963→Retain the existing trust content, but improve its visual presentation.
+   964→
+   965→Avoid placing every trust statement inside an identical card.
+   966→
+   967→Use a cleaner combination of:
+   968→
+   969→- Short text blocks
+   970→- Privacy iconography
+   971→- One relevant healthcare image
+   972→- Security and consent indicators
+   973→- Expandable details where useful
+   974→
+   975→Keep these messages:
+   976→
+   977→- Novalyte AI does not diagnose
+   978→- Novalyte AI does not prescribe
+   979→- Treatment is not guaranteed
+   980→- Users choose whether to contact a clinic
+   981→- Clinics are independently responsible for care
+   982→- Contact consent is explicit
+   983→- Users can opt out
+   984→- No fake urgency
+   985→- No fabricated reviews
+   986→
+   987→==================================================
+   988→22. DATA STORAGE
+   989→==================================================
+   990→
+   991→Save assessment progress securely.
+   992→
+   993→Data model should support:
+   994→
+   995→- assessment_id
+   996→- treatment_type
+   997→- first_name
+   998→- last_name
+   999→- email
+  1000→- phone
+  1001→- ZIP code
+  1002→- state
+  1003→- goals
+  1004→- answers
+  1005→- timeline
+  1006→- care_preference
+  1007→- self_pay_openness
+  1008→- budget_range
+  1009→- assessment_status
+  1010→- readiness_status
+  1011→- clinic_matches
+  1012→- consent_contact
+  1013→- consent_sms
+  1014→- consent_marketing
+  1015→- started_at
+  1016→- completed_at
+  1017→- last_step
+  1018→- source_page
+  1019→- UTM parameters
+  1020→- created_at
+  1021→- updated_at
+  1022→
+  1023→Requirements:
+  1024→
+  1025→- Save answers after each step
+  1026→- Resume incomplete sessions
+  1027→- Do not expose private assessment data in URLs
+  1028→- Do not log sensitive form answers into general analytics
+  1029→- Protect data in transit
+  1030→- Prepare the system for future Supabase integration
+  1031→- Do not claim HIPAA compliance without verified implementation
+  1032→
+  1033→==================================================
+  1034→23. RESPONSIVE DESIGN
+  1035→==================================================
+  1036→
+  1037→Desktop:
+  1038→
+  1039→- Large hero image
+  1040→- Three-column or four-column treatment grid
+  1041→- Connected horizontal process illustration
+  1042→- Strong visual hierarchy
+  1043→
+  1044→Tablet:
+  1045→
+  1046→- Two-column treatment grid
+  1047→- Responsive hero
+  1048→- Simplified process flow
+  1049→
+  1050→Mobile:
+  1051→
+  1052→- One treatment card per row
+  1053→- Image visible on every card
+  1054→- One assessment question per screen
+  1055→- Large selectable answers
+  1056→- Auto-advance
+  1057→- Sticky progress indicator
+  1058→- Clear back navigation
+  1059→- Optimized image crops
+  1060→- No horizontal overflow
+  1061→- No tiny disclaimers
+  1062→
+  1063→==================================================
+  1064→24. ACCESSIBILITY
+  1065→==================================================
+  1066→
+  1067→Ensure:
+  1068→
+  1069→- Accurate alt text
+  1070→- Semantic headings
+  1071→- Visible focus states
+  1072→- Keyboard-operable assessment
+  1073→- Screen-reader progress announcements
+  1074→- Form labels
+  1075→- Clear validation messages
+  1076→- Sufficient contrast
+  1077→- Large touch targets
+  1078→- Reduced-motion support
+  1079→- No information communicated through color alone
+  1080→- No auto-advance that traps keyboard or screen-reader users
+  1081→
+  1082→==================================================
+  1083→25. IMPLEMENTATION REQUIREMENTS
+  1084→==================================================
+  1085→
+  1086→Build reusable components for:
+  1087→
+  1088→- Hero image
+  1089→- Treatment category card
+  1090→- Treatment icon
+  1091→- Treatment page hero
+  1092→- Related article block
+  1093→- Assessment question
+  1094→- Single-select auto-advance
+  1095→- Multi-select question
+  1096→- Contact capture
+  1097→- Progress indicator
+  1098→- Result routing
+  1099→- Clinic recommendation
+  1100→- Journal recommendation
+  1101→- Connected process illustration
+  1102→- Trust section
+  1103→
+  1104→Do not create one large monolithic Patients page component.
+  1105→
+  1106→Use data-driven configurations for:
+  1107→
+  1108→- Treatment names
+  1109→- Slugs
+  1110→- Descriptions
+  1111→- Images
+  1112→- Icons
+  1113→- Assessment questions
+  1114→- Related articles
+  1115→- Clinic filters
+  1116→- Result messaging
+  1117→
+  1118→==================================================
+  1119→26. QUALITY-CONTROL CHECKLIST
+  1120→==================================================
+  1121→
+  1122→Before finishing, verify:
+  1123→
+  1124→- The Patients hero displays a real high-quality image
+  1125→- No image uses a fake `src="image"` value
+  1126→- No broken images are visible
+  1127→- Path A and Path B are removed
+  1128→- Treatment Categories appear directly beneath the hero
+  1129→- Every treatment card has a relevant image
+  1130→- Every treatment card has a relevant icon
+  1131→- Images are not repeated excessively
+  1132→- Images are high resolution and optimized
+  1133→- Treatment cards no longer contain large empty white areas
+  1134→- Learn More opens a dedicated treatment page
+  1135→- Treatment pages contain high-quality imagery
+  1136→- Journal articles use dedicated URLs
+  1137→- Assessments capture contact information early
+  1138→- Contact collection is clearly explained
+  1139→- Email, phone, and ZIP code validation work
+  1140→- Single-choice questions auto-advance
+  1141→- Multi-select questions do not advance prematurely
+  1142→- Users can go back without losing answers
+  1143→- Progress is saved
+  1144→- High-intent users see clinic matches
+  1145→- Research-stage users see relevant Journal content
+  1146→- No user is told they are medically qualified or disqualified
+  1147→- The process section uses a connected illustration instead of six separate cards
+  1148→- Mobile image crops are correct
+  1149→- Accessibility and reduced-motion behavior work
+  1150→- Existing navigation and marketplace functionality remain intact
+  1151→
+  1152→==================================================
+  1153→FINAL EXPECTATION
+  1154→==================================================
+  1155→
+  1156→The completed Patients page must feel like a premium men’s-health discovery platform, not a text-heavy prototype.
+  1157→
+  1158→The user should immediately see:
+  1159→
+  1160→- A credible real-world healthcare image
+  1161→- Clear treatment options
+  1162→- Relevant visual categories
+  1163→- Useful educational information
+  1164→- A short and easy assessment
+  1165→- A transparent explanation of why contact details are requested
+  1166→- Personalized next steps
+  1167→- Relevant clinic recommendations
+  1168→- Relevant Journal resources
+  1169→
+  1170→High-quality imagery must be treated as a core part of the product experience, not as optional decoration.
+  1171→```
+  1172→

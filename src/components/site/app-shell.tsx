@@ -14,6 +14,7 @@ import { JobDetailView } from "@/components/views/job-detail-view";
 import { MarketplaceView } from "@/components/views/marketplace-view";
 import { ProductDetailView } from "@/components/views/product-detail-view";
 import { VendorProfileView } from "@/components/views/vendor-profile-view";
+import { TreatmentDetailView } from "@/components/views/treatment-detail-view";
 import { JournalView } from "@/components/views/journal-view";
 import { ArticleView } from "@/components/views/article-view";
 import { JournalCategoryView } from "@/components/views/journal-category-view";
@@ -92,6 +93,21 @@ export function AppShell({ data }: { data: PlatformData }) {
           <VendorProfileView
             vendor={data.vendors.find((v) => v.id === params?.id) ?? data.vendors[0]}
             listings={data.listings.filter((l) => l.vendorName === (data.vendors.find((v) => v.id === params?.id) ?? data.vendors[0])?.name)}
+          />
+        )}
+        {view === "treatment-detail" && (
+          <TreatmentDetailView
+            slug={params?.slug ?? "testosterone-replacement-therapy"}
+            clinics={data.clinics}
+            articles={data.articles}
+            onStartAssessment={(slug) => {
+              // Navigate to patients view and trigger assessment
+              navigate("patients");
+              // Use a custom event to trigger the assessment modal
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent("novalyte-start-assessment", { detail: slug }));
+              }, 100);
+            }}
           />
         )}
         {view === "journal" && <JournalView articles={ARTICLES} />}

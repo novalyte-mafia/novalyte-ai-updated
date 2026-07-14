@@ -145,11 +145,12 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
     slug: "testosterone-replacement-therapy",
     treatmentLabel: "Testosterone Replacement Therapy",
     shortLabel: "TRT",
-    heroImage: "/images/treatments/weight-3.png",
-    heroImageAlt: "Clinician reviewing treatment options with a male patient",
+    heroImage: "/images/treatments/trt-1.jpg",
+    heroImageAlt: "Clinician reviewing laboratory blood test results with a male patient",
     description: "An informational assessment to help you explore whether TRT is worth discussing with a licensed provider.",
     questions: [
       AGE_Q,
+      CONTACT_Q,
       {
         id: "goal",
         type: "multi",
@@ -217,7 +218,6 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
       CARE_FORMAT_Q,
       SELFPAY_Q,
       BUDGET_Q,
-      CONTACT_Q,
       CONSENT_Q,
     ],
     results: {

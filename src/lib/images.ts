@@ -76,20 +76,20 @@ export const IMAGES = {
     "/images/articles/article-6.jpg",
   ],
 
-  // Treatment vertical imagery
+  // Treatment vertical imagery — each category has its own relevant image
   treatments: {
-    "testosterone-replacement-therapy": "/images/hero/hero-4.jpg",
-    "hormone-optimization": "/images/hero/hero-3.jpg",
+    "testosterone-replacement-therapy": "/images/treatments/trt-1.jpg",
+    "hormone-optimization": "/images/treatments/trt-2.jpg",
     "erectile-dysfunction": "/images/hero/hero-1.jpg",
     "medical-weight-loss": "/images/treatments/weight-1.jpg",
     "glp-1": "/images/treatments/weight-2.jpg",
     "peptide-therapy": "/images/marketplace/inject-3.jpg",
     "hair-restoration": "/images/treatments/hair-1.jpg",
     "sexual-wellness": "/images/hero/hero-2.jpg",
-    "longevity-medicine": "/images/hero/hero-6.jpg",
-    "performance-recovery": "/images/marketplace/recovery-3.jpg",
-    "preventive-mens-health": "/images/treatments/weight-3.png",
-    "telehealth-services": "/images/treatments/telehealth-1.jpg",
+    "longevity-medicine": "/images/treatments/preventive-3.jpg",
+    "performance-recovery": "/images/treatments/perf-1.jpg",
+    "preventive-mens-health": "/images/treatments/preventive-2.jpg",
+    "telehealth-services": "/images/treatments/telehealth-new-1.jpg",
   },
 
   // Patient journey imagery

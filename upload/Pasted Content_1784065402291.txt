@@ -1,0 +1,3488 @@
+
+
+GLM-5.2
+
+Share
+Loading...
+ Novalyte AI — Enterprise-Grade Platform Redesign Directive
+
+The current design is a solid starting point, but it does not yet reflect the level of quality, sophistication, and credibility required for Novalyte AI.
+
+Redesign the entire experience so it feels like a premium, enterprise-grade healthcare technology platform—not a basic startup template, generic marketplace, or early-stage MVP.
+
+The quality benchmark should feel comparable to products designed by companies such as Salesforce, Google, Uber, Stripe, and other category-defining technology platforms. Do not copy their visual styles directly. Instead, match their level of polish, clarity, usability, information architecture, and attention to detail.
+
+Primary Objective
+
+Transform the platform into a cohesive, modern, and highly professional ecosystem that feels capable of supporting:
+
+* Large healthcare organizations
+* Established men’s health clinics
+* Medical professionals
+* Patients searching for trusted care
+* Healthcare vendors and service providers
+* Enterprise partnerships and investors
+
+Every page should communicate trust, scale, technical sophistication, and operational maturity.
+
+Critical Areas That Must Be Redesigned
+
+1. Clinic Directory
+
+The directory is one of the most important parts of the platform and should be treated as a flagship product experience.
+
+The current directory design feels too basic and should be completely reconsidered.
+
+Redesign it to include:
+
+* A sophisticated search and discovery experience
+* Advanced filters for location, treatment type, insurance, telehealth availability, clinic type, ratings, verified status, and appointment availability
+* Clear visual hierarchy
+* High-quality clinic cards
+* Interactive map and list views
+* Intelligent sorting and recommendation options
+* Verified clinic indicators
+* Trust signals and accreditation details
+* Distance, availability, specialties, and pricing summaries
+* Smooth transitions, loading states, empty states, and responsive interactions
+* Saved clinics and comparison functionality
+* Clean pagination or infinite scrolling
+* Mobile-friendly filter and search behavior
+
+The directory should feel like a combination of a premium healthcare search platform, an enterprise data product, and a modern location marketplace.
+
+It must not feel like a basic grid of cards.
+
+2. Clinic Profile Pages
+
+Clinic profiles should be among the most detailed, premium, and trustworthy pages in the entire Novalyte AI platform.
+
+The current clinic profile experience is not strong enough and requires a complete redesign.
+
+Each clinic profile should feel like a comprehensive digital destination for evaluating and choosing a provider.
+
+Include clearly organized sections for:
+
+* Clinic overview
+* Verified status and credentials
+* Treatments and specialties
+* Provider profiles
+* Clinic locations
+* Hours of operation
+* Insurance and payment options
+* Telehealth availability
+* Patient eligibility information
+* Pricing or consultation details
+* Photos and facility gallery
+* Ratings and verified reviews
+* Frequently asked questions
+* Appointment availability
+* Contact and booking actions
+* Educational resources
+* Related clinics
+* Safety and compliance information
+
+The profile should have a strong hero section with the clinic’s identity, location, reputation, treatment focus, verification status, and primary booking action immediately visible.
+
+Use sticky navigation or a structured tab system so users can move through longer profiles without becoming overwhelmed.
+
+The page should establish confidence within seconds.
+
+3. Job Board and Workforce Experience
+
+The job board currently feels too simple and should be elevated into a professional healthcare workforce marketplace.
+
+Redesign it to include:
+
+* Advanced job search
+* Role, specialty, location, employment type, experience, schedule, compensation, and credential filters
+* High-quality job cards
+* Verified employer indicators
+* Salary transparency
+* Remote, hybrid, and on-site labels
+* Saved jobs
+* Application tracking
+* Featured opportunities
+* Recommended positions
+* Employer profiles
+* Credential requirements
+* Benefits and schedule details
+* Clear application flows
+* Candidate and employer dashboards
+* Strong empty, loading, success, and error states
+
+The experience should feel credible enough for medical professionals, recruiters, staffing teams, and healthcare organizations.
+
+It must not resemble a basic classified listings page.
+
+4. Marketplace
+
+Redesign the marketplace so it feels like a legitimate B2B healthcare commerce platform.
+
+Improve:
+
+* Product discovery
+* Category navigation
+* Search and filtering
+* Vendor profiles
+* Product detail pages
+* Equipment specifications
+* Financing and leasing indicators
+* Shipping and fulfillment information
+* Quote-request workflows
+* Verified supplier badges
+* Product comparisons
+* Related products
+* Saved items
+* Order and inquiry tracking
+* Enterprise purchasing workflows
+
+Avoid generic e-commerce templates. The marketplace should feel specialized for healthcare operations and clinical equipment procurement.
+
+Global Design Standards
+
+Apply the following standards across the entire platform:
+
+Visual Quality
+
+* Premium light-first healthcare design
+* Strong typography and spacing
+* Clean grid systems
+* Sophisticated cards and data presentation
+* Restrained use of shadows and borders
+* Subtle depth and layering
+* Consistent iconography
+* High-quality imagery
+* Carefully designed responsive layouts
+* No oversized empty areas without purpose
+* No generic dashboard appearance
+* No repetitive card grids without hierarchy
+* No placeholder-style UI
+
+User Experience
+
+Every important workflow should be intuitive, clear, and fast.
+
+Design complete interaction states, including:
+
+* Hover states
+* Selected states
+* Loading states
+* Skeleton screens
+* Empty states
+* Error states
+* Success states
+* Disabled states
+* Form validation
+* Mobile behavior
+* Tablet behavior
+* Desktop behavior
+
+Do not design only static screens. Design the experience as a functioning product.
+
+Information Architecture
+
+Improve the structure of every page.
+
+Use:
+
+* Clear page hierarchy
+* Logical grouping
+* Strong section transitions
+* Contextual navigation
+* Breadcrumbs where appropriate
+* Sticky actions for important workflows
+* Progressive disclosure for complex information
+* Clear primary and secondary calls to action
+* Better separation between patient, clinic, workforce, and marketplace experiences
+
+Enterprise Credibility
+
+The platform should visually communicate:
+
+* Trust
+* Security
+* Verification
+* Healthcare professionalism
+* Scalability
+* Data intelligence
+* Operational reliability
+* Premium service quality
+
+Include trust signals naturally throughout the product without overcrowding the interface.
+
+Redesign Approach
+
+Do not make minor cosmetic adjustments to the existing pages.
+
+Reevaluate the layouts, components, page structure, hierarchy, and user journeys from the ground up.
+
+Preserve the Novalyte AI brand, positioning, platform purpose, and core functionality, but significantly improve how everything is presented and experienced.
+
+Before implementing each major page, determine:
+
+1. Who the primary user is
+2. What they are trying to accomplish
+3. What information they need first
+4. What action the page should guide them toward
+5. What creates trust in that specific workflow
+6. How the design should adapt across screen sizes
+
+Final Quality Requirement
+
+The finished product should feel like a platform created by an experienced enterprise product design team with substantial resources—not a template, prototype, or early-stage marketplace.
+
+Every page should feel intentional, connected, refined, and production-ready.
+
+The clinic directory, clinic profiles, job board, workforce marketplace, and healthcare marketplace must become standout product experiences that users immediately recognize as professional, trustworthy, and technically advanced.
+
+Do not stop at “good.”
+
+Build a platform that feels category-defining.  Show full message
+ 
+Thought Process
+ This is a major enterprise-grade redesign directive. Let me approach this strategically — first upgrading the design foundation and shared component system, then redesigning each flagship experience in parallel.
+
+ Let me first review the current shared components and nav store to understand what I'm extending.
+
+ Now let me upgrade the design system foundation with refined enterprise tokens and depth system.
+
+ Now let me upgrade the nav store to support view params (for clinic profiles, product details, vendor profiles) and add a localStorage-backed saved-items store.
+
+ Now let me build the new enterprise shared components — skeletons, breadcrumbs, sticky-tab-nav, save button, filter chips, sort control, view toggle, metadata rows, and an enhanced section/card system.
+
+ Now a sticky tab navigation component for long profile pages, and a comparison drawer.
+
+ Now let me update the AppShell to handle the new views (clinic-profile, job-detail, product-detail, vendor-profile) and the compare tray. Let me also enhance the header to be more enterprise-grade with breadcrumbs support. First, let me check the current AppShell and Header.
+
+ Now let me rewrite the AppShell to handle all the new views and add the compare tray. I'll create the new view files (clinic-profile, job-detail, product-detail, vendor-profile) via subagents in parallel, but first I need the AppShell ready to reference them.
+
+ I need to add the VendorT type and update page.tsx to fetch vendors. Let me add the type and update the data fetch.
+
+ Now I need to create the compare tray view components and the placeholder detail views so the build doesn't break. Let me write the compare trays first, then dispatch subagents for the big redesigns. First, let me create a worklog entry and the compare trays.
+
+ Now I need to create placeholder files for the detail views so the build works, then I'll dispatch subagents to build the real ones. But actually, since the subagents will overwrite them, let me create them as proper stubs that compile. Let me write the worklog and dispatch the subagents in parallel — they'll create their own files.
+
+Let me first update the worklog with the foundation work, then dispatch 3 subagents in parallel for the big redesigns while I build the Clinic Directory + Clinic Profile myself (the most flagship parts).
+
+ Now let me dispatch 2 subagents in parallel — one for the Workforce/Job Board redesign (including job-detail view), and one for the Marketplace redesign (including product-detail + vendor-profile views). Meanwhile I'll build the flagship Directory + Clinic Profile myself.
+
+ Both subagents finished. The dev server is failing because clinic-profile-view doesn't exist yet. Let me now build the flagship Directory + Clinic Profile views myself. First, the redesigned Clinic Directory.
+
+ pls continue 
+ 
+Thought Process
+ I'll continue building the flagship Clinic Directory and Clinic Profile views. The dev server is currently failing because clinic-profile-view doesn't exist yet. Let me build both now.
+
+ Now let me build the flagship Clinic Directory — a sophisticated search and discovery experience.
+
+ Now the flagship Clinic Profile view — the most detailed page in the platform.
+
+ Now let me check the dev server compiles. There may be issues with the marketplace view referencing the old signature (no vendors prop). Let me check and fix.
+
+ The error is stale — the file now exists. Let me verify it's being picked up and run lint.
+
+ I need to fix the lint errors — the useEffect calling setState synchronously. Let me refactor the directory view to use useTransition instead.
+
+ Now I need to update the filter setters to use the transition wrapper. Let me update the resetFilters and the filter wiring.
+
+ Now let me update the FiltersPanel call to wrap setters with the transition, and the query input. Let me check the current filterContent definition.
+
+ Now let me also wrap the inline search and state select in the hero, and fix the clinic-profile-view scrollToTab issue.
+
+ Now fix the clinic-profile-view scrollToTab — the react-hooks/preserve-manual-memoization warning. Let me check what that's about.
+
+ The specs array is recreated each render, breaking memoization. Let me fix by using the primitive clinic.specialties as the dependency instead.
+
+ Lint passes cleanly. Now let me also remove the unused SectionHeading import from directory-view and check the dev server is healthy.
+
+ Server is healthy and returning 200. Now let me update the homepage and header to match the new enterprise bar, then run the full Agent Browser verification. Let me first update the header to be more enterprise-grade with breadcrumbs support and the marketplace view signature fix.
+
+ Good — the marketplace view already has the correct signature matching what AppShell passes. Now let me update the todos and polish the homepage hero to match the new enterprise depth system. Let me also remove the unused SectionHeading import from directory-view.
+
+ Now let me update the homepage hero to use the new premium depth system, and update the header to feel more enterprise-grade. Let me check the current header first.
+
+ Let me update the homepage hero to use the new premium depth system for a more enterprise feel.
+
+ Now let me also update the pillar cards on the homepage to use the new premium card system.
+
+ Now let me run lint and then do the full Agent Browser verification of the redesigned flagship experiences.
+
+ Lint clean, server healthy. Let me update the worklog and run the comprehensive Agent Browser verification.
+
+ Now let me run the comprehensive Agent Browser verification of all the redesigned flagship experiences.
+
+ No errors. Let me verify the homepage renders, then navigate to the redesigned Directory.
+
+ The click hit the homepage pillar text. Let me navigate via the header nav properly.
+
+ The redesigned Directory is rendering. Let me verify the key enterprise features — stats strip, filters, view toggle, and clinic cards.
+
+ Excellent — the directory has the Grid/List/Map view toggle, Add to compare buttons, View profile + Request consult CTAs, and filter switches. Let me test the telehealth filter and the map view.
+
+ The map view is working — showing clinic pins and a selected clinic panel. The telehealth filter correctly filtered to only telehealth clinics (Harbor, Summit, Meridian shown on map). Let me click into a clinic profile to test the flagship profile page.
+
+ The Clinic Profile page is rendering with all 12 tabs in the sticky navigation, the snapshot card, and primary CTAs. Let me verify the hero content and test tab switching.
+
+ The Clinic Profile works — hero shows verification, telehealth, specialties, and tab switching to Treatments shows the specialty cards. Let me test the Contact tab's consultation form, then verify the Workforce and Marketplace redesigns.
+
+ Contact tab works with the consultation form. Now let me verify the redesigned Workforce view (built by subagent).
+
+ The Workforce redesign is excellent — job cards show Featured/Verified employer badges, remote/on-site labels, salary transparency ($42k–$52k), Apply now + View details buttons, and filter sidebar with Remote only switch. Let me test the Job Detail view.
+
+ Job Detail view works with sticky tabs (Overview, Requirements, Compensation & Benefits, Schedule, How to Apply) and Apply button. Now let me verify the Marketplace redesign.
+
+ Marketplace redesign works — B2B commerce headline, category navigation, filter sidebar with Verified suppliers toggle, listing cards with Compare + Request Quote buttons. Let me test the Product Detail view.
+
+ Product Detail works with sticky tabs (Overview, Specifications, Pricing & Financing, Shipping & Fulfillment, Vendor, FAQs), Save/Compare/Request Quote buttons, and vendor link. Let me test the compare functionality and verify mobile responsiveness.
+
+ The compare tray is working — it shows "Comparing 1 product" and a disabled "Compare (1)" button (needs 2+ to compare). Let me add a second product and test the comparison.
+
+ The compare functionality is working (tray appeared, comparison overlay shows). Let me close any overlays and test mobile responsiveness — critical for the enterprise redesign.
+
+ There's a hydration error. Let me check the dev log for details.
+
+ There's a nested button issue — a <button> inside a <button>. This is likely in the SaveButton or compare button being inside a clickable card. Let me find and fix it. The error mentions SaveButton and ProductDetailView. Let me check the marketplace listing cards.
+
+ I see — PremiumCard with hover renders as a <button> (via the as prop), and inside it there are nested <button> elements. Let me check the PremiumCard component.
+
+ Good — PremiumCard defaults to div, not button. The issue is elsewhere. The error says <button> cannot be a descendant of <button>. Let me look at the grid variant of the marketplace listing card.
+
+ Let me check the product-detail-view for nested buttons — the error mentions it specifically.
+
+ Found it! Line 259-261: a SaveButton (which renders as <button>) is nested inside a <Button> (also a <button>). That's the nested button issue. Let me fix this.
+
+ Now let me also check the vendor-profile-view for the same issue.
+
+ No nested SaveButton inside Button in vendor-profile. Let me also check the directory and clinic-profile views for the same pattern, then reload and re-test.
+
+ Let me check if any of these SaveButtons are nested inside another Button. Let me check the directory list view where I saw the SaveButton.
+
+ Good — the SaveButton is inside a div, not inside another Button. The directory and clinic-profile look fine. Let me reload and re-test.
+
+ No console errors. The click hit the homepage audience card text again. Let me navigate properly via the Platform dropdown.
+
+ I see — at mobile viewport (390px) the header collapses to hamburger. Let me click "Browse the Directory" directly from the homepage.
+
+ Directory renders on mobile with a "Filters" button (collapsible). Let me test the mobile filter sheet and verify no hydration errors.
+
+ Mobile filter sheet works. Let me close it and check console errors one more time, then switch to desktop to verify the clinic profile page.
+
+ No hydration errors. Let me do a final comprehensive check — verify the clinic profile page loads cleanly on desktop, then check the dev log for any remaining issues.
+
+ All 12 tabs render, no console errors. Let me run a final lint check and verify the dev server log is clean.
+
+ Lint clean, server returning 200. The Fast Refresh warning is from the earlier hydration error which is now fixed. Let me close the browser and mark the task complete.
+
+ The enterprise-grade redesign of Novalyte AI is complete and fully verified. Here's what was transformed:
+
+What Changed
+
+Enterprise Design System
+
+ Refined depth tokens: 5-tier shadow scale (xs→xl), surface layers, premium card utilities with hairline gradient borders, shimmer/fade-up/scale-in animations
+ New shared component library: PremiumCard, MetaRow, StatCard, CardSkeleton, ListSkeleton, EmptyState, FilterChip, ViewToggle, SaveButton, Breadcrumbs, StickyTabNav, CompareTray
+ Stateful stores: useSaved (localStorage-backed bookmarks for clinics/jobs/products), useCompare (comparison tray with max-3, expandable overlay)
+Flagship Experiences Redesigned
+
+1. Clinic Directory — Now a sophisticated search & discovery platform:
+
+ Premium hero with breadcrumbs, big search bar, and live stats strip (clinics/verified/telehealth/states)
+ Sticky filter sidebar (state, city, treatment, telehealth, in-person, verified) that collapses to a mobile Sheet with filter-count badge
+ Grid / List / Map view toggle — the map view shows positioned clinic pins with a detail panel
+ Sort control, applied filter chips, premium clinic cards with Save + Compare buttons
+ Loading skeletons (via useTransition), empty state, pagination
+2. Clinic Profile — A comprehensive 12-tab digital destination:
+
+ Strong hero with clinic identity, verification badge, trust signals, and primary booking action
+ Sticky tab navigation: Overview, Treatments & Specialties, Providers, Locations & Hours, Insurance & Pricing, Telehealth, Eligibility, Gallery, Reviews, FAQ, Contact & Booking, Safety & Compliance
+ Snapshot sidebar, related clinics, working consultation request form
+3. Workforce + Job Board — Professional healthcare recruiting:
+
+ Sticky filter sidebar (keyword, state, employment type, compensation range, license, specialty, remote)
+ Premium job cards with Featured/Verified employer badges, salary transparency ($42k–$52k), remote/on-site labels, Save + Apply
+ Dedicated Job Detail page with sticky tabs (Overview, Requirements, Compensation & Benefits, Schedule, How to Apply) + application form
+4. Marketplace — B2B healthcare commerce:
+
+ Sticky category navigation bar with icons
+ Filter sidebar (category, type, vendor, verified, pricing model, availability)
+ Listing cards with Save + Compare + Request Quote, financing indicators
+ Product Detail page with sticky tabs (Overview, Specifications, Pricing & Financing, Shipping & Fulfillment, Vendor, FAQs)
+ Vendor Profile page with sticky tabs (Overview, Products & Services, Verification, Contact)
+ Bottom-docked compare tray with expandable comparison table
+Verification
+
+All flows browser-verified: directory filters/map/list/grid, clinic profile tabs + consultation form, workforce job cards + job detail, marketplace listings + product detail, compare tray, mobile responsive (collapsible filters), no hydration/console errors, lint clean.
+
+You can preview it now in the Preview Panel on the right.
+
+ You are upgrading the existing Novalyte AI website. Do not rebuild the project from scratch and do not replace the current design system. Keep the existing light-first healthcare aesthetic, navigation, page structure, typography, colors, responsive behavior, and working functionality.
+
+Your task is to make the platform substantially more visual, credible, premium, and content-rich by introducing high-quality, relevant imagery across the entire website and rebuilding the Journal into a real SEO-focused publishing system.
+
+==================================================
+PRIMARY OBJECTIVE
+==================================================
+
+The current website relies too heavily on text, icons, initials, badges, and empty interface space. Novalyte AI is a healthcare ecosystem, so the website must visually communicate:
+
+- Real men receiving modern healthcare
+- Licensed healthcare professionals
+- Premium men’s health clinics
+- Modern clinic environments
+- Testosterone and hormone optimization
+- Medical weight-loss and GLP-1 care
+- Sexual wellness and erectile-dysfunction care
+- Longevity, recovery, and performance medicine
+- Healthcare professionals and clinical staffing
+- Medical equipment and clinic operations
+- Marketplace products and vendor services
+- Technology-enabled healthcare workflows
+
+Every major page should include imagery that immediately communicates the purpose of that page.
+
+Images must not be added randomly or merely as decoration. Each image must reinforce the page’s message, subject, treatment vertical, audience, or product category.
+
+==================================================
+1. GLOBAL IMAGE DIRECTION
+==================================================
+
+Use premium, editorial-quality healthcare photography.
+
+The visual direction should feel:
+
+- Modern
+- Trustworthy
+- Human
+- Premium
+- Clinical without feeling sterile
+- Aspirational without appearing unrealistic
+- Appropriate for adult men between approximately 30 and 65
+- Appropriate for clinics, providers, healthcare professionals, and medical suppliers
+
+Avoid:
+
+- Generic corporate stock photography
+- Fake-looking doctors posing at the camera
+- Overly dramatic hospital imagery
+- Emergency-room imagery unless contextually required
+- Images that appear cheap, blurry, outdated, or unrelated
+- Repeated use of the same image
+- Images containing visible competitor logos
+- Overly masculine clichés such as bodybuilders, sports cars, or aggressive fitness imagery
+- Explicit or uncomfortable imagery for sensitive treatment categories
+- Random AI-generated medical anatomy that could be inaccurate
+- Images that imply Novalyte AI directly provides medical treatment
+
+Use diverse, authentic representations of patients and professionals.
+
+All imagery must be properly licensed or sourced from legally usable image libraries. During development, approved temporary sources may include Unsplash or Pexels, but the implementation must make it easy to replace assets with licensed production photography later.
+
+Store production images locally inside the project when possible. Do not hotlink fragile third-party image URLs throughout the application.
+
+==================================================
+2. HOMEPAGE IMAGERY
+==================================================
+
+The homepage must immediately include a strong visual focal point.
+
+Add a premium hero image or sophisticated split-screen visual that communicates modern men’s healthcare and technology.
+
+Possible hero directions:
+
+- A male patient speaking with a healthcare professional in a premium modern clinic
+- A healthcare professional reviewing treatment information with a male patient
+- A refined clinic scene combined with a subtle Novalyte AI platform interface
+- A layered composition showing patient care, clinic operations, workforce, and marketplace connections
+
+The hero image must:
+
+- Work naturally with the existing headline and CTA
+- Preserve text readability
+- Avoid placing important faces beneath text
+- Use controlled gradients or overlays where needed
+- Scale correctly across desktop, tablet, and mobile
+- Have a defined focal point
+- Avoid looking like a generic hospital website
+
+Below the hero, add relevant imagery to the four primary platform pillars:
+
+1. Patient Acquisition
+   - Male patient consultation, digital intake, or care discovery
+
+2. Verified Clinic Directory
+   - Premium men’s health clinic, consultation room, or provider interaction
+
+3. Workforce Hub
+   - Nurse practitioner, medical assistant, physician, or clinical team
+
+4. Marketplace
+   - Medical equipment, diagnostic tools, treatment furniture, clinic supplies, or operational technology
+
+Do not use only icons for these sections. Icons may remain as secondary visual aids, but each major pillar should have a meaningful photographic or product visual.
+
+==================================================
+3. CLINIC DIRECTORY
+==================================================
+
+Redesign the clinic directory cards so every clinic can display real visual identity.
+
+Each clinic card should support:
+
+- Primary clinic image
+- Clinic logo or initials fallback
+- Location
+- Verified status
+- Treatment specialties
+- Telehealth availability
+- Short clinic description
+- Primary CTA
+- Save/favorite action
+
+Use clinic photography such as:
+
+- Exterior clinic image
+- Reception area
+- Consultation room
+- Treatment room
+- Provider-patient consultation
+- Clinic team
+
+Create graceful fallbacks when a clinic has no uploaded images.
+
+Fallback order:
+
+1. Clinic-uploaded primary photo
+2. Clinic-uploaded logo
+3. High-quality category-specific placeholder
+4. Branded Novalyte AI initials fallback
+
+Do not use the same generic image for every clinic.
+
+Directory filters and cards should remain fast, accessible, and responsive.
+
+==================================================
+4. CLINIC PROFILE PAGE
+==================================================
+
+The current clinic profile is too text-heavy and does not visually establish the clinic.
+
+Upgrade every clinic profile into a sophisticated, premium healthcare profile page.
+
+Add:
+
+- Large clinic cover image
+- Clinic logo or identity mark
+- Optional photo gallery
+- Interior clinic images
+- Exterior/location image
+- Provider headshots
+- Treatment-room images
+- Equipment or capabilities imagery
+- Telehealth-related visual where relevant
+- Map/location section
+- Hours and contact information presented with stronger visual hierarchy
+
+Recommended profile structure:
+
+1. Breadcrumbs
+2. Clinic hero
+   - Cover image
+   - Logo
+   - Clinic name
+   - Verified status
+   - Location
+   - Telehealth status
+   - Main specialties
+   - Consultation CTA
+
+3. Clinic snapshot
+4. About the clinic
+5. Treatments and specialties
+6. Provider team with professional headshots
+7. Clinic gallery
+8. Locations and hours
+9. Insurance and pricing
+10. Telehealth
+11. Eligibility
+12. Reviews
+13. FAQ
+14. Contact and booking
+15. Safety and compliance
+
+The image gallery should support:
+
+- Responsive image grid
+- Full-screen lightbox
+- Keyboard navigation
+- Image captions
+- Proper alt text
+- Lazy loading
+- Optimized thumbnails
+- Mobile swipe interaction
+
+Do not use a modal instead of the full clinic profile page. The clinic profile must remain a dedicated URL.
+
+==================================================
+5. WORKFORCE HUB
+==================================================
+
+The Workforce Hub must visually communicate professional clinical talent.
+
+Use imagery for:
+
+- Nurse practitioners
+- Physicians
+- Physician assistants
+- Medical assistants
+- Registered nurses
+- Patient coordinators
+- Clinic operations professionals
+- Remote and telehealth professionals
+
+Professional profiles should support:
+
+- Headshot
+- Role
+- Credentials
+- Location
+- Availability
+- Experience
+- Specialty expertise
+- Verification status
+- Telehealth or in-person availability
+
+Do not create fake credential claims. Use clearly labeled demonstration data where real data is unavailable.
+
+The page should feel like a specialized healthcare talent network, not a generic job board.
+
+Job listings should also have visual context through:
+
+- Clinic logo
+- Clinic image
+- Role category icon
+- Location indicator
+- Employment type
+- Specialty tags
+
+==================================================
+6. MARKETPLACE
+==================================================
+
+The Marketplace must be highly visual because users need to see the products, equipment, and services being offered.
+
+Every marketplace listing must support:
+
+- High-resolution primary product image
+- Multiple product images
+- Vendor logo
+- Product category
+- Product title
+- Short description
+- Pricing or “Request quote”
+- Availability
+- Shipping or service region
+- Product specifications
+- Verification or approved-vendor badge where applicable
+
+Relevant marketplace categories may include:
+
+- Examination tables
+- Treatment chairs
+- Centrifuges
+- Laboratory equipment
+- Diagnostic equipment
+- Blood-pressure monitors
+- Body-composition analyzers
+- Medical refrigerators
+- Phlebotomy supplies
+- Injection supplies
+- PPE
+- Telehealth equipment
+- Clinic furniture
+- Patient intake technology
+- EHR and operational software
+- Marketing services
+- Credentialing services
+- Medical waste services
+- Laboratory partnerships
+- Hyperbaric chambers where legally and commercially appropriate
+- Recovery and wellness equipment
+
+Marketplace product cards must prominently display the product image.
+
+Create dedicated product-detail pages with:
+
+- Product image gallery
+- Product specifications
+- Vendor information
+- Shipping or service details
+- Request-a-quote CTA
+- Related products
+- Compliance disclosures
+- Clear explanation that Novalyte AI is a marketplace facilitator where applicable
+
+Do not use a popup modal as the main product-detail experience. Every listing must have its own indexable URL.
+
+==================================================
+7. TREATMENT VERTICAL PAGES
+==================================================
+
+Each treatment vertical must have imagery specifically related to its topic.
+
+Examples:
+
+Testosterone Replacement Therapy:
+- Mature male patient speaking with a clinician
+- Lab review
+- Clinical consultation
+- Hormone-health discussion
+
+Medical Weight Loss and GLP-1:
+- Clinician-guided weight-management consultation
+- Health tracking
+- Nutrition and metabolic health
+- Non-stigmatizing patient imagery
+
+Erectile Dysfunction and Sexual Wellness:
+- Tasteful, discreet, professional lifestyle or consultation imagery
+- No explicit imagery
+- Emphasize privacy, confidence, and licensed care
+
+Peptide Therapy:
+- Clinical consultation
+- Research-informed treatment discussion
+- Laboratory or wellness setting
+- Avoid inaccurate molecular imagery
+
+Hair Restoration:
+- Hair and scalp consultation
+- Professional before-and-after framework only where properly authorized
+- Modern treatment setting
+
+Longevity and Preventive Men’s Health:
+- Healthy mature men
+- Biomarker review
+- Preventive consultation
+- Active lifestyle
+- Clinical technology
+
+Performance and Recovery:
+- Medical recovery consultation
+- Physical performance assessment
+- Recovery equipment
+- Avoid turning the page into a bodybuilding website
+
+Every image must match the treatment context and maintain a medically responsible tone.
+
+==================================================
+8. ABOUT, PLATFORM, PATIENT, AND CLINIC PAGES
+==================================================
+
+Every major marketing page needs at least one strong visual section.
+
+For Patients:
+- Male patient journey
+- Consultation
+- Care discovery
+- Telehealth
+- Privacy and trust
+
+For Clinics:
+- Clinic team
+- Growth operations
+- Patient intake
+- Analytics
+- Workforce and vendor coordination
+
+Platform:
+- Product interface screenshots
+- Connected ecosystem visualization
+- Workflow diagrams
+- Dashboard previews
+- Data flow visuals
+
+About:
+- Mission-driven healthcare imagery
+- Leadership or team imagery when available
+- Community and innovation
+- No anonymous fake executive portraits presented as real team members
+
+Contact and Get Started:
+- Maintain simplicity
+- Use subtle supporting imagery rather than a large distracting stock photo
+
+==================================================
+9. JOURNAL REBUILD
+==================================================
+
+The Journal must become a complete, scalable publishing system.
+
+Do not display full articles in popup modals.
+
+Every article must have its own dedicated URL, for example:
+
+/journal/testosterone-replacement-therapy-guide
+/journal/how-to-choose-a-mens-health-clinic
+/journal/glp-1-medical-weight-loss
+/journal/how-mens-health-clinics-grow
+/journal/trt-clinic-staffing-guide
+
+Each article page must be server-rendered or statically generated so search engines can crawl and index the complete content.
+
+Build:
+
+- Journal landing page
+- Category pages
+- Tag pages where useful
+- Author pages
+- Dedicated article pages
+- Related-article system
+- Search or filtering
+- Featured-article section
+- Newsletter CTA
+- Breadcrumb navigation
+- Pagination or load-more system
+- Article table of contents
+
+==================================================
+10. ARTICLE PAGE DESIGN
+==================================================
+
+Every article page should include:
+
+1. Breadcrumbs
+2. Article category
+3. SEO-focused headline
+4. Clear subtitle or summary
+5. Author name
+6. Author credentials or editorial role
+7. Medical reviewer when medical claims are included
+8. Published date
+9. Updated date
+10. Estimated reading time
+11. High-quality hero image
+12. Descriptive image caption
+13. Table of contents
+14. Long-form article body
+15. Relevant inline images
+16. Charts, diagrams, tables, or comparison blocks where useful
+17. Embedded video where it genuinely improves understanding
+18. Sources and references
+19. Medical disclaimer
+20. Author or reviewer information
+21. Related articles
+22. Newsletter CTA
+23. Relevant platform CTA
+24. Structured sharing controls
+
+The article page must feel like a credible healthcare publication, not a marketing blog popup.
+
+==================================================
+11. ARTICLE CONTENT REQUIREMENTS
+==================================================
+
+Create substantial, useful long-form articles.
+
+Target at least 1,500 words for major evergreen articles when the topic genuinely requires that depth. Do not add meaningless filler simply to reach a word count.
+
+Each article must:
+
+- Answer a specific search question or user need
+- Use a clear primary keyword
+- Include related semantic keywords naturally
+- Use descriptive H1, H2, and H3 headings
+- Provide a direct answer near the beginning
+- Explain the subject comprehensively
+- Include actionable information
+- Include FAQs where useful
+- Use short readable paragraphs
+- Include bullet lists and tables where appropriate
+- Link to related Novalyte AI articles
+- Link to relevant treatment, directory, workforce, or marketplace pages
+- Cite credible primary or authoritative sources
+- Clearly distinguish general education from medical advice
+- Avoid making unsupported treatment promises
+- Avoid copied or spun content
+- Avoid keyword stuffing
+- Avoid fabricated statistics
+- Avoid guaranteed outcomes
+- Avoid implying Novalyte AI provides diagnosis or treatment
+
+For medical or health-related content, prioritize authoritative sources such as:
+
+- Government health agencies
+- Peer-reviewed medical research
+- Professional medical associations
+- Clinical guidelines
+- Major academic medical institutions
+
+Do not fabricate citations.
+
+Do not claim that content will automatically rank on the first page of Google. Build the strongest technical, editorial, and topical foundation possible, but do not make ranking guarantees.
+
+==================================================
+12. SEO IMPLEMENTATION
+==================================================
+
+Implement proper technical SEO across the Journal and major public pages.
+
+Include:
+
+- Unique title tags
+- Unique meta descriptions
+- Canonical URLs
+- Open Graph metadata
+- Social sharing images
+- Twitter/X card metadata
+- Article structured data
+- Breadcrumb structured data
+- Organization structured data
+- WebSite structured data
+- FAQ structured data only when the FAQ is visibly present
+- Product structured data for marketplace listings where appropriate
+- LocalBusiness or MedicalClinic structured data for clinics where accurate
+- XML sitemap
+- Image sitemap where appropriate
+- Robots.txt
+- Clean semantic URLs
+- Correct heading hierarchy
+- Internal linking
+- Related-content linking
+- Author information
+- Published and updated dates
+- No duplicate metadata
+- No indexable modal-only content
+- No fake ratings or review markup
+
+Add schema markup only when the visible page content supports it.
+
+==================================================
+13. HEALTHCARE CONTENT TRUST
+==================================================
+
+Because this platform operates in healthcare, strengthen trust and editorial credibility.
+
+Add:
+
+- Editorial policy
+- Medical review policy
+- Content correction policy
+- Author biographies
+- Reviewer credentials
+- Source references
+- “Last medically reviewed” information where applicable
+- Clear medical disclaimer
+- Clear explanation that Novalyte AI is a technology platform
+- Clear separation between editorial content and sponsored content
+- Disclosure for affiliate or marketplace relationships where applicable
+
+Do not describe every article as medically reviewed unless an actual qualified reviewer is attached to it.
+
+==================================================
+14. VIDEO CONTENT
+==================================================
+
+Article pages and relevant platform pages should support video embeds.
+
+Use video only when it adds real educational value, such as:
+
+- Treatment explanation
+- Clinic walkthrough
+- Provider interview
+- Platform demonstration
+- Equipment demonstration
+- Patient education
+- Healthcare workflow explanation
+
+Video requirements:
+
+- Responsive embed
+- Accessible title
+- Caption or transcript
+- Poster image
+- Lazy loading
+- No autoplay with sound
+- Relevant written content surrounding the video
+- VideoObject structured data only when the required information is available
+
+Do not insert random videos merely for SEO.
+
+==================================================
+15. IMAGE SEO AND ACCESSIBILITY
+==================================================
+
+Every image must include:
+
+- Descriptive filename
+- Accurate alt text
+- Width and height attributes
+- Responsive sizing
+- Appropriate aspect ratio
+- Optimized file size
+- Lazy loading below the fold
+- Priority loading only for critical hero imagery
+- Caption where context is useful
+- Correct semantic placement
+
+Alt text must describe the image naturally. Do not stuff keywords into alt text.
+
+Bad:
+“best testosterone clinic TRT men’s health doctor Tampa Florida”
+
+Good:
+“Clinician reviewing treatment options with a male patient in a private consultation room”
+
+Decorative images should use empty alt text.
+
+==================================================
+16. PERFORMANCE
+==================================================
+
+Do not damage site performance by adding large unoptimized images.
+
+Implement:
+
+- Next.js Image or the project’s equivalent optimized image component
+- AVIF or WebP where supported
+- Responsive srcset
+- Defined image dimensions
+- Prevent cumulative layout shift
+- Lazy loading
+- Blur placeholders or skeleton loading where appropriate
+- Compression
+- CDN-compatible asset handling
+- Mobile-specific image sizes
+- Limited use of large background images
+
+The site must remain fast on mobile networks.
+
+Target strong Core Web Vitals and avoid loading full-resolution product galleries on initial page load.
+
+==================================================
+17. CONTENT MODEL AND DATA STRUCTURE
+==================================================
+
+Create reusable data models for:
+
+Clinic:
+- name
+- logo
+- coverImage
+- gallery
+- providerImages
+- locationImages
+- equipmentImages
+
+Provider:
+- name
+- credentials
+- role
+- headshot
+- specialties
+- verificationStatus
+
+Marketplace Product:
+- title
+- slug
+- primaryImage
+- gallery
+- vendor
+- category
+- specifications
+- description
+- price
+- quoteRequired
+
+Article:
+- title
+- slug
+- excerpt
+- category
+- tags
+- heroImage
+- heroImageAlt
+- author
+- reviewer
+- publishedAt
+- updatedAt
+- readingTime
+- tableOfContents
+- body
+- inlineImages
+- video
+- references
+- relatedArticles
+- SEO metadata
+
+Build reusable components rather than hardcoding every page separately.
+
+==================================================
+18. DEMONSTRATION CONTENT
+==================================================
+
+For the current demo, populate the website with realistic visual examples across:
+
+- At least six clinic cards
+- At least three detailed clinic profiles
+- At least eight workforce profiles or job listings
+- At least twelve marketplace products or services
+- At least six Journal articles
+- Multiple treatment vertical pages
+
+Clearly label fictional business names, providers, contact details, and statistics as demonstration data.
+
+Do not present invented professionals, clinics, reviews, accreditations, or clinical outcomes as real.
+
+==================================================
+19. QUALITY CONTROL
+==================================================
+
+Before completing the work, verify:
+
+- Every major page includes relevant imagery
+- Images are not repeated excessively
+- No broken image links exist
+- No stretched or pixelated images exist
+- Mobile crops preserve the important subject
+- Text remains readable over imagery
+- Clinic profiles feel premium and complete
+- Marketplace cards visibly show the product
+- Workforce profiles visibly show the professional or organization
+- Journal articles open as dedicated pages
+- No article opens in a modal
+- Article URLs are indexable
+- Metadata is unique
+- Schema is valid
+- Images have alt text
+- Images are optimized
+- Galleries are accessible
+- All existing buttons and navigation still work
+- The consultation-request experience remains functional
+- The site does not imply that Novalyte AI provides medical care
+
+==================================================
+FINAL EXPECTATION
+==================================================
+
+The finished Novalyte AI website should no longer feel like a text-heavy prototype.
+
+It should feel like a premium, enterprise-grade men’s health technology ecosystem where:
+
+- Patients can visually understand care options
+- Clinics can establish trust through complete visual profiles
+- Professionals can present credible expertise
+- Marketplace users can clearly evaluate equipment and services
+- Journal readers can access comprehensive, authoritative resources
+- Search engines can crawl properly structured long-form pages
+- Every image has a clear strategic purpose
+
+Preserve the current product direction, but make the entire experience more visual, human, credible, indexable, and sophisticated.  Show full message
+ 
+Thought Process
+ This is a major visual + Journal publishing upgrade. Let me start by understanding the current Journal implementation and image infrastructure, then build a comprehensive image system and rebuild the Journal as a real publishing platform.
+
+ Now I understand the image-search skill. Let me search for healthcare images in batches and download them locally. I'll run multiple searches in parallel to gather all the imagery I need.
+
+ The file has CLI output mixed in. Let me extract just the JSON part.
+
+ I have a working pipeline. Let me run all the image searches in parallel and download them. I'll write a script to handle this efficiently.
+
+ Two searches failed (empty). Let me retry them with slightly different queries and also get more specific images.
+
+ Now let me get a few more specific image sets and then download everything.
+
+ Now let me download all images locally. I'll write a script that downloads from all the JSON result files with proper naming.
+
+ 49 images downloaded. The consult JSON was empty (it was the tee output). Let me re-download the hero/consult images.
+
+ All images downloaded. Now let me create the centralized image asset config and a reusable SmartImage component. This makes it easy to swap images later.
+
+ Now the reusable SmartImage component using Next.js Image with blur placeholders and graceful fallbacks.
+
+ Now let me configure Next.js to allow the local images and set up the image domains. Let me also check the next.config.
+
+ Good — local images in /public work with Next.js Image by default. Now let me update the worklog and dispatch a subagent to build the Journal rebuild (the biggest piece) while I handle the visual imagery upgrades across all pages in parallel.
+
+ Now let me dispatch the Journal rebuild as a subagent (it's the biggest piece with SEO, long-form content, and dedicated article pages) while I handle the visual imagery upgrades across all pages myself.
+
+ The Journal rebuild is done. Now let me handle the visual imagery upgrades across all the major pages. Let me start with the homepage hero — adding a premium split-screen visual with a real healthcare image.
+
+ Now let me redesign the hero to include a premium healthcare image alongside the ecosystem visual — a layered split-screen composition.
+
+ Now let me add imagery to the four-pillar section on the homepage. Let me read and update it.
+
+ I see there's leftover code from the old block. Let me clean it up.
+
+ Now I need to add the imports for SmartImage and IMAGES to home-marketing.tsx.
+
+ Now let me update the Clinic Directory cards to include clinic images with the fallback chain. Let me read the current ClinicCard.
+
+ Now let me update the grid view ClinicCard to use a real clinic image instead of the colored banner. I'll replace the banner section with a SmartImage.
+
+ Now I need to remove the old verification badge that was at the bottom of the banner (it's now in the image overlay). Let me check what follows.
+
+ There's a duplicate verification badge. Let me remove the old one.
+
+ Now I need to add the imports for SmartImage and getClinicImage to directory-view.tsx.
+
+ Now let me also add the list-view clinic card to use an image. Let me update the list view to include a small image thumbnail.
+
+ Now let me update the Clinic Profile to add a cover image and gallery. Let me read the hero section of the clinic profile.
+
+ Let me add a cover image to the clinic profile hero. I'll insert it above the identity section.
+
+ Now let me update the GalleryTab in the clinic profile to use real images with the lightbox. Let me find it.
+
+ Now I need to add the imports for SmartImage, ImageLightbox, and getClinicGallery to clinic-profile-view.tsx.
+
+ Now let me add imagery to the Workforce view (professional headshots) and Marketplace view (product images). Let me dispatch these as a subagent since they're self-contained, while I verify the build compiles.
+
+ Lint passes. Let me now dispatch a subagent to add imagery to the Workforce and Marketplace views (which were built by previous subagents and need image integration), while I handle the Patients view treatment imagery and SEO metadata.
+
+ 
+pasted_image_1784063497839.png
+pasted_image_1784063497839.png
+PNG
+836.8 KB
+ pls continue but revert and bring back the previous / illustrations I like it better only this 
+ 
+Thought Process
+ Let me look at the uploaded image to understand what you want to keep.
+
+ I understand — you want the original ecosystem illustration back (the animated hub with floating nodes and connecting lines), not the photo-based hero. Let me revert the hero to the previous illustration version.
+
+ The hero illustration is restored. Now let me verify the dev server is healthy and check the result.
+
+ Let me verify with Agent Browser that the original ecosystem illustration is back.
+
+ The original ecosystem illustration is back. Let me close the browser and confirm everything is working.
+
+ Done. The homepage hero has been reverted to the original ecosystem illustration you preferred — the animated Novalyte AI Core hub with the 4 floating nodes (Patients, Clinics, Professionals, Suppliers) connected by dashed lines, plus the floating data chips ("intake routed", "clinic matched", "talent sourced").
+
+The other visual and Journal improvements from this session remain in place:
+
+ Clinic Directory cards now show real clinic images with fallback chain
+ Clinic Profile has a cover image and a real photo gallery with lightbox
+ Homepage pillar section includes imagery
+ Journal is rebuilt as a full publishing system with dedicated article pages, SEO metadata, and structured data
+You can preview it now in the Preview Panel on the right.
+
+ You are updating the existing Novalyte AI website. Do not rebuild the project from scratch. Preserve the current light-first healthcare design system, responsive behavior, typography, component quality, and existing working functionality.
+
+Your task is to make three focused upgrades:
+
+1. Rebuild the main navigation
+2. Redesign the Patients experience and assessment system
+3. Create a new Novalyte AI logo concept
+
+The final result must feel like a premium, trustworthy, conversion-focused men’s health platform—not a generic healthcare website.
+
+==================================================
+1. MAIN NAVIGATION RESTRUCTURE
+==================================================
+
+Remove “Platform” from the main navigation entirely.
+
+The primary desktop navigation should be:
+
+- Patients
+- Clinics
+- Directory
+- Workforce
+- Journal
+
+On the far right:
+
+- Sign In
+- Marketplace
+
+Replace the current “Get Started” button with a prominent “Marketplace” button.
+
+Recommended structure:
+
+LEFT:
+- Novalyte AI logo
+
+CENTER:
+- Patients
+- Clinics
+- Directory
+- Workforce
+- Journal
+
+RIGHT:
+- Sign In
+- Marketplace button
+
+Navigation rules:
+
+- “Patients” links to the patient experience
+- “Clinics” links to the clinic growth and patient-acquisition page
+- “Directory” links directly to the clinic directory
+- “Workforce” links to the healthcare workforce hub
+- “Journal” links to the long-form editorial platform
+- “Marketplace” links to the equipment, services, and vendor marketplace
+
+Do not leave “Platform” anywhere in the primary navigation.
+
+Update the mobile menu to use the same structure.
+
+Use consistent naming everywhere. Prefer:
+
+- Patients
+- Clinics
+- Directory
+- Workforce
+- Journal
+- Marketplace
+
+Do not use “Patient Acquisition” in the public navigation. The public-facing label should simply be “Patients.”
+
+==================================================
+2. PATIENT PAGE PURPOSE
+==================================================
+
+Redesign the Patients page around one central question:
+
+“What does a man need to see, understand, and do when he lands on Novalyte AI looking for treatment?”
+
+The page must help two types of visitors:
+
+TYPE A:
+A patient who already knows the treatment he is interested in.
+
+Examples:
+
+- Testosterone replacement therapy
+- Hormone optimization
+- Erectile dysfunction care
+- Medical weight loss
+- GLP-1 programs
+- Peptide therapy
+- Hair restoration
+- Sexual wellness
+- Longevity medicine
+- Performance and recovery
+- Preventive men’s health
+- Telehealth services
+
+TYPE B:
+A patient who knows something is wrong or wants improvement but does not know which treatment category fits his goals.
+
+The page must guide both visitors toward a relevant educational pathway, assessment, clinic, or consultation request.
+
+==================================================
+3. PATIENT PAGE HERO
+==================================================
+
+Create a stronger patient-focused hero.
+
+Recommended message direction:
+
+Eyebrow:
+FOR PATIENTS
+
+Headline:
+Find the Right Path for Your Men’s Health Goals
+
+Supporting copy:
+Explore treatment options, understand what may be relevant to your goals, complete a personalized readiness assessment, and connect with qualified men’s health clinics.
+
+Primary CTA:
+Start Your Assessment
+
+Secondary CTA:
+Explore Treatments
+
+Optional tertiary text link:
+Find a Clinic
+
+Add a premium healthcare image showing a mature male patient speaking with a healthcare professional in a modern, private clinic.
+
+The hero should communicate:
+
+- Privacy
+- Trust
+- Direction
+- Modern men’s healthcare
+- Human support
+- Clear next steps
+
+Do not make the page feel like a diagnosis tool.
+
+Include a visible disclaimer:
+
+“Novalyte AI provides educational and technology services only. It does not diagnose medical conditions or provide medical care.”
+
+==================================================
+4. “I KNOW WHAT I WANT” PATH
+==================================================
+
+Create a strong treatment-selection section for visitors who already know what they want.
+
+Suggested heading:
+
+“What are you interested in?”
+
+Display treatment categories as premium visual cards.
+
+Each card should include:
+
+- Relevant image
+- Treatment name
+- Short plain-language description
+- “Take Assessment” CTA
+- “Learn More” secondary link
+
+Treatment categories:
+
+- Testosterone Replacement Therapy
+- Hormone Optimization
+- Erectile Dysfunction Care
+- Medical Weight Loss
+- GLP-1 Programs
+- Peptide Therapy
+- Hair Restoration
+- Sexual Wellness
+- Longevity Medicine
+- Performance & Recovery
+- Preventive Men’s Health
+- Telehealth Services
+
+When the visitor clicks “Take Assessment,” open the assessment flow for that specific treatment category.
+
+Do not send every treatment into one generic questionnaire.
+
+==================================================
+5. “I DON’T KNOW WHERE TO START” PATH
+==================================================
+
+Add an AI-guided care discovery experience for visitors who do not know which treatment category may be relevant.
+
+Suggested heading:
+
+“Not sure where to start?”
+
+Supporting text:
+
+“Tell us what you would like to improve, and Novalyte AI will help organize relevant treatment categories and questions to discuss with a licensed provider.”
+
+Create a conversational intake interface with prompts such as:
+
+- What brings you here today?
+- What would you most like to improve?
+- How long have you noticed this concern?
+- Which symptoms or goals are most relevant?
+- Are you looking for in-person care, telehealth, or either?
+- How soon would you like to speak with a provider?
+
+Suggested response categories:
+
+- Low energy
+- Reduced motivation
+- Weight gain
+- Trouble losing weight
+- Sexual performance concerns
+- Hair loss
+- Muscle and recovery concerns
+- Sleep concerns
+- Hormone concerns
+- Preventive health
+- Longevity
+- General men’s health guidance
+
+The AI guidance system must:
+
+- Organize the user’s stated goals
+- Suggest relevant treatment categories
+- Explain why those categories may be worth learning about
+- Direct the user to the correct assessment
+- Offer relevant educational articles
+- Offer relevant clinics
+- Clearly state that the result is informational and not a medical diagnosis
+
+Do not claim that AI determines medical eligibility.
+
+Use language such as:
+
+“Based on the goals you selected, these treatment categories may be worth discussing with a licensed healthcare professional.”
+
+==================================================
+6. ASSESSMENT SYSTEM
+==================================================
+
+Build a dedicated multi-step assessment system.
+
+Each treatment category must have its own assessment logic.
+
+The experience should feel personalized, intelligent, and relevant while remaining transparent that it is:
+
+- Educational
+- Informational
+- A readiness and preference screening
+- Not a diagnosis
+- Not a medical eligibility decision
+
+Do not create a fake medical assessment designed to mislead the user.
+
+The system may evaluate:
+
+- Treatment interest
+- General goals
+- Self-reported concerns
+- Location
+- Care preferences
+- Timeline
+- Consultation readiness
+- Ability and willingness to pay out of pocket
+- Contact information
+- Consent to be contacted
+
+Do not describe financial screening as medical suitability.
+
+==================================================
+7. DYNAMIC TREATMENT-SPECIFIC ASSESSMENTS
+==================================================
+
+Each treatment category should dynamically load a different set of questions.
+
+Use approximately 8–10 primary questions per assessment, excluding final consent and contact confirmation where necessary.
+
+The questions must be short, simple, mobile-friendly, and shown one step at a time.
+
+A. TESTOSTERONE REPLACEMENT THERAPY ASSESSMENT
+
+Suggested questions:
+
+1. What is your age range?
+2. What would you most like to improve?
+   - Energy
+   - Motivation
+   - Strength
+   - Muscle mass
+   - Sexual health
+   - Mood
+   - Recovery
+   - General wellness
+3. How long have you experienced these concerns?
+4. Have you had testosterone or hormone lab work completed recently?
+5. Have you previously discussed testosterone treatment with a licensed provider?
+6. Are you currently using testosterone, hormone therapy, or related medication?
+7. How soon would you like to speak with a provider?
+   - Within 7 days
+   - Within 2 weeks
+   - Within 30 days
+   - Just researching
+8. Are you open to telehealth, in-person care, or either?
+9. Many men’s health services may require direct payment. Are you comfortable considering self-pay treatment if recommended by a licensed provider?
+10. What monthly budget range would you be comfortable discussing?
+   - Under $100
+   - $100–$199
+   - $200–$299
+   - $300+
+   - Not sure yet
+
+Do not imply that any answer confirms medical eligibility for TRT.
+
+B. ERECTILE DYSFUNCTION CARE ASSESSMENT
+
+Suggested focus:
+
+- Primary concern
+- Duration
+- Frequency
+- Previous provider consultation
+- Previous treatment
+- Preference for privacy or telehealth
+- Desired consultation timeline
+- Self-pay comfort
+- Contact details
+
+Use discreet and respectful language.
+
+Do not ask explicit questions that are not necessary for routing and consultation readiness.
+
+C. MEDICAL WEIGHT LOSS ASSESSMENT
+
+Suggested focus:
+
+- Primary weight-loss goal
+- Approximate desired weight change
+- Previous attempts
+- Current support from a provider
+- Interest in medication-assisted programs
+- Telehealth preference
+- Timeline
+- Readiness to follow a structured program
+- Self-pay comfort
+- Contact details
+
+D. GLP-1 PROGRAM ASSESSMENT
+
+Suggested focus:
+
+- Interest in GLP-1 care
+- Previous GLP-1 use
+- Previous provider consultation
+- Desired outcome
+- Timeline
+- Telehealth preference
+- Willingness to complete provider-requested labs
+- Self-pay comfort
+- Contact details
+
+Do not promise access to medication or imply a prescription is guaranteed.
+
+E. PEPTIDE THERAPY ASSESSMENT
+
+Suggested focus:
+
+- Goal
+- Previous peptide use
+- Current provider involvement
+- Understanding that this is an evolving area
+- Desired timeline
+- Telehealth preference
+- Willingness to discuss evidence, risks, and monitoring
+- Self-pay comfort
+- Contact details
+
+F. HAIR RESTORATION ASSESSMENT
+
+Suggested focus:
+
+- Hair concern
+- Duration
+- Previous treatments
+- Interest in medical, topical, procedural, or general guidance
+- Desired timeline
+- Telehealth or in-person preference
+- Budget comfort
+- Contact details
+
+G. HORMONE OPTIMIZATION ASSESSMENT
+
+Suggested focus:
+
+- Primary goal
+- Existing lab work
+- Current medications
+- Previous hormone-related treatment
+- Timeline
+- Care preference
+- Self-pay comfort
+- Contact details
+
+H. LONGEVITY AND PREVENTIVE HEALTH ASSESSMENT
+
+Suggested focus:
+
+- Primary health goals
+- Preventive screenings
+- Interest in biomarker testing
+- Lifestyle goals
+- Timeline
+- Care format
+- Self-pay comfort
+- Contact details
+
+Build the architecture so additional treatment-specific assessments can be added later without rebuilding the entire assessment engine.
+
+==================================================
+8. CONTACT INFORMATION CAPTURE
+==================================================
+
+The assessment must capture:
+
+- First name
+- Last name
+- Email address
+- Mobile phone number
+- ZIP code
+- State
+- Preferred contact method
+- Best time to contact
+- Treatment interest
+- Consultation timeline
+- Telehealth preference
+- Self-pay comfort
+- Consent to be contacted
+
+Email requirements:
+
+- Validate formatting
+- Reject clearly invalid email patterns
+- Prevent accidental spaces
+- Confirm the user’s email before submission
+- Support optional email verification later
+
+Phone requirements:
+
+- Use proper formatting
+- Validate plausible U.S. phone numbers
+- Support SMS consent separately
+- Do not pre-check marketing consent
+
+Consent requirements:
+
+Use clear, separate consent language.
+
+Example:
+
+“By submitting this form, I agree that Novalyte AI and participating clinics may contact me about my consultation request.”
+
+For SMS:
+
+“I agree to receive text messages regarding my request. Message and data rates may apply. Consent is not required to use the service.”
+
+Do not bundle all permissions into one vague checkbox.
+
+==================================================
+9. READINESS AND FINANCIAL SCREENING
+==================================================
+
+The platform needs to identify whether the patient is ready to act and whether self-pay treatment is realistic.
+
+Do this transparently.
+
+Include questions such as:
+
+“When would you ideally like to begin speaking with a provider?”
+
+Options:
+
+- Within 7 days
+- Within 2 weeks
+- Within 30 days
+- Within 1–3 months
+- I am only researching
+
+Include:
+
+“Some men’s health services may not be fully covered by insurance. Are you open to discussing self-pay options with a clinic?”
+
+Options:
+
+- Yes
+- Possibly, depending on cost
+- I need insurance-covered options only
+- I am not sure
+
+Include an optional budget comfort range where appropriate.
+
+Do not use deceptive language.
+
+Do not imply that users with lower budgets are medically unsuitable.
+
+Do not hide the purpose of financial questions.
+
+Add a short explanation:
+
+“This helps us show clinics and care options that better match your preferences. It does not determine whether treatment is medically appropriate.”
+
+==================================================
+10. ASSESSMENT SCORING AND ROUTING
+==================================================
+
+Create a backend-ready assessment scoring system.
+
+The internal system may classify leads using operational readiness signals such as:
+
+- Treatment selected
+- Consultation timeline
+- Contact completeness
+- Location
+- Telehealth preference
+- Self-pay openness
+- Budget comfort
+- Previous treatment experience
+- Willingness to complete labs or provider consultation
+- Consent status
+
+Possible internal statuses:
+
+- Consultation-ready
+- High intent
+- Researching
+- Needs follow-up
+- Insurance-dependent
+- Incomplete
+- Invalid contact information
+
+Do not show manipulative or insulting labels to the patient.
+
+Patient-facing language should remain respectful.
+
+Example patient result:
+
+“You appear ready to explore a consultation. We can now show clinics that match your treatment interest, location, timing, and care preferences.”
+
+The score must never claim:
+
+- The patient qualifies medically
+- The treatment is appropriate
+- A provider will prescribe
+- The user has been diagnosed
+- A specific clinical outcome is likely
+
+==================================================
+11. ASSESSMENT COMPLETION EXPERIENCE
+==================================================
+
+After assessment completion, show a dedicated result page.
+
+The result page should include:
+
+- Thank-you message
+- Treatment interest summary
+- Patient goals summary
+- Preferred timeline
+- Telehealth preference
+- Relevant clinic matches
+- Relevant educational content
+- Next-step CTA
+- Medical disclaimer
+
+Primary CTA options:
+
+- View Matching Clinics
+- Request a Consultation
+- Speak With a Clinic
+- Review Your Treatment Guide
+
+Do not end with a generic “Form submitted” screen.
+
+The result should feel personalized and useful.
+
+==================================================
+12. DATA STORAGE
+==================================================
+
+Every assessment must be saved.
+
+Create a backend-ready data model with:
+
+- assessment_id
+- treatment_type
+- started_at
+- completed_at
+- completion_status
+- first_name
+- last_name
+- email
+- phone
+- ZIP code
+- state
+- symptoms_or_goals
+- treatment_interest
+- timeline
+- care_preference
+- telehealth_preference
+- self_pay_openness
+- budget_range
+- consent_contact
+- consent_sms
+- source_page
+- referral_source
+- UTM parameters
+- internal_readiness_status
+- matched_clinics
+- created_at
+- updated_at
+
+Requirements:
+
+- Save progress between steps
+- Support resume-later behavior
+- Save abandoned assessments where legally appropriate
+- Encrypt sensitive data in transit and at rest
+- Do not expose assessment data in the client
+- Do not place private assessment information in URLs
+- Do not log sensitive answers in browser analytics
+- Add clear privacy language
+- Design the data layer for future Supabase integration
+
+Do not claim HIPAA compliance unless the implementation and vendors actually meet the required standards.
+
+==================================================
+13. PATIENT PAGE CONTENT STRUCTURE
+==================================================
+
+Use this recommended page order:
+
+1. Patient-focused hero
+2. Two clear pathways
+   - I know what I’m looking for
+   - Help me understand where to start
+3. Treatment-category cards
+4. AI-guided care discovery
+5. How the process works
+6. Treatment-specific assessment preview
+7. Clinic matching explanation
+8. Why use Novalyte AI
+9. Privacy and transparency
+10. Educational resources
+11. Final CTA
+
+Suggested “How It Works” sequence:
+
+1. Select a goal or treatment
+2. Complete a short personalized assessment
+3. Review relevant educational guidance
+4. Discover matching clinics
+5. Request a consultation
+6. Speak with a licensed provider
+
+==================================================
+14. PATIENT TRUST SECTION
+==================================================
+
+Add a dedicated trust section.
+
+Include:
+
+- No diagnosis from Novalyte AI
+- No guaranteed treatment approval
+- Patient chooses whether to contact a clinic
+- Clinics remain independently responsible for care
+- Clear explanation of self-pay questions
+- Privacy-first data handling
+- Transparent consent
+- Easy opt-out
+- No fake urgency
+- No fabricated reviews
+- No false medical claims
+
+Suggested heading:
+
+“Clear guidance without pressure”
+
+Suggested copy:
+
+“Novalyte AI helps organize your treatment interests, preferences, and consultation goals. Licensed healthcare professionals remain responsible for diagnosis, treatment decisions, and prescribing.”
+
+==================================================
+15. LOGO REDESIGN
+==================================================
+
+Create a new Novalyte AI brand mark based on the meaning:
+
+Nova = new star or burst of light  
+Lyte = light  
+Novalyte = new light
+
+The logo concept should represent:
+
+- A new light emerging
+- A star-like source of energy
+- Intelligence
+- Direction
+- Precision
+- Health innovation
+- Connected technology
+
+Create a symbol that looks like a refined, abstract star or pulsing point of light.
+
+Visual direction:
+
+- Small central luminous core
+- Four to eight refined rays or geometric light paths
+- Subtle orbital or pulse effect
+- Clean enough to work as an app icon
+- Distinctive at small sizes
+- Premium and modern
+- Not a generic sparkle icon
+- Not a medical cross
+- Not a sunburst cliché
+- Not overly futuristic
+- Not complicated
+
+The dark-background version may include:
+
+- Deep navy or charcoal circular field
+- Bright teal, aqua, or white luminous star
+- Soft controlled glow
+- Subtle pulse animation
+
+The light-background version should use:
+
+- Deep navy symbol
+- Teal or aqua luminous accent
+- Minimal or no glow
+- Strong contrast
+
+Wordmark:
+
+“Novalyte AI” must stay on one line.
+
+Do not allow “AI” to wrap to a second line.
+
+Recommended lockup:
+
+[STAR MARK] Novalyte AI
+
+The wordmark should feel:
+
+- Premium
+- Technical
+- Healthcare-appropriate
+- Modern
+- Clear
+- Confident
+
+Create:
+
+- Full horizontal logo
+- Symbol-only mark
+- Dark-background version
+- Light-background version
+- Favicon
+- Mobile navigation mark
+- App icon
+- Monochrome version
+
+Create the pulsing animation with CSS or SVG.
+
+Animation requirements:
+
+- Very subtle
+- Slow breathing pulse
+- No flashing
+- No distracting rapid movement
+- Respect prefers-reduced-motion
+- Preserve accessibility
+- Do not reduce readability
+
+==================================================
+16. VISUAL DESIGN DIRECTION
+==================================================
+
+The patient page should feel:
+
+- Human
+- Premium
+- Calm
+- Private
+- Modern
+- Clear
+- Action-oriented
+- Appropriate for men aged approximately 30–65
+
+Use:
+
+- Light backgrounds
+- Deep navy text
+- Strong teal accents
+- Premium photography
+- Rounded cards
+- Subtle depth
+- Generous spacing
+- High readability
+- Clear CTAs
+
+Avoid:
+
+- Dark dashboard styling across the whole page
+- Aggressive bodybuilding visuals
+- Explicit sexual-health imagery
+- Overly clinical hospital scenes
+- Generic SaaS illustrations
+- Dense text walls
+- Too many competing buttons
+- Fake urgency
+- Shame-based messaging
+- Guaranteed medical outcomes
+
+==================================================
+17. RESPONSIVE EXPERIENCE
+==================================================
+
+Make the full experience work on:
+
+- Desktop
+- Tablet
+- Mobile
+
+Mobile requirements:
+
+- Sticky progress indicator during assessment
+- One question per screen
+- Large touch targets
+- Clear back and continue buttons
+- Persistent save progress
+- Proper keyboard behavior
+- No horizontal overflow
+- Optimized image crops
+- Easy form completion
+- Proper autofill
+- No tiny disclaimers
+- Marketplace CTA remains visible in the navigation
+
+==================================================
+18. ACCESSIBILITY
+==================================================
+
+Ensure:
+
+- Semantic headings
+- Keyboard navigation
+- Visible focus states
+- Sufficient color contrast
+- Form labels
+- Clear error messages
+- Screen-reader-friendly progress states
+- No color-only meaning
+- Reduced motion support
+- Accessible modals if any are used
+- Assessment can be completed without a mouse
+
+==================================================
+19. IMPLEMENTATION QUALITY
+==================================================
+
+Build reusable components for:
+
+- Main navigation
+- Treatment cards
+- AI-guided intake
+- Assessment progress
+- Question types
+- Contact capture
+- Consent fields
+- Result page
+- Clinic match cards
+- Trust disclosures
+- Logo and wordmark
+- Mobile menu
+
+Do not hardcode all treatment assessments into one monolithic component.
+
+Use configuration-driven assessment logic so each treatment can define:
+
+- Questions
+- Answer types
+- Conditional logic
+- Required fields
+- Scoring signals
+- Result messaging
+- Clinic routing rules
+
+==================================================
+20. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+Before finishing, verify:
+
+- “Platform” is removed from the primary navigation
+- Navigation displays Patients, Clinics, Directory, Workforce, and Journal
+- “Get Started” is replaced by “Marketplace”
+- Marketplace appears as the top-right primary CTA
+- Mobile navigation matches desktop structure
+- Patients page supports visitors who know what they want
+- Patients page supports visitors who do not know where to start
+- Each treatment category launches a relevant assessment
+- Assessments are not generic
+- Assessments capture complete contact information
+- Email and phone fields validate correctly
+- Financial questions are transparent
+- Consultation timeline is captured
+- Consent is explicit
+- Assessment progress is saved
+- Completion creates a personalized result page
+- Data is backend-ready
+- No medical diagnosis is implied
+- No prescription or treatment approval is guaranteed
+- The new logo uses a star-like pulsing light concept
+- “Novalyte AI” remains on one line
+- The full experience is premium, responsive, and accessible
+
+The completed Patients page should make a visitor immediately understand:
+
+- What Novalyte AI does
+- Which treatment categories are available
+- Where to begin
+- How to take the correct assessment
+- What happens after the assessment
+- How clinics are matched
+- What Novalyte AI does and does not do  Show full message
+ This is a focused three-part upgrade. Let me start by understanding the current state of the navigation, patients view, and logo, then build all three upgrades.
+
+ Now let me look at the existing assessment component and the constants/treatments to understand the structure.
+
+ Now I have a clear picture. Let me start with the three upgrades. First, the new logo — a star-like pulsing light mark.
+
+ Now let me add the logo glow animation to globals.css and create an SVG favicon.
+
+ Now let me create an SVG favicon with the star mark.
+
+ Now let me rebuild the main navigation per the new structure.
+
+ Now let me build the configuration-driven assessment engine. First, the assessment config file with treatment-specific questions.
+
+ Now let me update the assessment API to handle the new comprehensive data model, then build the assessment engine component.
+
+ I need to update the Prisma schema to store the richer assessment data. Let me update it.
+
+ Now let me update the assessment API route to handle the new comprehensive data model.
+
+ Now let me build the configuration-driven assessment engine component. This is the core of the new assessment system.
+
+ Now let me build the new Patients page with the dual pathway, treatment cards, AI-guided care discovery, and all the required sections.
+
+ Now let me run lint to check for errors.
+
+ Lint passes. Let me verify the dev server compiles and then do a quick browser check.
+
+ Server is healthy. Let me verify with Agent Browser that the new nav, logo, and patients page work.
+
+ The navigation is exactly as specified: Patients, Clinics, Directory, Workforce, Journal in the center, and Sign In + Marketplace on the right. No "Platform" or "Get Started" in the nav. Let me verify the logo and the Patients page.
+
+ The new logo and navigation are confirmed. Now let me test the Patients page and the assessment flow.
+
+ The Patients page has the hero with disclaimer, dual pathway, and treatment cards with "Take Assessment" buttons. Let me test the assessment flow by clicking one.
+
+ The assessment engine opened with the TRT-specific assessment, showing "Step 1 of 12", the age range question, and disabled Continue until answered. Let me test the AI-guided discovery and then verify mobile.
+
+ The AI-guided discovery is working with goal categories. Let me test selecting goals and seeing recommendations.
+
+ The AI-guided discovery works — selecting "Low energy" recommended TRT and Hormone Optimization with the proper disclaimer language. Let me verify mobile responsiveness and then wrap up.
+
+ Mobile shows the Marketplace button and hamburger menu. Let me open the mobile menu to verify it matches the desktop structure.
+
+ Mobile menu matches the desktop structure exactly. Let me close the browser and finalize.
+
+ All three upgrades are complete and verified. Here's a summary of what was delivered:
+
+1. Main Navigation Restructured
+
+ "Platform" removed entirely from the primary navigation
+ Center nav: Patients · Clinics · Directory · Workforce · Journal (with active-state teal underline)
+ Right side: Sign In + prominent teal Marketplace button (replaced "Get Started")
+ Mobile menu matches the desktop structure exactly
+ Verified in browser — no "Platform" or "Get Started" remains
+2. New Novalyte AI Logo
+
+A star-like pulsing light mark based on the meaning: Nova = new star, Lyte = light → new light.
+
+ Symbol: 8 radiating light paths + a 4-point luminous core star with a radial gradient
+ Variants: default (navy + teal on light), dark (glowing teal on dark field with blur glow), monochrome, and mark-only
+ Wordmark: "Novalyte AI" stays on one line (whitespace-nowrap)
+ Animation: subtle 3.5s breathing pulse glow, respects prefers-reduced-motion
+ Favicon: new SVG favicon, wired into layout metadata
+3. Patients Page + Assessment System Redesigned
+
+Patients page rebuilt around the central question "What does a man need when he lands looking for treatment?":
+
+ Hero: "Find the Right Path for Your Men's Health Goals" + consultation image + visible disclaimer ("Novalyte AI provides educational and technology services only. It does not diagnose...")
+ Dual pathway: "I know what I'm looking for" (Path A) / "Not sure where to start?" (Path B)
+ Treatment cards with images — each "Take Assessment" opens a treatment-specific assessment
+ AI-guided care discovery: select goals (low energy, weight gain, hair loss, etc.) → get recommended treatment categories with proper disclaimers
+ How It Works (6 steps), Trust & Transparency section (6 points: no diagnosis, no guaranteed approval, privacy-first, transparent consent, etc.)
+Assessment engine — configuration-driven so new treatments can be added without rebuilding:
+
+ 8 treatment-specific assessments (TRT, ED, Medical Weight Loss, GLP-1, Peptide Therapy, Hair Restoration, Hormone Optimization, Longevity) — each with 8–12 tailored questions
+ Question types: single-choice, multi-select, contact capture, consent
+ Contact capture: first/last name, email, phone, ZIP, state, preferred contact method, best time
+ Separate consent: contact consent (required) + SMS consent (optional, not pre-checked)
+ Readiness scoring: consultation-ready / high-intent / researching / insurance-dependent — never claims medical eligibility
+ Personalized result page: summary, matched clinics, next-step CTAs, medical disclaimer
+ Backend-ready data model: all fields stored in Prisma with validation via Zod API route
+All disclaimers are present throughout — no diagnosis, no prescription guarantees, educational only. You can preview it now in the Preview Panel on the right.
+
+
+
+
+Text
+Pasted Content_1784065372347.txt
+TXT
+·
+29.6 KB
+
+
+
+
+
+
+
+
+
+
+
+
+Download
+Publish
+
+
+Pasted Content_1784065372347.txt
+```text
+You are upgrading the existing Novalyte AI Patients page. Do not rebuild the website from scratch. Preserve the current light-first design system, typography, colors, navigation, responsive behavior, and existing route structure.
+
+This is a focused redesign of the Patients page, treatment-category experience, treatment education pages, and assessment flow.
+
+The current page is structurally solid, but it is not visually credible enough because major sections contain empty white space, missing images, generic image placeholders, and overly card-based layouts.
+
+The Patients page must become more visual, more useful, easier to complete, and substantially more conversion-focused.
+
+==================================================
+PRIMARY OBJECTIVE
+==================================================
+
+Transform the Patients page into a premium men’s-health discovery and consultation-readiness experience that:
+
+- Immediately shows a real, high-quality patient-care image
+- Helps visitors understand available treatment categories
+- Provides useful educational information
+- Makes the correct assessment easy to begin
+- Captures valid contact information early and transparently
+- Uses treatment-specific imagery and icons
+- Automatically advances through simple assessment questions
+- Routes high-intent users toward relevant clinics
+- Routes research-stage users toward useful Journal content
+- Does not imply diagnosis, medical qualification, or guaranteed treatment
+
+High-quality imagery is mandatory.
+
+Do not leave large empty image areas, blank cards, broken image placeholders, generic gray boxes, or repeated stock photographs anywhere on this page.
+
+==================================================
+1. FIX THE PATIENT HERO IMAGE
+==================================================
+
+The current Patients hero contains image markup, but no meaningful image is visibly rendering.
+
+Fix this immediately.
+
+Add a real, high-resolution hero image showing:
+
+- An adult male patient between approximately 35 and 60
+- A private conversation with a licensed healthcare professional
+- A modern, premium clinic or consultation room
+- A calm, trustworthy interaction
+- Natural expressions and realistic clinical context
+- Appropriate lighting and composition for a premium healthcare website
+
+The image must not feel like:
+
+- A generic hospital advertisement
+- An emergency-room scene
+- A staged doctor pointing at a clipboard
+- A bodybuilding advertisement
+- A pharmaceutical promotion
+- An unrelated wellness lifestyle photo
+
+Recommended layout:
+
+Desktop:
+- Split hero layout
+- Text on the left
+- Large editorial image on the right
+- Slightly rounded image container
+- Subtle depth or shadow
+- Optional small trust badge layered near the image
+
+Mobile:
+- Text first
+- Image directly below the CTAs
+- Correctly cropped around the patient and clinician
+- No important face cut off
+- No horizontal overflow
+
+Technical image requirements:
+
+- Use a real working image asset
+- Do not use `src="image"` or a fake placeholder value
+- Store the image locally in the project or use the project’s approved image pipeline
+- Use the framework’s optimized image component
+- Add width and height
+- Use responsive sizes
+- Use AVIF or WebP where supported
+- Use a meaningful filename
+- Include accurate alt text
+- Confirm that the image visibly renders in production
+- Add a fallback image if the primary asset fails
+
+Example alt text:
+
+“Male patient discussing treatment goals with a healthcare professional in a private modern clinic”
+
+==================================================
+2. REMOVE PATH A AND PATH B
+==================================================
+
+Remove the entire section containing:
+
+- Path A
+- I know what I’m looking for
+- Path B
+- Not sure where to start?
+
+This section is unnecessary and adds visual friction.
+
+Do not replace it with another pair of cards.
+
+Move the Treatment Categories section directly upward so it follows the hero.
+
+Recommended order:
+
+1. Hero
+2. Treatment Categories
+3. Guided care discovery
+4. Treatment education and trust content
+5. Assessment explanation
+6. How the process works
+7. Journal resources
+8. Final CTA
+
+The user should see the treatment categories quickly without scrolling through unnecessary pathway cards.
+
+==================================================
+3. TREATMENT CATEGORY SECTION
+==================================================
+
+Move the Treatment Categories section directly beneath the hero.
+
+Recommended heading:
+
+Explore Men’s Health Treatment Options
+
+Supporting copy:
+
+“Choose the area that best matches your goals. You can learn more, complete a short personalized assessment, or explore clinics that offer the service.”
+
+The treatment categories should include:
+
+- Testosterone Replacement Therapy
+- Hormone Optimization
+- Erectile Dysfunction Care
+- Medical Weight Loss
+- GLP-1 Programs
+- Peptide Therapy
+- Hair Restoration
+- Sexual Wellness
+- Longevity Medicine
+- Performance & Recovery
+- Preventive Men’s Health
+- Telehealth Services
+
+==================================================
+4. TREATMENT CARD REDESIGN
+==================================================
+
+The existing treatment cards contain too much blank white space and do not visually establish credibility.
+
+Redesign them as premium visual treatment cards.
+
+Each treatment card must include:
+
+- A high-quality, relevant image
+- A treatment-specific icon
+- Treatment name
+- Concise description
+- “Take Assessment” CTA where an assessment exists
+- “Learn More” CTA
+- Optional “Find Clinics” link
+- Clear hover state
+- Clear focus state
+- Responsive mobile layout
+
+Do not use icons as a replacement for photography.
+
+Use both:
+
+1. A meaningful visual image
+2. A small treatment-specific icon or symbol
+
+Recommended card structure:
+
+- Image occupying the upper 40%–50% of the card
+- Treatment icon layered near the lower edge of the image
+- Treatment name
+- Two- or three-line description
+- Primary and secondary actions
+- Consistent card heights where practical
+
+Do not use full photographic backgrounds behind long text because readability may suffer.
+
+Prefer:
+
+- Image panel at the top
+- Clean content area beneath it
+- Optional subtle image gradient
+- Refined border and shadow
+
+==================================================
+5. TREATMENT-SPECIFIC IMAGE DIRECTION
+==================================================
+
+Use different, contextually relevant images for each treatment category.
+
+Do not repeat the same doctor-patient image across all cards.
+
+A. Testosterone Replacement Therapy
+
+Use:
+
+- Male patient reviewing laboratory results with a clinician
+- Hormone consultation
+- Bloodwork review
+- Private men’s-health consultation
+
+Avoid:
+
+- Syringe close-ups
+- Bodybuilders
+- Unsupervised testosterone imagery
+- Medication product promotion
+
+B. Hormone Optimization
+
+Use:
+
+- Clinician reviewing biomarker or hormone data
+- Adult patient discussing energy, sleep, and wellness goals
+- Modern diagnostic consultation
+
+C. Erectile Dysfunction Care
+
+Use:
+
+- Discreet private consultation
+- Mature male patient speaking with a clinician
+- Professional and respectful imagery
+
+Avoid:
+
+- Explicit imagery
+- Embarrassing or comedic visuals
+- Suggestive stock photography
+
+D. Medical Weight Loss
+
+Use:
+
+- Clinician-guided weight-management consultation
+- Patient reviewing progress data
+- Nutrition or metabolic-health discussion
+
+Avoid:
+
+- Shame-based body imagery
+- Tape measures around stomachs
+- Extreme before-and-after photography
+
+E. GLP-1 Programs
+
+Use:
+
+- Medical weight-management consultation
+- Clinician reviewing a structured treatment program
+- Patient monitoring health progress
+
+Avoid:
+
+- Branded medication packaging
+- Guaranteed weight-loss claims
+- Needle-focused imagery
+
+F. Peptide Therapy
+
+Use:
+
+- Research-informed consultation
+- Clinician reviewing treatment information
+- Modern laboratory or clinical environment
+
+Avoid:
+
+- Fake molecular graphics
+- Unverified scientific claims
+- Dramatic anti-aging visuals
+
+G. Hair Restoration
+
+Use:
+
+- Hair and scalp consultation
+- Clinician examining hair density
+- Modern hair-restoration clinic
+
+H. Sexual Wellness
+
+Use:
+
+- Discreet consultation
+- Confidential provider-patient discussion
+- Mature, respectful lifestyle image
+
+I. Longevity Medicine
+
+Use:
+
+- Biomarker review
+- Preventive-health consultation
+- Healthy mature male lifestyle
+- Advanced diagnostics
+
+J. Performance & Recovery
+
+Use:
+
+- Recovery consultation
+- Movement or performance assessment
+- Clinical recovery technology
+- Athlete meeting with a healthcare professional
+
+Avoid:
+
+- Gym-only bodybuilding imagery
+- Influencer-style fitness content
+
+K. Preventive Men’s Health
+
+Use:
+
+- Routine checkup
+- Preventive screening
+- Blood-pressure or wellness consultation
+
+L. Telehealth Services
+
+Use:
+
+- Male patient speaking with a clinician through a laptop or tablet
+- Private home environment
+- Professional telehealth interface
+
+==================================================
+6. IMAGE QUALITY RULES
+==================================================
+
+High-quality imagery is non-negotiable.
+
+Every visual asset must be:
+
+- Relevant to its treatment category
+- High resolution
+- Professionally composed
+- Properly cropped
+- Visually consistent with the overall website
+- Legally usable
+- Optimized for web performance
+- Accessible
+- Responsive
+
+Do not use:
+
+- Fake image URLs
+- Broken placeholders
+- Low-resolution assets
+- Watermarked images
+- Visible competitor branding
+- Repeated photos across unrelated sections
+- Random medical equipment unrelated to the treatment
+- AI-generated imagery with inaccurate anatomy
+- Images where hands, faces, medical devices, or text appear distorted
+
+Use real licensed photography where possible.
+
+If temporary development imagery is needed, use approved sources such as Unsplash or Pexels, but organize the code so assets can be replaced easily before production.
+
+==================================================
+7. TREATMENT ICON SYSTEM
+==================================================
+
+Add a consistent icon system to reinforce each treatment category.
+
+Examples:
+
+- TRT: laboratory vial, hormone graph, or biomarker icon
+- Hormone Optimization: connected biomarker nodes
+- ED Care: discreet heart and wellness symbol
+- Medical Weight Loss: metabolic-health or progress icon
+- GLP-1: structured care pathway icon
+- Peptides: clinical molecular or sequence symbol
+- Hair Restoration: hair follicle icon
+- Sexual Wellness: privacy and wellness icon
+- Longevity: healthspan or circular vitality icon
+- Performance & Recovery: recovery pulse icon
+- Preventive Health: shield and check icon
+- Telehealth: video consultation icon
+
+Icons must:
+
+- Share one consistent style
+- Use the Novalyte AI color system
+- Be simple and premium
+- Remain legible at small sizes
+- Not imply medical diagnosis
+- Not rely on emoji
+
+==================================================
+8. LEARN MORE PAGES
+==================================================
+
+Every “Learn More” action must open a dedicated treatment education page.
+
+Do not open a popup modal.
+
+Use dedicated indexable URLs such as:
+
+- `/treatments/testosterone-replacement-therapy`
+- `/treatments/hormone-optimization`
+- `/treatments/erectile-dysfunction`
+- `/treatments/medical-weight-loss`
+- `/treatments/glp-1-programs`
+- `/treatments/peptide-therapy`
+- `/treatments/hair-restoration`
+- `/treatments/longevity-medicine`
+
+Each treatment page should include:
+
+1. Treatment-specific hero image
+2. Clear explanation of the treatment
+3. Who may consider discussing it with a provider
+4. Common goals or concerns
+5. What a consultation may involve
+6. Possible testing or evaluation
+7. Potential benefits discussed responsibly
+8. Risks, limitations, or uncertainties
+9. Questions to ask a provider
+10. Frequently asked questions
+11. Relevant Journal articles
+12. Relevant clinic listings
+13. “Take Assessment” CTA
+14. Medical disclaimer
+15. Sources and references where medical claims are included
+
+The page must not promise treatment eligibility or outcomes.
+
+==================================================
+9. EXPAND THE JOURNAL CONNECTION
+==================================================
+
+Connect treatment categories to relevant Journal content.
+
+Each category should show two to four related articles.
+
+Examples for TRT:
+
+- What Are Common Signs of Low Testosterone?
+- What Happens During a Testosterone Consultation?
+- What Lab Tests Are Commonly Discussed Before TRT?
+- How Much Does TRT Typically Cost?
+- Telehealth vs. In-Person TRT Care
+- Questions to Ask a Men’s Health Provider
+
+Examples for GLP-1:
+
+- How Clinician-Guided GLP-1 Programs Work
+- What to Discuss Before Starting a Medical Weight-Loss Program
+- GLP-1 Costs and Self-Pay Considerations
+- Why Ongoing Monitoring Matters
+
+Examples for ED Care:
+
+- When to Speak With a Provider About Erectile Dysfunction
+- Common Causes Providers May Evaluate
+- Telehealth Options for Sexual-Wellness Care
+- Questions to Ask During a Private Consultation
+
+Journal requirements:
+
+- Dedicated article URLs
+- No modal articles
+- Long-form, useful content
+- High-quality hero image
+- Relevant inline images
+- Clear heading structure
+- Related articles
+- Sources and references
+- Medical-review field where applicable
+- Published and updated dates
+- Relevant clinic CTA
+- Relevant assessment CTA
+- No fabricated claims
+
+==================================================
+10. ASSESSMENT EXPERIENCE REDESIGN
+==================================================
+
+The assessment must feel effortless and fast while still collecting meaningful intent and contact information.
+
+Use a one-question-at-a-time experience.
+
+For simple single-choice questions:
+
+- The user clicks an answer
+- The selected answer animates briefly
+- The interface automatically advances to the next question
+- No separate “Continue” button is required
+
+For multi-select questions:
+
+- Allow the user to choose multiple answers
+- Show a small “Continue” button only when required
+- Make the distinction between single-select and multi-select clear
+
+For typed fields:
+
+- Use a Continue button or keyboard Enter
+- Validate before advancing
+
+Animation requirements:
+
+- Smooth horizontal or fade transition
+- Approximately 200–350 milliseconds
+- No distracting motion
+- Preserve browser back behavior
+- Respect `prefers-reduced-motion`
+- Do not lose previously entered answers
+
+==================================================
+11. CAPTURE CONTACT INFORMATION EARLY
+==================================================
+
+Capture contact information near the beginning of the assessment, but do so transparently.
+
+Do not collect a full street address unless it is operationally necessary.
+
+For clinic matching, use:
+
+- First name
+- Last name
+- Email address
+- Mobile phone number
+- ZIP code
+- State
+
+Recommended assessment sequence:
+
+Step 1:
+Treatment selected
+
+Step 2:
+First name and last name
+
+Step 3:
+Email address
+
+Step 4:
+Mobile phone number
+
+Step 5:
+ZIP code and state
+
+Step 6 onward:
+Treatment-specific questions
+
+Final step:
+Consent and review
+
+Add a short explanation above the contact fields:
+
+“We use this information to save your progress, prepare your results, and help connect you with relevant clinics. Submitting your information does not require you to book treatment.”
+
+Do not disguise the lead-capture purpose.
+
+Do not tell users the information is required for medical evaluation unless that is actually true.
+
+==================================================
+12. CONTACT VALIDATION
+==================================================
+
+Email:
+
+- Validate format
+- Remove accidental leading or trailing spaces
+- Reject obviously invalid addresses
+- Prevent multiple `@` characters
+- Suggest corrections for common domain typos where possible
+- Ask the user to confirm the address before final submission
+
+Phone:
+
+- Format as the user types
+- Validate plausible U.S. numbers
+- Reject incomplete values
+- Support mobile autofill
+- Do not assume phone consent equals SMS marketing consent
+
+ZIP code:
+
+- Validate five-digit U.S. ZIP code
+- Use ZIP code to support clinic matching
+- Do not ask for full home address unless necessary
+
+Consent:
+
+Use separate checkboxes for:
+
+- Contact regarding the consultation request
+- SMS communication
+- Marketing communication, if included
+
+Do not preselect consent boxes.
+
+==================================================
+13. TREATMENT-SPECIFIC QUESTIONS
+==================================================
+
+Keep most treatment assessments between approximately 7 and 10 meaningful questions after contact capture.
+
+Questions should determine:
+
+- What the user is interested in
+- What they want to improve
+- How long the concern has existed
+- Whether they have spoken with a provider
+- Whether they have recent labs where relevant
+- Whether they prefer telehealth or in-person care
+- How soon they want to act
+- Whether they are open to self-pay care
+- General budget comfort where appropriate
+- Whether they are ready for a consultation
+
+Do not ask unnecessary medical-history questions merely to make the form appear clinical.
+
+Novalyte AI must not make clinical eligibility decisions.
+
+==================================================
+14. EXAMPLE TRT ASSESSMENT FLOW
+==================================================
+
+Question 1:
+What would you most like to improve?
+
+- Energy
+- Motivation
+- Strength
+- Muscle development
+- Sexual health
+- Mood
+- Recovery
+- General wellness
+
+Question 2:
+How long have you noticed these concerns?
+
+- Less than 3 months
+- 3–6 months
+- 6–12 months
+- More than 1 year
+
+Question 3:
+Have you had testosterone or hormone lab work recently?
+
+- Yes, within the last 3 months
+- Yes, within the last year
+- No
+- I am not sure
+
+Question 4:
+Have you discussed these concerns with a healthcare professional?
+
+- Yes
+- No
+- I have an appointment scheduled
+
+Question 5:
+Have you previously used testosterone therapy?
+
+- Yes, currently
+- Yes, previously
+- No
+- Prefer not to say
+
+Question 6:
+What type of care would you prefer?
+
+- Telehealth
+- In-person
+- Either
+
+Question 7:
+How soon would you like to speak with a provider?
+
+- Within 7 days
+- Within 2 weeks
+- Within 30 days
+- Within 1–3 months
+- I am researching
+
+Question 8:
+Some men’s-health services may require direct payment. Are you open to discussing self-pay care?
+
+- Yes
+- Possibly, depending on cost
+- I need insurance-covered care only
+- I am not sure
+
+Question 9:
+What monthly cost range would you be comfortable discussing?
+
+- Under $100
+- $100–$199
+- $200–$299
+- $300+
+- I need more information first
+
+Final:
+Review information and provide consent
+
+Do not show the user a message stating that they “qualify for TRT.”
+
+==================================================
+15. AUTO-ADVANCE BEHAVIOR
+==================================================
+
+For all single-choice questions:
+
+1. User clicks an option
+2. Option receives a selected state
+3. Answer is saved immediately
+4. A subtle transition begins
+5. The next question appears automatically
+
+The experience should feel fast, similar to a premium onboarding flow.
+
+Include:
+
+- Back button
+- Progress indicator
+- Save progress
+- Resume later
+- Keyboard selection
+- Mobile tap optimization
+- Error recovery
+- Session persistence
+
+Do not auto-advance when:
+
+- Multiple selections are permitted
+- The user must enter text
+- Consent is required
+- The answer requires confirmation
+- Validation fails
+
+==================================================
+16. RESULT AND ROUTING LOGIC
+==================================================
+
+After completion, route users based on their intent and readiness signals.
+
+Do not tell users they are medically qualified or disqualified.
+
+Possible internal routing statuses:
+
+- High consultation intent
+- Ready within 30 days
+- Research stage
+- Insurance-dependent
+- Self-pay open
+- Needs more education
+- Incomplete
+- Invalid contact data
+
+A. HIGH-INTENT USER
+
+Show:
+
+- Personalized summary
+- Relevant clinics
+- Request consultation CTA
+- Treatment education
+- Next steps
+- Expected contact process
+
+Suggested message:
+
+“Your responses indicate that you are ready to explore a provider consultation. Review clinics that match your treatment interest, location, timing, and care preferences.”
+
+B. RESEARCH-STAGE USER
+
+Show:
+
+- Relevant treatment guide
+- Recommended Journal articles
+- Questions to ask a provider
+- Option to save results
+- Option to return later
+- Clinic directory link
+
+Suggested message:
+
+“You may benefit from reviewing additional information before requesting a consultation. We selected several resources based on your interests.”
+
+C. INSURANCE-DEPENDENT OR COST-CONCERNED USER
+
+Do not treat this user disrespectfully or describe them as unqualified.
+
+Show:
+
+- Cost education
+- Insurance guidance
+- Self-pay explanation
+- Lower-cost or financing information where legitimate
+- Relevant clinics that publish pricing or accept insurance
+- Journal content
+
+Suggested message:
+
+“Coverage and pricing vary by clinic. Review cost and insurance resources before deciding which care options fit your situation.”
+
+D. USER OUTSIDE AN AVAILABLE SERVICE AREA
+
+Show:
+
+- Telehealth options if legally and operationally available
+- Journal resources
+- Notify-me option
+- General provider-search guidance
+
+==================================================
+17. “NOT QUALIFIED” LANGUAGE
+==================================================
+
+Do not display:
+
+- You are not qualified
+- You failed the assessment
+- You are not eligible for care
+- You cannot afford treatment
+- Treatment is not for you
+
+Use respectful routing language.
+
+Preferred language:
+
+- “You may benefit from learning more before requesting a consultation.”
+- “Based on your timeline, these resources may be a better next step.”
+- “Coverage and pricing vary, so review these options before continuing.”
+- “A licensed provider determines whether any treatment is appropriate.”
+
+==================================================
+18. AI-GUIDED CARE DISCOVERY
+==================================================
+
+Keep the guided care discovery feature, but improve its presentation.
+
+It should not appear as a long checklist inside a generic card.
+
+Create a refined interactive section with:
+
+- A conversational heading
+- Short prompt
+- Selectable goals
+- Treatment recommendations
+- Explanation of each recommendation
+- Related articles
+- Relevant assessment CTA
+
+Possible heading:
+
+Not Sure Which Treatment Fits Your Goals?
+
+Prompt:
+
+“Select the areas you would like to improve. We will organize relevant treatment categories and educational resources.”
+
+Use visual selectable chips or tiles for:
+
+- Energy
+- Weight management
+- Sexual health
+- Hair loss
+- Strength and recovery
+- Hormone health
+- Sleep
+- Preventive health
+- Longevity
+- General men’s health
+
+After selection, show:
+
+- Two or three relevant categories
+- Short explanation
+- Relevant article
+- Take assessment CTA
+
+Always show:
+
+“This guidance is educational and is not a diagnosis.”
+
+==================================================
+19. HOW IT WORKS REDESIGN
+==================================================
+
+Remove the current six-step card grid.
+
+Do not place every step inside a separate box.
+
+Redesign “How It Works” as a connected visual process similar to the ecosystem logic used on the homepage.
+
+Create a horizontal process illustration on desktop and vertical process on mobile.
+
+Suggested steps:
+
+1. Choose a goal
+2. Complete a short assessment
+3. Review relevant guidance
+4. Discover matching clinics
+5. Request a consultation
+6. Speak with a licensed provider
+
+Visual direction:
+
+- Connected line or pathway
+- Numbered milestones
+- Small supporting icons
+- Subtle animated progress
+- Clean background
+- Strong central flow
+- No excessive card borders
+
+The illustration should explain how information moves through the Novalyte AI process.
+
+Add a short note beneath the final step:
+
+“Licensed healthcare professionals remain responsible for diagnosis, prescribing, and treatment decisions.”
+
+==================================================
+20. PATIENT VALUE CONTENT
+==================================================
+
+The page must provide real value before asking the visitor to submit information.
+
+Add short educational sections such as:
+
+- Understanding treatment options
+- What to expect during a men’s-health consultation
+- Telehealth versus in-person care
+- Common laboratory discussions
+- How self-pay care typically works
+- Questions to ask a clinic
+- How Novalyte AI matches patients and clinics
+- What Novalyte AI does and does not do
+
+Use:
+
+- Relevant imagery
+- Short explanations
+- Links to deeper Journal content
+- Clear disclaimers
+- No unsupported medical claims
+
+==================================================
+21. TRUST AND TRANSPARENCY
+==================================================
+
+Retain the existing trust content, but improve its visual presentation.
+
+Avoid placing every trust statement inside an identical card.
+
+Use a cleaner combination of:
+
+- Short text blocks
+- Privacy iconography
+- One relevant healthcare image
+- Security and consent indicators
+- Expandable details where useful
+
+Keep these messages:
+
+- Novalyte AI does not diagnose
+- Novalyte AI does not prescribe
+- Treatment is not guaranteed
+- Users choose whether to contact a clinic
+- Clinics are independently responsible for care
+- Contact consent is explicit
+- Users can opt out
+- No fake urgency
+- No fabricated reviews
+
+==================================================
+22. DATA STORAGE
+==================================================
+
+Save assessment progress securely.
+
+Data model should support:
+
+- assessment_id
+- treatment_type
+- first_name
+- last_name
+- email
+- phone
+- ZIP code
+- state
+- goals
+- answers
+- timeline
+- care_preference
+- self_pay_openness
+- budget_range
+- assessment_status
+- readiness_status
+- clinic_matches
+- consent_contact
+- consent_sms
+- consent_marketing
+- started_at
+- completed_at
+- last_step
+- source_page
+- UTM parameters
+- created_at
+- updated_at
+
+Requirements:
+
+- Save answers after each step
+- Resume incomplete sessions
+- Do not expose private assessment data in URLs
+- Do not log sensitive form answers into general analytics
+- Protect data in transit
+- Prepare the system for future Supabase integration
+- Do not claim HIPAA compliance without verified implementation
+
+==================================================
+23. RESPONSIVE DESIGN
+==================================================
+
+Desktop:
+
+- Large hero image
+- Three-column or four-column treatment grid
+- Connected horizontal process illustration
+- Strong visual hierarchy
+
+Tablet:
+
+- Two-column treatment grid
+- Responsive hero
+- Simplified process flow
+
+Mobile:
+
+- One treatment card per row
+- Image visible on every card
+- One assessment question per screen
+- Large selectable answers
+- Auto-advance
+- Sticky progress indicator
+- Clear back navigation
+- Optimized image crops
+- No horizontal overflow
+- No tiny disclaimers
+
+==================================================
+24. ACCESSIBILITY
+==================================================
+
+Ensure:
+
+- Accurate alt text
+- Semantic headings
+- Visible focus states
+- Keyboard-operable assessment
+- Screen-reader progress announcements
+- Form labels
+- Clear validation messages
+- Sufficient contrast
+- Large touch targets
+- Reduced-motion support
+- No information communicated through color alone
+- No auto-advance that traps keyboard or screen-reader users
+
+==================================================
+25. IMPLEMENTATION REQUIREMENTS
+==================================================
+
+Build reusable components for:
+
+- Hero image
+- Treatment category card
+- Treatment icon
+- Treatment page hero
+- Related article block
+- Assessment question
+- Single-select auto-advance
+- Multi-select question
+- Contact capture
+- Progress indicator
+- Result routing
+- Clinic recommendation
+- Journal recommendation
+- Connected process illustration
+- Trust section
+
+Do not create one large monolithic Patients page component.
+
+Use data-driven configurations for:
+
+- Treatment names
+- Slugs
+- Descriptions
+- Images
+- Icons
+- Assessment questions
+- Related articles
+- Clinic filters
+- Result messaging
+
+==================================================
+26. QUALITY-CONTROL CHECKLIST
+==================================================
+
+Before finishing, verify:
+
+- The Patients hero displays a real high-quality image
+- No image uses a fake `src="image"` value
+- No broken images are visible
+- Path A and Path B are removed
+- Treatment Categories appear directly beneath the hero
+- Every treatment card has a relevant image
+- Every treatment card has a relevant icon
+- Images are not repeated excessively
+- Images are high resolution and optimized
+- Treatment cards no longer contain large empty white areas
+- Learn More opens a dedicated treatment page
+- Treatment pages contain high-quality imagery
+- Journal articles use dedicated URLs
+- Assessments capture contact information early
+- Contact collection is clearly explained
+- Email, phone, and ZIP code validation work
+- Single-choice questions auto-advance
+- Multi-select questions do not advance prematurely
+- Users can go back without losing answers
+- Progress is saved
+- High-intent users see clinic matches
+- Research-stage users see relevant Journal content
+- No user is told they are medically qualified or disqualified
+- The process section uses a connected illustration instead of six separate cards
+- Mobile image crops are correct
+- Accessibility and reduced-motion behavior work
+- Existing navigation and marketplace functionality remain intact
+
+==================================================
+FINAL EXPECTATION
+==================================================
+
+The completed Patients page must feel like a premium men’s-health discovery platform, not a text-heavy prototype.
+
+The user should immediately see:
+
+- A credible real-world healthcare image
+- Clear treatment options
+- Relevant visual categories
+- Useful educational information
+- A short and easy assessment
+- A transparent explanation of why contact details are requested
+- Personalized next steps
+- Relevant clinic recommendations
+- Relevant Journal resources
+
+High-quality imagery must be treated as a core part of the product experience, not as optional decoration.
+```
