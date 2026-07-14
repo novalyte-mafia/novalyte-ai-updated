@@ -1,0 +1,320 @@
+// Novalyte AI — Men's Health Technology Platform
+// Prisma schema (SQLite). Lists are stored as comma-separated strings
+// or Json fields because SQLite/Prisma primitives cannot be arrays.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────────────────────────────────────────
+// Clinics (verified directory)
+// ───────────────────────────────────────────────────────────────
+model Clinic {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  tagline       String?
+  overview      String
+  logoColor     String   @default("teal")
+  city          String
+  state         String
+  zip           String
+  serviceArea   String?
+  specialties   String   // CSV of treatment specialties
+  capabilities  String?  // CSV of clinic capabilities
+  telehealth    Boolean  @default(false)
+  providerTypes String?  // CSV of provider types
+  phone         String?
+  email         String?
+  website       String?
+  hours         String?
+  verified      Boolean  @default(false)
+  verificationStatus String @default("pending") // pending | under_review | verified | rejected
+  verificationNotes String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  consultations ConsultationRequest[]
+
+  @@index([state])
+  @@index([verified])
+  @@index([slug])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Healthcare professionals (workforce)
+// ───────────────────────────────────────────────────────────────
+model Professional {
+  id                String   @id @default(cuid())
+  name              String
+  title             String
+  city              String
+  state             String
+  remote            Boolean  @default(false)
+  licenses          String?  // CSV
+  licensedStates    String?  // CSV
+  certifications    String?  // CSV
+  specialties       String?  // CSV
+  yearsExperience   Int      @default(0)
+  availability      String   @default("open") // open | limited | closed
+  employmentPref    String   @default("full-time") // full-time | part-time | contract | per-diem
+  bio               String?
+  verified          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  applications      JobApplication[]
+
+  @@index([state])
+  @@index([title])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Job postings (clinics hiring)
+// ───────────────────────────────────────────────────────────────
+model JobPosting {
+  id                   String   @id @default(cuid())
+  clinicName           String
+  title                String
+  employmentType       String   // full-time | part-time | contract | per-diem
+  city                 String
+  state                String
+  remote               Boolean  @default(false)
+  requiredLicenses     String?  // CSV
+  requiredExperience   String?
+  treatmentSpecialties String?  // CSV
+  compMin              Int?
+  compMax              Int?
+  schedule             String?
+  description          String
+  applicationRequirements String?
+  status               String   @default("open") // open | closed
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  applications         JobApplication[]
+
+  @@index([state])
+  @@index([title])
+}
+
+model JobApplication {
+  id            String   @id @default(cuid())
+  jobPostingId  String
+  professionalId String?
+  applicantName String
+  applicantEmail String
+  applicantPhone String?
+  coverNote     String?
+  status        String   @default("submitted") // submitted | reviewed | accepted | rejected
+  createdAt     DateTime @default(now())
+
+  jobPosting    JobPosting  @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  professional  Professional? @relation(fields: [professionalId], references: [id])
+
+  @@index([jobPostingId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Marketplace (vendors + listings)
+// ───────────────────────────────────────────────────────────────
+model Vendor {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  overview    String?
+  website     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listings    MarketplaceListing[]
+}
+
+model MarketplaceListing {
+  id            String   @id @default(cuid())
+  vendorId      String
+  vendorName    String
+  title         String
+  slug          String   @unique
+  category      String
+  listingType   String   // product | software | service | subscription | consultation | custom-quote
+  description   String
+  pricingModel  String?  // one-time | subscription | quote | range
+  priceNote     String?
+  availability  String   @default("in-stock") // in-stock | made-to-order | limited | preorder
+  imageColor    String   @default("teal")
+  verified      Boolean  @default(false)
+  reviewStatus  String   @default("pending") // pending | approved | rejected
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vendor        Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  quoteRequests QuoteRequest[]
+
+  @@index([category])
+  @@index([listingType])
+  @@index([reviewStatus])
+}
+
+model QuoteRequest {
+  id           String   @id @default(cuid())
+  listingId    String
+  requesterName String
+  requesterEmail String
+  requesterOrg String?
+  quantity     String?
+  notes        String?
+  status       String   @default("new") // new | responded | closed
+  createdAt    DateTime @default(now())
+
+  listing      MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Journal / educational content
+// ───────────────────────────────────────────────────────────────
+model Article {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  category        String
+  excerpt         String
+  content         String
+  author          String
+  medicalReviewer String?
+  readingTime     Int      @default(5)
+  publishedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  references      String?  // CSV of reference labels
+  relatedTreatment String?
+  status          String   @default("published") // draft | published
+  createdAt       DateTime @default(now())
+
+  @@index([category])
+  @@index([slug])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Patient-facing flows
+// ───────────────────────────────────────────────────────────────
+model AssessmentSubmission {
+  id               String   @id @default(cuid())
+  ageRange         String
+  locationState    String?
+  zip              String?
+  concerns         String?  // CSV
+  symptoms         String?  // CSV
+  treatmentInterest String?
+  careFormat       String?  // in-person | telehealth | either
+  telehealthPref   Boolean  @default(false)
+  contactName      String?
+  contactEmail     String?
+  consent          Boolean  @default(false)
+  matchedClinicIds String?  // CSV of clinic ids suggested
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model ConsultationRequest {
+  id            String   @id @default(cuid())
+  clinicId      String?
+  clinicName    String
+  patientName   String
+  patientEmail  String
+  patientPhone  String?
+  preferredTime String?
+  treatmentInterest String?
+  notes         String?
+  status        String   @default("new") // new | contacted | scheduled | closed
+  createdAt     DateTime @default(now())
+
+  clinic        Clinic?  @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId])
+  @@index([status])
+}
+
+// ───────────────────────────────────────────────────────────────
+// Generic inbound / onboarding forms
+// ───────────────────────────────────────────────────────────────
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  role      String   // patient | clinic | professional | vendor | investor | other
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model ClinicOnboarding {
+  id            String   @id @default(cuid())
+  clinicName    String
+  contactName   String
+  email         String
+  phone         String?
+  city          String?
+  state         String?
+  specialties   String?
+  currentVolume String?
+  goals         String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+}
+
+model ProfessionalOnboarding {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  title        String
+  state        String?
+  licenses     String?
+  experience   String?
+  preferences  String?
+  status       String   @default("new")
+  createdAt    DateTime @default(now())
+}
+
+model VendorOnboarding {
+  id           String   @id @default(cuid())
+  companyName  String
+  contactName  String
+  email        String
+  category     String?
+  productTypes String?
+  website      String?
+  notes        String?
+  status       String   @default("new")
+  createdAt    DateTime @default(now())
+}
+
+// ───────────────────────────────────────────────────────────────
+// Admin / audit
+// ───────────────────────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  actor     String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([entity])
+  @@index([createdAt])
+}
