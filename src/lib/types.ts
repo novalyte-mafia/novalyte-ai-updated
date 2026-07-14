@@ -62,6 +62,7 @@ export type JobPostingT = {
 
 export type MarketplaceListingT = {
   id: string;
+  vendorId: string;
   vendorName: string;
   title: string;
   slug: string;
@@ -74,6 +75,15 @@ export type MarketplaceListingT = {
   imageColor: string;
   verified: boolean;
   reviewStatus: string;
+};
+
+export type VendorT = {
+  id: string;
+  name: string;
+  slug: string;
+  overview: string | null;
+  website: string | null;
+  verified: boolean;
 };
 
 export type ArticleT = {

@@ -1,0 +1,786 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useMemo, useState } from "react";
+     4→     4→import { SectionShell, SectionHeading } from "@/components/shared/section";
+     5→     5→import { VerificationBadge, StatusPill } from "@/components/shared/badges";
+     6→     6→import { DisclaimerBanner } from "@/components/shared/disclaimer";
+     7→     7→import { CTASection } from "@/components/shared/cta";
+     8→     8→import { Input } from "@/components/ui/input";
+     9→     9→import { Label } from "@/components/ui/label";
+    10→    10→import { Button } from "@/components/ui/button";
+    11→    11→import { Badge } from "@/components/ui/badge";
+    12→    12→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+    13→    13→import { Switch } from "@/components/ui/switch";
+    14→    14→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+    15→    15→import { Textarea } from "@/components/ui/textarea";
+    16→    16→import { Checkbox } from "@/components/ui/checkbox";
+    17→    17→import { toast } from "sonner";
+    18→    18→import { colorClasses, MARKETPLACE_CATEGORIES } from "@/lib/constants";
+    19→    19→import type { MarketplaceListingT } from "@/lib/types";
+    20→    20→import { cn } from "@/lib/utils";
+    21→    21→import {
+    22→    22→  Search, ArrowRight, X, CheckCircle2, ShieldCheck, Package,
+    23→    23→  FlaskConical, Syringe, Droplet, Armchair, Activity, HeartPulse,
+    24→    24→  Video, Monitor, CreditCard, BadgeCheck, Megaphone, Users,
+    25→    25→  MessageSquare, Building2, TrendingUp, Store, LayoutDashboard,
+    26→    26→  ImageIcon, Inbox, FileBarChart, Wallet, ListChecks,
+    27→    27→} from "lucide-react";
+    28→    28→
+    29→    29→type IconKey =
+    30→    30→  | "flask" | "syringe" | "droplet" | "armchair" | "activity"
+    31→    31→  | "heartpulse" | "video" | "monitor" | "credit" | "badge"
+    32→    32→  | "shield" | "megaphone" | "users" | "message" | "building" | "trending"
+    33→    33→  | "package";
+    34→    34→
+    35→    35→function iconForCategory(category: string): IconKey {
+    36→    36→  const k = category.toLowerCase();
+    37→    37→  if (k.includes("lab")) return "flask";
+    38→    38→  if (k.includes("diagnostic")) return "activity";
+    39→    39→  if (k.includes("injection")) return "syringe";
+    40→    40→  if (k.includes("phlebotomy")) return "droplet";
+    41→    41→  if (k.includes("furniture")) return "armchair";
+    42→    42→  if (k.includes("body-composition") || k.includes("body composition")) return "activity";
+    43→    43→  if (k.includes("recovery")) return "heartpulse";
+    44→    44→  if (k.includes("telehealth")) return "video";
+    45→    45→  if (k.includes("software")) return "monitor";
+    46→    46→  if (k.includes("billing")) return "credit";
+    47→    47→  if (k.includes("credential")) return "badge";
+    48→    48→  if (k.includes("compliance")) return "shield";
+    49→    49→  if (k.includes("marketing")) return "megaphone";
+    50→    50→  if (k.includes("staffing")) return "users";
+    51→    51→  if (k.includes("patient engagement")) return "message";
+    52→    52→  if (k.includes("expansion")) return "trending";
+    53→    53→  return "package";
+    54→    54→}
+    55→    55→
+    56→    56→function CategoryIcon({ icon, className }: { icon: IconKey; className?: string }) {
+    57→    57→  switch (icon) {
+    58→    58→    case "flask": return <FlaskConical className={className} />;
+    59→    59→    case "syringe": return <Syringe className={className} />;
+    60→    60→    case "droplet": return <Droplet className={className} />;
+    61→    61→    case "armchair": return <Armchair className={className} />;
+    62→    62→    case "activity": return <Activity className={className} />;
+    63→    63→    case "heartpulse": return <HeartPulse className={className} />;
+    64→    64→    case "video": return <Video className={className} />;
+    65→    65→    case "monitor": return <Monitor className={className} />;
+    66→    66→    case "credit": return <CreditCard className={className} />;
+    67→    67→    case "badge": return <BadgeCheck className={className} />;
+    68→    68→    case "shield": return <ShieldCheck className={className} />;
+    69→    69→    case "megaphone": return <Megaphone className={className} />;
+    70→    70→    case "users": return <Users className={className} />;
+    71→    71→    case "message": return <MessageSquare className={className} />;
+    72→    72→    case "building": return <Building2 className={className} />;
+    73→    73→    case "trending": return <TrendingUp className={className} />;
+    74→    74→    case "package": default: return <Package className={className} />;
+    75→    75→  }
+    76→    76→}
+    77→    77→
+    78→    78→type QuoteFormState = {
+    79→    79→  requesterName: string;
+    80→    80→  requesterEmail: string;
+    81→    81→  requesterOrg: string;
+    82→    82→  quantity: string;
+    83→    83→  notes: string;
+    84→    84→  consent: boolean;
+    85→    85→};
+    86→    86→
+    87→    87→const emptyForm: QuoteFormState = {
+    88→    88→  requesterName: "",
+    89→    89→  requesterEmail: "",
+    90→    90→  requesterOrg: "",
+    91→    91→  quantity: "",
+    92→    92→  notes: "",
+    93→    93→  consent: false,
+    94→    94→};
+    95→    95→
+    96→    96→export function MarketplaceView({
+    97→    97→  listings,
+    98→    98→  onGetStarted,
+    99→    99→}: {
+   100→   100→  listings: MarketplaceListingT[];
+   101→   101→  onGetStarted: () => void;
+   102→   102→}) {
+   103→   103→  const [query, setQuery] = useState("");
+   104→   104→  const [category, setCategory] = useState("all");
+   105→   105→  const [listingType, setListingType] = useState("all");
+   106→   106→  const [verifiedOnly, setVerifiedOnly] = useState(false);
+   107→   107→
+   108→   108→  const [quoteListing, setQuoteListing] = useState<MarketplaceListingT | null>(null);
+   109→   109→  const [detailListing, setDetailListing] = useState<MarketplaceListingT | null>(null);
+   110→   110→
+   111→   111→  const allCategories = useMemo(() => {
+   112→   112→    const set = new Set<string>();
+   113→   113→    listings.forEach((l) => set.add(l.category));
+   114→   114→    return Array.from(set).sort();
+   115→   115→  }, [listings]);
+   116→   116→
+   117→   117→  const allListingTypes = useMemo(() => {
+   118→   118→    const set = new Set<string>();
+   119→   119→    listings.forEach((l) => set.add(l.listingType));
+   120→   120→    return Array.from(set).sort();
+   121→   121→  }, [listings]);
+   122→   122→
+   123→   123→  const filtered = useMemo(() => {
+   124→   124→    return listings.filter((l) => {
+   125→   125→      if (query) {
+   126→   126→        const q = query.toLowerCase();
+   127→   127→        const hay = `${l.title} ${l.vendorName} ${l.description} ${l.category}`.toLowerCase();
+   128→   128→        if (!hay.includes(q)) return false;
+   129→   129→      }
+   130→   130→      if (category !== "all" && l.category !== category) return false;
+   131→   131→      if (listingType !== "all" && l.listingType !== listingType) return false;
+   132→   132→      if (verifiedOnly && !l.verified) return false;
+   133→   133→      return true;
+   134→   134→    });
+   135→   135→  }, [listings, query, category, listingType, verifiedOnly]);
+   136→   136→
+   137→   137→  function resetFilters() {
+   138→   138→    setQuery("");
+   139→   139→    setCategory("all");
+   140→   140→    setListingType("all");
+   141→   141→    setVerifiedOnly(false);
+   142→   142→  }
+   143→   143→
+   144→   144→  function selectCategoryAndScroll(cat: string) {
+   145→   145→    setCategory(cat);
+   146→   146→    scrollToListings();
+   147→   147→  }
+   148→   148→
+   149→   149→  function scrollToListings() {
+   150→   150→    const el = document.getElementById("listings");
+   151→   151→    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+   152→   152→  }
+   153→   153→
+   154→   154→  return (
+   155→   155→    <>
+   156→   156→      {/* 1. Hero */}
+   157→   157→      <section className="border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-14 sm:py-20">
+   158→   158→        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+   159→   159→          <div className="max-w-3xl">
+   160→   160→            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-700">
+   161→   161→              <Store className="h-3.5 w-3.5" /> Marketplace
+   162→   162→            </div>
+   163→   163→            <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+   164→   164→              The Healthcare Services Marketplace
+   165→   165→            </h1>
+   166→   166→            <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+   167→   167→              A B2B marketplace for clinic products and services — labs, equipment, supplies,
+   168→   168→              software, billing, credentialing, compliance, marketing, and staffing. Discover
+   169→   169→              verified vendors, compare offerings, and request quotes in one place.
+   170→   170→            </p>
+   171→   171→            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+   172→   172→              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
+   173→   173→                Become a Vendor <ArrowRight className="ml-1 h-4 w-4" />
+   174→   174→              </Button>
+   175→   175→              <Button size="lg" variant="outline" onClick={scrollToListings}>
+   176→   176→                <Search className="mr-1 h-4 w-4" /> Browse Listings
+   177→   177→              </Button>
+   178→   178→            </div>
+   179→   179→          </div>
+   180→   180→        </div>
+   181→   181→      </section>
+   182→   182→
+   183→   183→      {/* 2. Categories overview */}
+   184→   184→      <SectionShell className="!pt-12">
+   185→   185→        <SectionHeading
+   186→   186→          eyebrow="Categories"
+   187→   187→          title="Everything your clinic needs, organized"
+   188→   188→          description="Tap a category to jump straight to relevant listings. Vendors cover both physical products and operational services."
+   189→   189→        />
+   190→   190→        <div className="mt-6 flex flex-wrap gap-2.5">
+   191→   191→          {MARKETPLACE_CATEGORIES.map((cat) => {
+   192→   192→            const active = category === cat;
+   193→   193→            const icon = iconForCategory(cat);
+   194→   194→            return (
+   195→   195→              <button
+   196→   196→                key={cat}
+   197→   197→                type="button"
+   198→   198→                onClick={() => selectCategoryAndScroll(cat)}
+   199→   199→                className={cn(
+   200→   200→                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
+   201→   201→                  active
+   202→   202→                    ? "border-teal-600 bg-teal-600 text-white"
+   203→   203→                    : "border-border bg-card text-foreground/80 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700",
+   204→   204→                )}
+   205→   205→              >
+   206→   206→                <CategoryIcon icon={icon} className="h-4 w-4" />
+   207→   207→                {cat}
+   208→   208→              </button>
+   209→   209→            );
+   210→   210→          })}
+   211→   211→        </div>
+   212→   212→      </SectionShell>
+   213→   213→
+   214→   214→      {/* 3. Listings */}
+   215→   215→      <SectionShell id="listings" className="!pt-12">
+   216→   216→        <SectionHeading
+   217→   217→          eyebrow="Browse Listings"
+   218→   218→          title="Equipment, services, and vendors in one place"
+   219→   219→          description="Filter by keyword, category, listing type, and verification status. Request a quote or contact a vendor directly."
+   220→   220→        />
+   221→   221→
+   222→   222→        {/* Filter bar */}
+   223→   223→        <div className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+   224→   224→          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
+   225→   225→            <div className="grid gap-1.5">
+   226→   226→              <Label htmlFor="mk-q" className="text-xs">Search</Label>
+   227→   227→              <div className="relative">
+   228→   228→                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+   229→   229→                <Input
+   230→   230→                  id="mk-q"
+   231→   231→                  placeholder="Title, vendor, or description..."
+   232→   232→                  value={query}
+   233→   233→                  onChange={(e) => setQuery(e.target.value)}
+   234→   234→                  className="pl-9"
+   235→   235→                />
+   236→   236→              </div>
+   237→   237→            </div>
+   238→   238→            <div className="grid gap-1.5">
+   239→   239→              <Label className="text-xs">Category</Label>
+   240→   240→              <Select value={category} onValueChange={setCategory}>
+   241→   241→                <SelectTrigger><SelectValue placeholder="All categories" /></SelectTrigger>
+   242→   242→                <SelectContent>
+   243→   243→                  <SelectItem value="all">All categories</SelectItem>
+   244→   244→                  {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+   245→   245→                </SelectContent>
+   246→   246→              </Select>
+   247→   247→            </div>
+   248→   248→            <div className="grid gap-1.5">
+   249→   249→              <Label className="text-xs">Listing type</Label>
+   250→   250→              <Select value={listingType} onValueChange={setListingType}>
+   251→   251→                <SelectTrigger><SelectValue placeholder="All types" /></SelectTrigger>
+   252→   252→                <SelectContent>
+   253→   253→                  <SelectItem value="all">All types</SelectItem>
+   254→   254→                  {allListingTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+   255→   255→                </SelectContent>
+   256→   256→              </Select>
+   257→   257→            </div>
+   258→   258→            <div className="flex items-end">
+   259→   259→              <label className="flex items-center gap-2 text-sm">
+   260→   260→                <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+   261→   261→                <span className="flex items-center gap-1 text-muted-foreground">
+   262→   262→                  <ShieldCheck className="h-3.5 w-3.5" /> Verified only
+   263→   263→                </span>
+   264→   264→              </label>
+   265→   265→            </div>
+   266→   266→          </div>
+   267→   267→          <div className="mt-4 flex items-center justify-between border-t pt-3 text-sm">
+   268→   268→            <span className="text-muted-foreground">
+   269→   269→              Showing <span className="font-semibold text-foreground">{filtered.length}</span> of {listings.length} listings
+   270→   270→            </span>
+   271→   271→            <Button variant="ghost" size="sm" onClick={resetFilters}>
+   272→   272→              <X className="mr-1 h-3.5 w-3.5" /> Reset
+   273→   273→            </Button>
+   274→   274→          </div>
+   275→   275→        </div>
+   276→   276→
+   277→   277→        {/* Results */}
+   278→   278→        {filtered.length === 0 ? (
+   279→   279→          <EmptyState onReset={resetFilters} />
+   280→   280→        ) : (
+   281→   281→          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+   282→   282→            {filtered.map((l) => (
+   283→   283→              <ListingCard
+   284→   284→                key={l.id}
+   285→   285→                listing={l}
+   286→   286→                onQuote={() => setQuoteListing(l)}
+   287→   287→                onContact={onGetStarted}
+   288→   288→                onDetails={() => setDetailListing(l)}
+   289→   289→              />
+   290→   290→            ))}
+   291→   291→          </div>
+   292→   292→        )}
+   293→   293→
+   294→   294→        <DisclaimerBanner className="mt-8" tone="teal">
+   295→   295→          Vendor verification reflects administrative review of business information. Listings
+   296→   296→          and any associated product claims are subject to moderation. Novalyte AI does not
+   297→   297→          endorse specific vendors and does not guarantee clinical or financial outcomes.
+   298→   298→        </DisclaimerBanner>
+   299→   299→      </SectionShell>
+   300→   300→
+   301→   301→      {/* 6. Vendor portal preview */}
+   302→   302→      <SectionShell tone="muted">
+   303→   303→        <SectionHeading
+   304→   304→          eyebrow="Vendor Portal"
+   305→   305→          title="A complete toolkit for vendors"
+   306→   306→          description="List products and services, manage inquiries, and track performance — all from a single vendor dashboard."
+   307→   307→        />
+   308→   308→        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+   309→   309→          {VENDOR_FEATURES.map((f) => (
+   310→   310→            <div key={f.title} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+   311→   311→              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+   312→   312→                <f.icon className="h-5 w-5" />
+   313→   313→              </div>
+   314→   314→              <h3 className="mt-3 text-base font-semibold text-foreground">{f.title}</h3>
+   315→   315→              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.description}</p>
+   316→   316→            </div>
+   317→   317→          ))}
+   318→   318→        </div>
+   319→   319→        <div className="mt-8 flex justify-center">
+   320→   320→          <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
+   321→   321→            Become a Vendor <ArrowRight className="ml-1 h-4 w-4" />
+   322→   322→          </Button>
+   323→   323→        </div>
+   324→   324→      </SectionShell>
+   325→   325→
+   326→   326→      {/* 7. Marketplace safety */}
+   327→   327→      <SectionShell className="!pt-12">
+   328→   328→        <SectionHeading
+   329→   329→          eyebrow="Marketplace Safety"
+   330→   330→          title="Moderated listings, verified vendors"
+   331→   331→          description="Novalyte AI does not allow direct publication of medical claims without review. An administrative moderation process governs what appears in the marketplace."
+   332→   332→        />
+   333→   333→        <div className="mt-6">
+   334→   334→          <DisclaimerBanner tone="teal">
+   335→   335→            <div className="space-y-3">
+   336→   336→              <p>
+   337→   337→                <strong className="font-semibold">No medical claims without review.</strong> Listings
+   338→   338→                may not publish medical or clinical claims until they pass moderation. This protects
+   339→   339→                clinics, patients, and the integrity of the marketplace.
+   340→   340→              </p>
+   341→   341→              <p className="text-xs font-semibold uppercase tracking-wider text-teal-700/80">
+   342→   342→                Moderation covers
+   343→   343→              </p>
+   344→   344→              <div className="flex flex-wrap gap-2">
+   345→   345→                {REVIEW_TYPES.map((r) => (
+   346→   346→                  <span
+   347→   347→                    key={r}
+   348→   348→                    className="inline-flex items-center gap-1 rounded-full border border-teal-300 bg-white px-2.5 py-1 text-xs font-medium text-teal-800"
+   349→   349→                  >
+   350→   350→                    <CheckCircle2 className="h-3 w-3" /> {r}
+   351→   351→                  </span>
+   352→   352→                ))}
+   353→   353→              </div>
+   354→   354→            </div>
+   355→   355→          </DisclaimerBanner>
+   356→   356→        </div>
+   357→   357→      </SectionShell>
+   358→   358→
+   359→   359→      {/* 8. CTA */}
+   360→   360→      <CTASection
+   361→   361→        title="Reach men's health clinics seeking your solutions"
+   362→   362→        description="List your products and services in the Novalyte AI marketplace and connect with verified clinics actively looking for what you offer."
+   363→   363→        primaryLabel="Become a Vendor"
+   364→   364→        onPrimary={onGetStarted}
+   365→   365→        secondaryLabel="Explore Workforce"
+   366→   366→        secondaryView="workforce"
+   367→   367→        tone="dark"
+   368→   368→      />
+   369→   369→
+   370→   370→      {/* 4. Quote request dialog */}
+   371→   371→      <QuoteRequestDialog
+   372→   372→        listing={quoteListing}
+   373→   373→        onClose={() => setQuoteListing(null)}
+   374→   374→      />
+   375→   375→
+   376→   376→      {/* 5. Listing detail dialog (with embedded quote form) */}
+   377→   377→      <ListingDetailDialog
+   378→   378→        listing={detailListing}
+   379→   379→        onClose={() => setDetailListing(null)}
+   380→   380→        onQuote={(l) => {
+   381→   381→          setDetailListing(null);
+   382→   382→          setQuoteListing(l);
+   383→   383→        }}
+   384→   384→        onContact={onGetStarted}
+   385→   385→      />
+   386→   386→    </>
+   387→   387→  );
+   388→   388→}
+   389→   389→
+   390→   390→function ListingCard({
+   391→   391→  listing,
+   392→   392→  onQuote,
+   393→   393→  onContact,
+   394→   394→  onDetails,
+   395→   395→}: {
+   396→   396→  listing: MarketplaceListingT;
+   397→   397→  onQuote: () => void;
+   398→   398→  onContact: () => void;
+   399→   399→  onDetails: () => void;
+   400→   400→}) {
+   401→   401→  const c = colorClasses(listing.imageColor);
+   402→   402→  const icon = iconForCategory(listing.category);
+   403→   403→
+   404→   404→  return (
+   405→   405→    <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:shadow-md">
+   406→   406→      {/* Banner */}
+   407→   407→      <div className={cn("relative flex h-24 items-center justify-center", c.bg)}>
+   408→   408→        <CategoryIcon icon={icon} className="h-9 w-9 text-white/90" />
+   409→   409→        <div className="absolute right-3 top-3">
+   410→   410→          <VerificationBadge verified={listing.verified} status={listing.reviewStatus} className="bg-white/90" />
+   411→   411→        </div>
+   412→   412→      </div>
+   413→   413→
+   414→   414→      <div className="flex flex-1 flex-col p-5">
+   415→   415→        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+   416→   416→          {listing.vendorName}
+   417→   417→        </p>
+   418→   418→        <h3 className="mt-1 text-base font-semibold leading-tight text-foreground">{listing.title}</h3>
+   419→   419→
+   420→   420→        <div className="mt-2 flex flex-wrap gap-1.5">
+   421→   421→          <StatusPill tone="teal">{listing.category}</StatusPill>
+   422→   422→          <StatusPill tone="muted">{listing.listingType}</StatusPill>
+   423→   423→        </div>
+   424→   424→
+   425→   425→        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+   426→   426→          {listing.description}
+   427→   427→        </p>
+   428→   428→
+   429→   429→        <div className="mt-3 space-y-1.5">
+   430→   430→          {listing.priceNote && (
+   431→   431→            <p className="text-sm font-semibold text-foreground">{listing.priceNote}</p>
+   432→   432→          )}
+   433→   433→          {listing.pricingModel && (
+   434→   434→            <p className="text-xs text-muted-foreground">Pricing: {listing.pricingModel}</p>
+   435→   435→          )}
+   436→   436→        </div>
+   437→   437→
+   438→   438→        <div className="mt-3">
+   439→   439→          <StatusPill tone={listing.availability.toLowerCase().includes("avail") ? "emerald" : "amber"}>
+   440→   440→            {listing.availability}
+   441→   441→          </StatusPill>
+   442→   442→        </div>
+   443→   443→
+   444→   444→        <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row">
+   445→   445→          <Button
+   446→   446→            size="sm"
+   447→   447→            className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
+   448→   448→            onClick={onQuote}
+   449→   449→          >
+   450→   450→            Request Quote
+   451→   451→          </Button>
+   452→   452→          <Button size="sm" variant="outline" className="flex-1" onClick={onContact}>
+   453→   453→            Contact Vendor
+   454→   454→          </Button>
+   455→   455→          <Button size="sm" variant="outline" className="flex-1" onClick={onDetails}>
+   456→   456→            View Details
+   457→   457→          </Button>
+   458→   458→        </div>
+   459→   459→      </div>
+   460→   460→    </div>
+   461→   461→  );
+   462→   462→}
+   463→   463→
+   464→   464→function QuoteForm({
+   465→   465→  listingId,
+   466→   466→  listingTitle,
+   467→   467→  onDone,
+   468→   468→}: {
+   469→   469→  listingId: string;
+   470→   470→  listingTitle: string;
+   471→   471→  onDone?: () => void;
+   472→   472→}) {
+   473→   473→  const [form, setForm] = useState<QuoteFormState>(emptyForm);
+   474→   474→  const [submitting, setSubmitting] = useState(false);
+   475→   475→  const [done, setDone] = useState(false);
+   476→   476→
+   477→   477→  async function submit(e: React.FormEvent) {
+   478→   478→    e.preventDefault();
+   479→   479→    if (!form.consent) {
+   480→   480→      toast.error("Please acknowledge the consent statement before submitting.");
+   481→   481→      return;
+   482→   482→    }
+   483→   483→    setSubmitting(true);
+   484→   484→    try {
+   485→   485→      const res = await fetch("/api/quote", {
+   486→   486→        method: "POST",
+   487→   487→        headers: { "Content-Type": "application/json" },
+   488→   488→        body: JSON.stringify({
+   489→   489→          listingId,
+   490→   490→          requesterName: form.requesterName,
+   491→   491→          requesterEmail: form.requesterEmail,
+   492→   492→          requesterOrg: form.requesterOrg || null,
+   493→   493→          quantity: form.quantity || null,
+   494→   494→          notes: form.notes || null,
+   495→   495→        }),
+   496→   496→      });
+   497→   497→      if (!res.ok) throw new Error();
+   498→   498→      setDone(true);
+   499→   499→      toast.success("Quote request sent. The vendor will follow up.");
+   500→   500→      onDone?.();
+   501→   501→    } catch {
+   502→   502→      toast.error("Something went wrong. Please try again.");
+   503→   503→    } finally {
+   504→   504→      setSubmitting(false);
+   505→   505→    }
+   506→   506→  }
+   507→   507→
+   508→   508→  if (done) {
+   509→   509→    return (
+   510→   510→      <div className="flex flex-col items-center gap-2 py-6 text-center">
+   511→   511→        <CheckCircle2 className="h-9 w-9 text-teal-600" />
+   512→   512→        <p className="text-sm font-medium">Quote request sent for &ldquo;{listingTitle}&rdquo;</p>
+   513→   513→        <p className="text-xs text-muted-foreground">The vendor will reach out using the contact details you provided.</p>
+   514→   514→      </div>
+   515→   515→    );
+   516→   516→  }
+   517→   517→
+   518→   518→  return (
+   519→   519→    <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
+   520→   520→      <div className="grid gap-1.5">
+   521→   521→        <Label htmlFor="qf-name" className="text-xs">Requester name *</Label>
+   522→   522→        <Input
+   523→   523→          id="qf-name"
+   524→   524→          required
+   525→   525→          placeholder="Full name"
+   526→   526→          value={form.requesterName}
+   527→   527→          onChange={(e) => setForm({ ...form, requesterName: e.target.value })}
+   528→   528→        />
+   529→   529→      </div>
+   530→   530→      <div className="grid gap-1.5">
+   531→   531→        <Label htmlFor="qf-email" className="text-xs">Email *</Label>
+   532→   532→        <Input
+   533→   533→          id="qf-email"
+   534→   534→          required
+   535→   535→          type="email"
+   536→   536→          placeholder="you@clinic.com"
+   537→   537→          value={form.requesterEmail}
+   538→   538→          onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })}
+   539→   539→        />
+   540→   540→      </div>
+   541→   541→      <div className="grid gap-1.5">
+   542→   542→        <Label htmlFor="qf-org" className="text-xs">Organization (optional)</Label>
+   543→   543→        <Input
+   544→   544→          id="qf-org"
+   545→   545→          placeholder="Clinic or company"
+   546→   546→          value={form.requesterOrg}
+   547→   547→          onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })}
+   548→   548→        />
+   549→   549→      </div>
+   550→   550→      <div className="grid gap-1.5">
+   551→   551→        <Label htmlFor="qf-qty" className="text-xs">Quantity (optional)</Label>
+   552→   552→        <Input
+   553→   553→          id="qf-qty"
+   554→   554→          placeholder="e.g. 5 units, 12 months"
+   555→   555→          value={form.quantity}
+   556→   556→          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+   557→   557→        />
+   558→   558→      </div>
+   559→   559→      <div className="grid gap-1.5 sm:col-span-2">
+   560→   560→        <Label htmlFor="qf-notes" className="text-xs">Notes (optional)</Label>
+   561→   561→        <Textarea
+   562→   562→          id="qf-notes"
+   563→   563→          rows={3}
+   564→   564→          placeholder="Questions, delivery timelines, integrations, etc."
+   565→   565→          value={form.notes}
+   566→   566→          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+   567→   567→        />
+   568→   568→      </div>
+   569→   569→      <label className="flex items-start gap-2 text-xs text-muted-foreground sm:col-span-2">
+   570→   570→        <Checkbox
+   571→   571→          checked={form.consent}
+   572→   572→          onCheckedChange={(v) => setForm({ ...form, consent: v === true })}
+   573→   573→          className="mt-0.5"
+   574→   574→        />
+   575→   575→        <span>
+   576→   576→          I understand Novalyte AI is a technology platform and does not sell, endorse, or warrant
+   577→   577→          vendor products. Quotes are provided directly by the vendor. Medical or clinical claims
+   578→   578→          are subject to moderation.
+   579→   579→        </span>
+   580→   580→      </label>
+   581→   581→      <Button
+   582→   582→        type="submit"
+   583→   583→        className="sm:col-span-2 bg-teal-600 text-white hover:bg-teal-700"
+   584→   584→        disabled={submitting || !form.consent}
+   585→   585→      >
+   586→   586→        {submitting ? "Sending..." : "Submit quote request"} <ArrowRight className="ml-1 h-4 w-4" />
+   587→   587→      </Button>
+   588→   588→    </form>
+   589→   589→  );
+   590→   590→}
+   591→   591→
+   592→   592→function QuoteRequestDialog({
+   593→   593→  listing,
+   594→   594→  onClose,
+   595→   595→}: {
+   596→   596→  listing: MarketplaceListingT | null;
+   597→   597→  onClose: () => void;
+   598→   598→}) {
+   599→   599→  return (
+   600→   600→    <Dialog open={!!listing} onOpenChange={(v) => { if (!v) onClose(); }}>
+   601→   601→      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+   602→   602→        {listing && (
+   603→   603→          <>
+   604→   604→            <DialogHeader>
+   605→   605→              <DialogTitle>Request a quote</DialogTitle>
+   606→   606→              <DialogDescription>
+   607→   607→                For <span className="font-medium text-foreground">{listing.title}</span> by {listing.vendorName}.
+   608→   608→              </DialogDescription>
+   609→   609→            </DialogHeader>
+   610→   610→            <QuoteForm
+   611→   611→              key={listing.id}
+   612→   612→              listingId={listing.id}
+   613→   613→              listingTitle={listing.title}
+   614→   614→            />
+   615→   615→          </>
+   616→   616→        )}
+   617→   617→      </DialogContent>
+   618→   618→    </Dialog>
+   619→   619→  );
+   620→   620→}
+   621→   621→
+   622→   622→function ListingDetailDialog({
+   623→   623→  listing,
+   624→   624→  onClose,
+   625→   625→  onQuote,
+   626→   626→  onContact,
+   627→   627→}: {
+   628→   628→  listing: MarketplaceListingT | null;
+   629→   629→  onClose: () => void;
+   630→   630→  onQuote: (l: MarketplaceListingT) => void;
+   631→   631→  onContact: () => void;
+   632→   632→}) {
+   633→   633→  const c = listing ? colorClasses(listing.imageColor) : colorClasses("teal");
+   634→   634→  const icon = listing ? iconForCategory(listing.category) : "package";
+   635→   635→
+   636→   636→  return (
+   637→   637→    <Dialog open={!!listing} onOpenChange={(v) => { if (!v) onClose(); }}>
+   638→   638→      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+   639→   639→        {listing && (
+   640→   640→          <>
+   641→   641→            <DialogHeader>
+   642→   642→              <div className={cn("mb-3 flex h-24 w-full items-center justify-center rounded-xl", c.bg)}>
+   643→   643→                <CategoryIcon icon={icon} className="h-9 w-9 text-white/90" />
+   644→   644→              </div>
+   645→   645→              <DialogTitle className="text-xl">{listing.title}</DialogTitle>
+   646→   646→              <DialogDescription className="flex flex-wrap items-center gap-2">
+   647→   647→                <span className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+   648→   648→                  {listing.vendorName}
+   649→   649→                </span>
+   650→   650→                <VerificationBadge verified={listing.verified} status={listing.reviewStatus} />
+   651→   651→              </DialogDescription>
+   652→   652→            </DialogHeader>
+   653→   653→
+   654→   654→            <div className="flex flex-wrap gap-1.5">
+   655→   655→              <StatusPill tone="teal">{listing.category}</StatusPill>
+   656→   656→              <StatusPill tone="muted">{listing.listingType}</StatusPill>
+   657→   657→              <StatusPill tone={listing.availability.toLowerCase().includes("avail") ? "emerald" : "amber"}>
+   658→   658→                {listing.availability}
+   659→   659→              </StatusPill>
+   660→   660→            </div>
+   661→   661→
+   662→   662→            <p className="text-sm leading-relaxed text-muted-foreground">{listing.description}</p>
+   663→   663→
+   664→   664→            <div className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm sm:grid-cols-2">
+   665→   665→              {listing.pricingModel && (
+   666→   666→                <div>
+   667→   667→                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pricing model</p>
+   668→   668→                  <p className="mt-0.5 text-foreground">{listing.pricingModel}</p>
+   669→   669→                </div>
+   670→   670→              )}
+   671→   671→              {listing.priceNote && (
+   672→   672→                <div>
+   673→   673→                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price</p>
+   674→   674→                  <p className="mt-0.5 font-semibold text-foreground">{listing.priceNote}</p>
+   675→   675→                </div>
+   676→   676→              )}
+   677→   677→              <div>
+   678→   678→                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Verification</p>
+   679→   679→                <p className="mt-0.5 text-foreground">
+   680→   680→                  {listing.verified ? "Verified vendor" : listing.reviewStatus.replace(/_/g, " ")}
+   681→   681→                </p>
+   682→   682→              </div>
+   683→   683→              <div>
+   684→   684→                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Listing type</p>
+   685→   685→                <p className="mt-0.5 text-foreground">{listing.listingType}</p>
+   686→   686→              </div>
+   687→   687→            </div>
+   688→   688→
+   689→   689→            <div className="flex flex-col gap-2 sm:flex-row">
+   690→   690→              <Button
+   691→   691→                className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
+   692→   692→                onClick={() => onQuote(listing)}
+   693→   693→              >
+   694→   694→                Request Quote <ArrowRight className="ml-1 h-4 w-4" />
+   695→   695→              </Button>
+   696→   696→              <Button variant="outline" className="flex-1" onClick={onContact}>
+   697→   697→                Contact Vendor
+   698→   698→              </Button>
+   699→   699→            </div>
+   700→   700→
+   701→   701→            <div className="rounded-xl border border-teal-200 bg-teal-50/30 p-5">
+   702→   702→              <h4 className="text-sm font-semibold text-foreground">Request a quote</h4>
+   703→   703→              <p className="mt-1 text-xs text-muted-foreground">
+   704→   704→                Submit your details and the vendor will respond directly. Novalyte AI does not
+   705→   705→                intermediate transactions.
+   706→   706→              </p>
+   707→   707→              <div className="mt-4">
+   708→   708→                <QuoteForm
+   709→   709→                  key={listing.id}
+   710→   710→                  listingId={listing.id}
+   711→   711→                  listingTitle={listing.title}
+   712→   712→                />
+   713→   713→              </div>
+   714→   714→            </div>
+   715→   715→          </>
+   716→   716→        )}
+   717→   717→      </DialogContent>
+   718→   718→    </Dialog>
+   719→   719→  );
+   720→   720→}
+   721→   721→
+   722→   722→function EmptyState({ onReset }: { onReset: () => void }) {
+   723→   723→  return (
+   724→   724→    <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 text-center">
+   725→   725→      <Search className="h-8 w-8 text-muted-foreground/60" />
+   726→   726→      <h3 className="mt-3 text-base font-semibold">No listings match your filters</h3>
+   727→   727→      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+   728→   728→        Try widening your search or clearing filters to see more marketplace listings.
+   729→   729→      </p>
+   730→   730→      <Button variant="outline" size="sm" className="mt-4" onClick={onReset}>Clear filters</Button>
+   731→   731→    </div>
+   732→   732→  );
+   733→   733→}
+   734→   734→
+   735→   735→const VENDOR_FEATURES: { title: string; description: string; icon: React.ComponentType<{ className?: string }> }[] = [
+   736→   736→  {
+   737→   737→    title: "Create company profile",
+   738→   738→    description: "Establish a verified vendor profile with capabilities, coverage area, and contact details.",
+   739→   739→    icon: Store,
+   740→   740→  },
+   741→   741→  {
+   742→   742→    title: "Submit products & services",
+   743→   743→    description: "Publish equipment, supplies, software, and service offerings with full descriptions.",
+   744→   744→    icon: Package,
+   745→   745→  },
+   746→   746→  {
+   747→   747→    title: "Upload media",
+   748→   748→    description: "Add product images, spec sheets, demo videos, and brand assets to your listings.",
+   749→   749→    icon: ImageIcon,
+   750→   750→  },
+   751→   751→  {
+   752→   752→    title: "Manage listings",
+   753→   753→    description: "Edit pricing, availability, categories, and listing types from a single dashboard.",
+   754→   754→    icon: LayoutDashboard,
+   755→   755→  },
+   756→   756→  {
+   757→   757→    title: "Receive inquiries",
+   758→   758→    description: "Get notified when clinics request quotes or reach out about your offerings.",
+   759→   759→    icon: Inbox,
+   760→   760→  },
+   761→   761→  {
+   762→   762→    title: "Respond to quote requests",
+   763→   763→    description: "Reply to qualified buyers with pricing, lead times, and terms.",
+   764→   764→    icon: MessageSquare,
+   765→   765→  },
+   766→   766→  {
+   767→   767→    title: "Track listing performance",
+   768→   768→    description: "Monitor views, inquiries, and quote conversions across your catalog.",
+   769→   769→    icon: FileBarChart,
+   770→   770→  },
+   771→   771→  {
+   772→   772→    title: "Subscription & commission",
+   773→   773→    description: "Manage your vendor subscription tier and any applicable marketplace commission.",
+   774→   774→    icon: Wallet,
+   775→   775→  },
+   776→   776→];
+   777→   777→
+   778→   778→const REVIEW_TYPES: string[] = [
+   779→   779→  "Vendor verification",
+   780→   780→  "Product review",
+   781→   781→  "Service review",
+   782→   782→  "Claim review",
+   783→   783→  "Category approval",
+   784→   784→  "Listing approval",
+   785→   785→];
+   786→   786→

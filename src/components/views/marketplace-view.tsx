@@ -1,320 +1,732 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { CTASection } from "@/components/shared/cta";
+import {
+  PremiumCard,
+  EmptyState,
+  FilterChip,
+  ViewToggle,
+  SaveButton,
+  CardSkeleton,
+} from "@/components/shared/enterprise";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { colorClasses, MARKETPLACE_CATEGORIES } from "@/lib/constants";
-import type { MarketplaceListingT } from "@/lib/types";
+import type { MarketplaceListingT, VendorT } from "@/lib/types";
+import { navigate, useSaved, useCompare } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import {
-  Search, ArrowRight, X, CheckCircle2, ShieldCheck, Package,
-  FlaskConical, Syringe, Droplet, Armchair, Activity, HeartPulse,
-  Video, Monitor, CreditCard, BadgeCheck, Megaphone, Users,
-  MessageSquare, Building2, TrendingUp, Store, LayoutDashboard,
-  ImageIcon, Inbox, FileBarChart, Wallet, ListChecks,
+  Search,
+  ArrowRight,
+  ArrowDown,
+  CheckCircle2,
+  Package,
+  LayoutGrid,
+  List,
+  SlidersHorizontal,
+  ShieldCheck,
+  Quote,
+  FileBarChart,
+  Store,
+  LayoutDashboard,
+  Image as ImageIcon,
+  Inbox,
+  MessageSquare,
+  Wallet,
+  Banknote,
+  Users,
+  Megaphone,
+  CreditCard,
+  BadgeCheck,
+  FlaskConical,
+  Syringe,
+  Droplet,
+  Armchair,
+  Activity,
+  HeartPulse,
+  Video,
+  Monitor,
+  Building2,
+  ClipboardCheck,
+  Stethoscope,
+  Clock,
+  X,
+  GitCompare,
 } from "lucide-react";
 
-type IconKey =
-  | "flask" | "syringe" | "droplet" | "armchair" | "activity"
-  | "heartpulse" | "video" | "monitor" | "credit" | "badge"
-  | "shield" | "megaphone" | "users" | "message" | "building" | "trending"
-  | "package";
-
-function iconForCategory(category: string): IconKey {
-  const k = category.toLowerCase();
-  if (k.includes("lab")) return "flask";
-  if (k.includes("diagnostic")) return "activity";
-  if (k.includes("injection")) return "syringe";
-  if (k.includes("phlebotomy")) return "droplet";
-  if (k.includes("furniture")) return "armchair";
-  if (k.includes("body-composition") || k.includes("body composition")) return "activity";
-  if (k.includes("recovery")) return "heartpulse";
-  if (k.includes("telehealth")) return "video";
-  if (k.includes("software")) return "monitor";
-  if (k.includes("billing")) return "credit";
-  if (k.includes("credential")) return "badge";
-  if (k.includes("compliance")) return "shield";
-  if (k.includes("marketing")) return "megaphone";
-  if (k.includes("staffing")) return "users";
-  if (k.includes("patient engagement")) return "message";
-  if (k.includes("expansion")) return "trending";
-  return "package";
-}
-
-function CategoryIcon({ icon, className }: { icon: IconKey; className?: string }) {
-  switch (icon) {
-    case "flask": return <FlaskConical className={className} />;
-    case "syringe": return <Syringe className={className} />;
-    case "droplet": return <Droplet className={className} />;
-    case "armchair": return <Armchair className={className} />;
-    case "activity": return <Activity className={className} />;
-    case "heartpulse": return <HeartPulse className={className} />;
-    case "video": return <Video className={className} />;
-    case "monitor": return <Monitor className={className} />;
-    case "credit": return <CreditCard className={className} />;
-    case "badge": return <BadgeCheck className={className} />;
-    case "shield": return <ShieldCheck className={className} />;
-    case "megaphone": return <Megaphone className={className} />;
-    case "users": return <Users className={className} />;
-    case "message": return <MessageSquare className={className} />;
-    case "building": return <Building2 className={className} />;
-    case "trending": return <TrendingUp className={className} />;
-    case "package": default: return <Package className={className} />;
+/* ───────────────────────────────────────────────────────────────
+   Category icon (stable wrapper — uses switch with literal JSX so the
+   React Compiler treats it as a static element)
+   ─────────────────────────────────────────────────────────────── */
+function CategoryIcon({ category, className }: { category: string; className?: string }) {
+  switch (category) {
+    case "Laboratory Services": return <FlaskConical className={className} />;
+    case "Diagnostic Equipment": return <Activity className={className} />;
+    case "Injection Supplies": return <Syringe className={className} />;
+    case "Phlebotomy Supplies": return <Droplet className={className} />;
+    case "Medical Furniture": return <Armchair className={className} />;
+    case "Body-Composition Systems": return <Stethoscope className={className} />;
+    case "Recovery Technology": return <HeartPulse className={className} />;
+    case "Telehealth Tools": return <Video className={className} />;
+    case "Clinic Software": return <Monitor className={className} />;
+    case "Billing Services": return <CreditCard className={className} />;
+    case "Credentialing Services": return <BadgeCheck className={className} />;
+    case "Compliance Support": return <ShieldCheck className={className} />;
+    case "Marketing Services": return <Megaphone className={className} />;
+    case "Staffing Services": return <Users className={className} />;
+    case "Patient Engagement Tools": return <MessageSquare className={className} />;
+    case "Clinic Expansion Services": return <Building2 className={className} />;
+    default: return <Package className={className} />;
   }
 }
 
-type QuoteFormState = {
-  requesterName: string;
-  requesterEmail: string;
-  requesterOrg: string;
-  quantity: string;
-  notes: string;
-  consent: boolean;
-};
+/* ───────────────────────────────────────────────────────────────
+   Availability + pricing + type helpers
+   ─────────────────────────────────────────────────────────────── */
+type AvailTone = "teal" | "amber" | "sky" | "violet";
 
-const emptyForm: QuoteFormState = {
-  requesterName: "",
-  requesterEmail: "",
-  requesterOrg: "",
-  quantity: "",
-  notes: "",
-  consent: false,
-};
+function availabilityMeta(av: string): { tone: AvailTone; label: string } {
+  const a = av.toLowerCase();
+  if (a.includes("order")) return { tone: "amber", label: "Made to order" };
+  if (a.includes("limit")) return { tone: "violet", label: "Limited" };
+  if (a.includes("pre") || a.includes("back")) return { tone: "sky", label: "Pre-order" };
+  return { tone: "teal", label: "In stock" };
+}
 
+const EQUIPMENT_CATEGORIES = new Set([
+  "Diagnostic Equipment",
+  "Body-Composition Systems",
+  "Recovery Technology",
+  "Medical Furniture",
+  "Telehealth Tools",
+]);
+
+function showsFinancingTag(listing: MarketplaceListingT): boolean {
+  return listing.listingType === "product" && EQUIPMENT_CATEGORIES.has(listing.category);
+}
+
+function vendorIdForName(vendors: VendorT[], name: string): string | undefined {
+  return vendors.find((v) => v.name === name)?.id;
+}
+
+const PRICING_MODELS = [
+  { value: "one-time", label: "One-time" },
+  { value: "subscription", label: "Subscription" },
+  { value: "quote", label: "Quote-based" },
+  { value: "range", label: "Price range" },
+  { value: "per-test", label: "Per-test" },
+  { value: "percentage", label: "Percentage" },
+];
+
+const AVAILABILITY_FILTERS = [
+  { value: "in-stock", label: "In stock" },
+  { value: "made-to-order", label: "Made to order" },
+  { value: "limited", label: "Limited" },
+  { value: "preorder", label: "Pre-order" },
+];
+
+const PAGE_SIZE = 9;
+
+/* ───────────────────────────────────────────────────────────────
+   Hero trust indicators (qualitative only — no fake numbers)
+   ─────────────────────────────────────────────────────────────── */
+const HERO_TRUST = [
+  { icon: ShieldCheck, label: "Verified supplier badges" },
+  { icon: Quote, label: "Quote & bulk-order workflows" },
+  { icon: Banknote, label: "Equipment financing indicators" },
+  { icon: ClipboardCheck, label: "Clinical-claim moderation" },
+];
+
+const VENDOR_PORTAL_FEATURES = [
+  { icon: Store, title: "Create profile", desc: "Establish your vendor identity with company overview, capabilities, and verification." },
+  { icon: Package, title: "Submit products & services", desc: "List equipment, software, services, and subscriptions with structured pricing." },
+  { icon: ImageIcon, title: "Upload media", desc: "Add banners, logos, and category tags so clinics can quickly evaluate fit." },
+  { icon: LayoutDashboard, title: "Manage listings", desc: "Edit pricing, availability, and descriptions across your entire catalog." },
+  { icon: Inbox, title: "Receive inquiries", desc: "Get quote requests and questions routed directly from clinic buyers." },
+  { icon: MessageSquare, title: "Respond to quotes", desc: "Reply with quantities, lead times, financing, and fulfillment details." },
+  { icon: FileBarChart, title: "Track performance", desc: "Monitor listing engagement and inquiries without vanity metrics." },
+  { icon: Wallet, title: "Manage billing", desc: "Subscription and commission terms reviewed during onboarding." },
+];
+
+const SAFETY_REVIEW_TYPES = [
+  { label: "Vendor verification", icon: ShieldCheck },
+  { label: "Product review", icon: Package },
+  { label: "Service review", icon: ClipboardCheck },
+  { label: "Claim review", icon: FileBarChart },
+  { label: "Category approval", icon: BadgeCheck },
+  { label: "Listing approval", icon: CheckCircle2 },
+];
+
+/* ───────────────────────────────────────────────────────────────
+   Main view
+   ─────────────────────────────────────────────────────────────── */
 export function MarketplaceView({
   listings,
+  vendors,
   onGetStarted,
 }: {
   listings: MarketplaceListingT[];
+  vendors: VendorT[];
   onGetStarted: () => void;
 }) {
+  /* Filter state */
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
-  const [listingType, setListingType] = useState("all");
+  const [category, setCategory] = useState<string>("all");
+  const [listingType, setListingType] = useState<string>("all");
+  const [vendorName, setVendorName] = useState<string>("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [pricingModel, setPricingModel] = useState<string>("all");
+  const [availability, setAvailability] = useState<string>("all");
 
+  /* UI state */
+  const [sort, setSort] = useState("relevant");
+  const [view, setView] = useState("grid");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [quoteListing, setQuoteListing] = useState<MarketplaceListingT | null>(null);
-  const [detailListing, setDetailListing] = useState<MarketplaceListingT | null>(null);
 
-  const allCategories = useMemo(() => {
-    const set = new Set<string>();
-    listings.forEach((l) => set.add(l.category));
-    return Array.from(set).sort();
+  /* Derive select options from listings */
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Set(listings.map((l) => l.category))).sort();
+  }, [listings]);
+  const uniqueListingTypes = useMemo(() => {
+    return Array.from(new Set(listings.map((l) => l.listingType))).sort();
+  }, [listings]);
+  const uniqueVendors = useMemo(() => {
+    return Array.from(new Set(listings.map((l) => l.vendorName))).sort();
+  }, [listings]);
+  const uniquePricingModels = useMemo(() => {
+    const present = new Set(listings.map((l) => l.pricingModel).filter(Boolean));
+    return PRICING_MODELS.filter((m) => present.has(m.value));
   }, [listings]);
 
-  const allListingTypes = useMemo(() => {
-    const set = new Set<string>();
-    listings.forEach((l) => set.add(l.listingType));
-    return Array.from(set).sort();
-  }, [listings]);
+  /* Reset to page 1 + brief loading shimmer whenever filters change.
+     Using the "adjusting state during render" pattern (endorsed by React docs)
+     to avoid cascading setState-in-effect warnings. */
+  const filterKey = `${query}|${category}|${listingType}|${vendorName}|${verifiedOnly}|${pricingModel}|${availability}|${sort}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (lastFilterKey !== filterKey) {
+    setLastFilterKey(filterKey);
+    setPage(1);
+    setLoading(true);
+  }
 
+  // Clear the loading shimmer 300ms after filters settle.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(t);
+  }, [loading, filterKey]);
+
+  /* Filter + sort */
   const filtered = useMemo(() => {
-    return listings.filter((l) => {
-      if (query) {
-        const q = query.toLowerCase();
+    const q = query.trim().toLowerCase();
+    let out = listings.filter((l) => {
+      if (q) {
         const hay = `${l.title} ${l.vendorName} ${l.description} ${l.category}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (category !== "all" && l.category !== category) return false;
       if (listingType !== "all" && l.listingType !== listingType) return false;
+      if (vendorName !== "all" && l.vendorName !== vendorName) return false;
       if (verifiedOnly && !l.verified) return false;
+      if (pricingModel !== "all" && l.pricingModel !== pricingModel) return false;
+      if (availability !== "all") {
+        const meta = availabilityMeta(l.availability);
+        const expected = AVAILABILITY_FILTERS.find((a) => a.value === availability);
+        if (expected && meta.label.toLowerCase() !== expected.label.toLowerCase()) return false;
+      }
       return true;
     });
-  }, [listings, query, category, listingType, verifiedOnly]);
+
+    if (sort === "az") {
+      out = [...out].sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sort === "verified") {
+      out = [...out].sort((a, b) => Number(b.verified) - Number(a.verified));
+    } else if (sort === "category") {
+      out = [...out].sort((a, b) => a.category.localeCompare(b.category));
+    }
+    return out;
+  }, [listings, query, category, listingType, vendorName, verifiedOnly, pricingModel, availability, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function resetFilters() {
     setQuery("");
     setCategory("all");
     setListingType("all");
+    setVendorName("all");
     setVerifiedOnly(false);
+    setPricingModel("all");
+    setAvailability("all");
   }
 
-  function selectCategoryAndScroll(cat: string) {
+  function scrollToCatalog() {
+    document.getElementById("listings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function selectCategory(cat: string) {
     setCategory(cat);
-    scrollToListings();
+    scrollToCatalog();
   }
 
-  function scrollToListings() {
-    const el = document.getElementById("listings");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  /* Applied filter chips */
+  const chips: { label: string; onRemove: () => void }[] = [];
+  if (query.trim()) chips.push({ label: `“${query.trim()}”`, onRemove: () => setQuery("") });
+  if (category !== "all") chips.push({ label: category, onRemove: () => setCategory("all") });
+  if (listingType !== "all") chips.push({ label: listingType, onRemove: () => setListingType("all") });
+  if (vendorName !== "all") chips.push({ label: vendorName, onRemove: () => setVendorName("all") });
+  if (pricingModel !== "all") {
+    const m = PRICING_MODELS.find((p) => p.value === pricingModel);
+    if (m) chips.push({ label: m.label, onRemove: () => setPricingModel("all") });
   }
+  if (availability !== "all") {
+    const a = AVAILABILITY_FILTERS.find((x) => x.value === availability);
+    if (a) chips.push({ label: a.label, onRemove: () => setAvailability("all") });
+  }
+  if (verifiedOnly) chips.push({ label: "Verified only", onRemove: () => setVerifiedOnly(false) });
+
+  /* Verified vendors (directory preview) */
+  const verifiedVendors = useMemo(() => vendors.filter((v) => v.verified), [vendors]);
+  const listingCountByVendor = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const l of listings) m[l.vendorName] = (m[l.vendorName] ?? 0) + 1;
+    return m;
+  }, [listings]);
 
   return (
     <>
-      {/* 1. Hero */}
-      <section className="border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-14 sm:py-20">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-700">
-              <Store className="h-3.5 w-3.5" /> Marketplace
-            </div>
-            <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              The Healthcare Services Marketplace
-            </h1>
-            <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              A B2B marketplace for clinic products and services — labs, equipment, supplies,
-              software, billing, credentialing, compliance, marketing, and staffing. Discover
-              verified vendors, compare offerings, and request quotes in one place.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
-                Become a Vendor <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={scrollToListings}>
-                <Search className="mr-1 h-4 w-4" /> Browse Listings
-              </Button>
-            </div>
+      {/* ── 1. Hero ────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-16 sm:py-24">
+        <div className="novalyte-dots novalyte-radial-fade pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+        <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Healthcare Services Marketplace"
+            title={
+              <>
+                The B2B Commerce Platform for{" "}
+                <span className="text-teal-700">Men&apos;s Health Operations</span>
+              </>
+            }
+            description="Source labs, equipment, supplies, software, billing, credentialing, compliance, marketing, and staffing — specialized for healthcare operations and clinical equipment procurement. Built for clinics buying, vendors selling, and the operational workflows in between."
+          />
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
+              Become a Vendor <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+            <Button size="lg" variant="outline" onClick={scrollToCatalog}>
+              <ArrowDown className="mr-1 h-4 w-4" /> Browse Catalog
+            </Button>
+          </div>
+
+          {/* Qualitative trust indicators (no fake numbers) */}
+          <div className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {HERO_TRUST.map((t) => {
+              const Icon = t.icon;
+              return (
+                <PremiumCard key={t.label} className="p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm font-medium leading-snug text-foreground">{t.label}</p>
+                  </div>
+                </PremiumCard>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* 2. Categories overview */}
-      <SectionShell className="!pt-12">
-        <SectionHeading
-          eyebrow="Categories"
-          title="Everything your clinic needs, organized"
-          description="Tap a category to jump straight to relevant listings. Vendors cover both physical products and operational services."
-        />
-        <div className="mt-6 flex flex-wrap gap-2.5">
-          {MARKETPLACE_CATEGORIES.map((cat) => {
-            const active = category === cat;
-            const icon = iconForCategory(cat);
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => selectCategoryAndScroll(cat)}
+      {/* ── 2. Category navigation bar (sticky) ───────────────── */}
+      <div className="sticky top-16 z-30 border-b border-border bg-background/90 backdrop-blur-md">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="novalyte-scroll -mb-px flex items-center gap-1 overflow-x-auto py-2">
+            <button
+              onClick={() => selectCategory("all")}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                category === "all"
+                  ? "border-teal-600 bg-teal-600 text-white"
+                  : "border-border bg-card text-muted-foreground hover:border-teal-300 hover:text-teal-700",
+              )}
+            >
+              All categories
+            </button>
+            {MARKETPLACE_CATEGORIES.map((cat) => {
+              const active = category === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => selectCategory(cat)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                    active
+                      ? "border-teal-600 bg-teal-600 text-white"
+                      : "border-border bg-card text-muted-foreground hover:border-teal-300 hover:text-teal-700",
+                  )}
+                >
+                  <CategoryIcon category={cat} className="h-3.5 w-3.5" />
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. Listings section ───────────────────────────────── */}
+      <SectionShell id="listings" className="!pt-10 !pb-16">
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          {/* Desktop filter sidebar (sticky) */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-32">
+              <FiltersPanel
+                query={query}
+                setQuery={setQuery}
+                category={category}
+                setCategory={setCategory}
+                listingType={listingType}
+                setListingType={setListingType}
+                vendorName={vendorName}
+                setVendorName={setVendorName}
+                verifiedOnly={verifiedOnly}
+                setVerifiedOnly={setVerifiedOnly}
+                pricingModel={pricingModel}
+                setPricingModel={setPricingModel}
+                availability={availability}
+                setAvailability={setAvailability}
+                uniqueCategories={uniqueCategories}
+                uniqueListingTypes={uniqueListingTypes}
+                uniqueVendors={uniqueVendors}
+                uniquePricingModels={uniquePricingModels}
+                onReset={resetFilters}
+              />
+            </div>
+          </aside>
+
+          {/* Main column */}
+          <div>
+            {/* Mobile filter trigger */}
+            <div className="mb-4 flex items-center justify-between gap-3 lg:hidden">
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Filters
+                    {chips.length > 0 && (
+                      <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1 text-[11px] font-semibold text-white">
+                        {chips.length}
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-sm">
+                  <SheetHeader>
+                    <SheetTitle>Filter catalog</SheetTitle>
+                    <SheetDescription>Refine the marketplace listings.</SheetDescription>
+                  </SheetHeader>
+                  <div className="p-4">
+                    <FiltersPanel
+                      query={query}
+                      setQuery={setQuery}
+                      category={category}
+                      setCategory={setCategory}
+                      listingType={listingType}
+                      setListingType={setListingType}
+                      vendorName={vendorName}
+                      setVendorName={setVendorName}
+                      verifiedOnly={verifiedOnly}
+                      setVerifiedOnly={setVerifiedOnly}
+                      pricingModel={pricingModel}
+                      setPricingModel={setPricingModel}
+                      availability={availability}
+                      setAvailability={setAvailability}
+                      uniqueCategories={uniqueCategories}
+                      uniqueListingTypes={uniqueListingTypes}
+                      uniqueVendors={uniqueVendors}
+                      uniquePricingModels={uniquePricingModels}
+                      onReset={resetFilters}
+                    />
+                    <Button className="mt-4 w-full bg-teal-600 text-white hover:bg-teal-700" onClick={() => setMobileFiltersOpen(false)}>
+                      Show {filtered.length} result{filtered.length === 1 ? "" : "s"}
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              <ViewToggle
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: "grid", label: "Grid", icon: LayoutGrid },
+                  { value: "list", label: "List", icon: List },
+                ]}
+              />
+            </div>
+
+            {/* Results header */}
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Showing{" "}
+                  <span className="font-semibold text-foreground">{filtered.length}</span> of{" "}
+                  <span className="font-semibold text-foreground">{listings.length}</span> products
+                  &amp; services
+                </p>
+                {chips.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {chips.map((c, i) => (
+                      <FilterChip key={i} label={c.label} onRemove={c.onRemove} />
+                    ))}
+                    <button
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition hover:text-rose-600"
+                    >
+                      <X className="h-3 w-3" /> Clear all
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Sort</Label>
+                  <Select value={sort} onValueChange={setSort}>
+                    <SelectTrigger size="sm" className="w-[160px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="relevant">Most relevant</SelectItem>
+                      <SelectItem value="az">A–Z</SelectItem>
+                      <SelectItem value="verified">Verified first</SelectItem>
+                      <SelectItem value="category">Category</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="hidden lg:block">
+                  <ViewToggle
+                    value={view}
+                    onChange={setView}
+                    options={[
+                      { value: "grid", label: "Grid", icon: LayoutGrid },
+                      { value: "list", label: "List", icon: List },
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Results grid */}
+            {loading ? (
+              <div
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
-                  active
-                    ? "border-teal-600 bg-teal-600 text-white"
-                    : "border-border bg-card text-foreground/80 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700",
+                  "grid gap-5",
+                  view === "grid"
+                    ? "sm:grid-cols-2 xl:grid-cols-3"
+                    : "grid-cols-1",
                 )}
               >
-                <CategoryIcon icon={icon} className="h-4 w-4" />
-                {cat}
-              </button>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <CardSkeleton key={i} />
+                ))}
+              </div>
+            ) : paged.length === 0 ? (
+              <EmptyState
+                icon={Package}
+                title="No listings match your filters"
+                description="Try widening your search or clearing filters to see more products & services."
+                action={
+                  <Button variant="outline" size="sm" onClick={resetFilters}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <div
+                className={cn(
+                  "novalyte-fade-up grid gap-5",
+                  view === "grid"
+                    ? "sm:grid-cols-2 xl:grid-cols-3"
+                    : "grid-cols-1",
+                )}
+              >
+                {paged.map((l) => (
+                  <ListingCard
+                    key={l.id}
+                    listing={l}
+                    vendors={vendors}
+                    view={view}
+                    onQuote={() => setQuoteListing(l)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {!loading && filtered.length > PAGE_SIZE && (
+              <div className="mt-8 flex justify-center">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        aria-disabled={page === 1}
+                        className={cn(page === 1 && "pointer-events-none opacity-40")}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      const n = i + 1;
+                      // Compact pagination: show first, last, current ±1, with ellipsis handled by clamping
+                      const show =
+                        n === 1 ||
+                        n === totalPages ||
+                        Math.abs(n - page) <= 1;
+                      if (!show) {
+                        if (n === page - 2 || n === page + 2) {
+                          return (
+                            <PaginationItem key={n}>
+                              <span className="flex h-9 w-9 items-center justify-center text-muted-foreground">
+                                …
+                              </span>
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      }
+                      return (
+                        <PaginationItem key={n}>
+                          <PaginationLink
+                            isActive={n === page}
+                            onClick={(e: React.MouseEvent) => {
+                              e.preventDefault();
+                              setPage(n);
+                            }}
+                          >
+                            {n}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        aria-disabled={page === totalPages}
+                        className={cn(page === totalPages && "pointer-events-none opacity-40")}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </div>
+        </div>
+      </SectionShell>
+
+      {/* ── 4. Vendor directory preview ──────────────────────── */}
+      <SectionShell tone="muted">
+        <SectionHeading
+          eyebrow="Vendor Directory"
+          title="Verified suppliers powering men's health operations"
+          description="Each vendor goes through a structured verification process. Browse the full vendor profile to review their catalog, capabilities, and review status."
+        />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {verifiedVendors.map((v) => {
+            const count = listingCountByVendor[v.name] ?? 0;
+            return (
+              <PremiumCard key={v.id} hover className="flex flex-col p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-base font-bold text-white">
+                    {v.name.slice(0, 1)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="truncate text-base font-semibold text-foreground">{v.name}</h3>
+                      <VerificationBadge verified={v.verified} />
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {v.overview || "Vendor overview available on profile."}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                  <span className="text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground">{count}</span> active listing
+                    {count === 1 ? "" : "s"}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("vendor-profile", undefined, { id: v.id })}
+                  >
+                    View vendor profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </PremiumCard>
             );
           })}
         </div>
       </SectionShell>
 
-      {/* 3. Listings */}
-      <SectionShell id="listings" className="!pt-12">
-        <SectionHeading
-          eyebrow="Browse Listings"
-          title="Equipment, services, and vendors in one place"
-          description="Filter by keyword, category, listing type, and verification status. Request a quote or contact a vendor directly."
-        />
-
-        {/* Filter bar */}
-        <div className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr_auto]">
-            <div className="grid gap-1.5">
-              <Label htmlFor="mk-q" className="text-xs">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="mk-q"
-                  placeholder="Title, vendor, or description..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <div className="grid gap-1.5">
-              <Label className="text-xs">Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue placeholder="All categories" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label className="text-xs">Listing type</Label>
-              <Select value={listingType} onValueChange={setListingType}>
-                <SelectTrigger><SelectValue placeholder="All types" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
-                  {allListingTypes.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 text-sm">
-                <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <ShieldCheck className="h-3.5 w-3.5" /> Verified only
-                </span>
-              </label>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center justify-between border-t pt-3 text-sm">
-            <span className="text-muted-foreground">
-              Showing <span className="font-semibold text-foreground">{filtered.length}</span> of {listings.length} listings
-            </span>
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
-              <X className="mr-1 h-3.5 w-3.5" /> Reset
-            </Button>
-          </div>
-        </div>
-
-        {/* Results */}
-        {filtered.length === 0 ? (
-          <EmptyState onReset={resetFilters} />
-        ) : (
-          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((l) => (
-              <ListingCard
-                key={l.id}
-                listing={l}
-                onQuote={() => setQuoteListing(l)}
-                onContact={onGetStarted}
-                onDetails={() => setDetailListing(l)}
-              />
-            ))}
-          </div>
-        )}
-
-        <DisclaimerBanner className="mt-8" tone="teal">
-          Vendor verification reflects administrative review of business information. Listings
-          and any associated product claims are subject to moderation. Novalyte AI does not
-          endorse specific vendors and does not guarantee clinical or financial outcomes.
-        </DisclaimerBanner>
-      </SectionShell>
-
-      {/* 6. Vendor portal preview */}
-      <SectionShell tone="muted">
+      {/* ── 5. Vendor portal preview ─────────────────────────── */}
+      <SectionShell>
         <SectionHeading
           eyebrow="Vendor Portal"
-          title="A complete toolkit for vendors"
-          description="List products and services, manage inquiries, and track performance — all from a single vendor dashboard."
+          title="Everything vendors need to sell to men's health clinics"
+          description="A purpose-built commerce workflow for healthcare suppliers — from company profile through inquiry routing and billing."
         />
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {VENDOR_FEATURES.map((f) => (
-            <div key={f.title} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                <f.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mt-3 text-base font-semibold text-foreground">{f.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.description}</p>
-            </div>
-          ))}
+          {VENDOR_PORTAL_FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <PremiumCard key={f.title} hover className="p-5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-foreground">{f.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+              </PremiumCard>
+            );
+          })}
         </div>
         <div className="mt-8 flex justify-center">
           <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
@@ -323,43 +735,39 @@ export function MarketplaceView({
         </div>
       </SectionShell>
 
-      {/* 7. Marketplace safety */}
-      <SectionShell className="!pt-12">
-        <SectionHeading
-          eyebrow="Marketplace Safety"
-          title="Moderated listings, verified vendors"
-          description="Novalyte AI does not allow direct publication of medical claims without review. An administrative moderation process governs what appears in the marketplace."
-        />
-        <div className="mt-6">
-          <DisclaimerBanner tone="teal">
-            <div className="space-y-3">
-              <p>
-                <strong className="font-semibold">No medical claims without review.</strong> Listings
-                may not publish medical or clinical claims until they pass moderation. This protects
-                clinics, patients, and the integrity of the marketplace.
-              </p>
-              <p className="text-xs font-semibold uppercase tracking-wider text-teal-700/80">
-                Moderation covers
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {REVIEW_TYPES.map((r) => (
-                  <span
-                    key={r}
-                    className="inline-flex items-center gap-1 rounded-full border border-teal-300 bg-white px-2.5 py-1 text-xs font-medium text-teal-800"
+      {/* ── 6. Marketplace safety section ─────────────────────── */}
+      <SectionShell tone="default" className="!pt-0">
+        <DisclaimerBanner tone="teal">
+          <div>
+            <p className="font-semibold">Marketplace safety &amp; clinical-claim moderation.</p>
+            <p className="mt-1">
+              Novalyte AI is a commerce facilitator. We do not sell, warranty, or ship products
+              ourselves. Listings that make clinical or outcome claims are subject to moderation
+              before publication. Verification reflects a review of submitted business information —
+              it is not an endorsement of clinical outcomes, product efficacy, or vendor performance.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {SAFETY_REVIEW_TYPES.map((r) => {
+                const Icon = r.icon;
+                return (
+                  <div
+                    key={r.label}
+                    className="flex items-center gap-2 rounded-lg border border-teal-200 bg-white/60 px-2.5 py-2 text-xs font-medium text-teal-800"
                   >
-                    <CheckCircle2 className="h-3 w-3" /> {r}
-                  </span>
-                ))}
-              </div>
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    {r.label}
+                  </div>
+                );
+              })}
             </div>
-          </DisclaimerBanner>
-        </div>
+          </div>
+        </DisclaimerBanner>
       </SectionShell>
 
-      {/* 8. CTA */}
+      {/* ── 7. CTA ────────────────────────────────────────────── */}
       <CTASection
         title="Reach men's health clinics seeking your solutions"
-        description="List your products and services in the Novalyte AI marketplace and connect with verified clinics actively looking for what you offer."
+        description="List your products and services where clinics are already sourcing labs, equipment, software, and operational tools. Quote workflows, verification, and inquiry routing are built in."
         primaryLabel="Become a Vendor"
         onPrimary={onGetStarted}
         secondaryLabel="Explore Workforce"
@@ -367,117 +775,328 @@ export function MarketplaceView({
         tone="dark"
       />
 
-      {/* 4. Quote request dialog */}
-      <QuoteRequestDialog
-        listing={quoteListing}
-        onClose={() => setQuoteListing(null)}
-      />
-
-      {/* 5. Listing detail dialog (with embedded quote form) */}
-      <ListingDetailDialog
-        listing={detailListing}
-        onClose={() => setDetailListing(null)}
-        onQuote={(l) => {
-          setDetailListing(null);
-          setQuoteListing(l);
-        }}
-        onContact={onGetStarted}
-      />
+      {/* Quote dialog */}
+      <QuoteDialog listing={quoteListing} onClose={() => setQuoteListing(null)} />
     </>
   );
 }
 
-function ListingCard({
-  listing,
-  onQuote,
-  onContact,
-  onDetails,
-}: {
-  listing: MarketplaceListingT;
-  onQuote: () => void;
-  onContact: () => void;
-  onDetails: () => void;
+/* ───────────────────────────────────────────────────────────────
+   Filters panel (shared between desktop sidebar & mobile sheet)
+   ─────────────────────────────────────────────────────────────── */
+function FiltersPanel(props: {
+  query: string;
+  setQuery: (v: string) => void;
+  category: string;
+  setCategory: (v: string) => void;
+  listingType: string;
+  setListingType: (v: string) => void;
+  vendorName: string;
+  setVendorName: (v: string) => void;
+  verifiedOnly: boolean;
+  setVerifiedOnly: (v: boolean) => void;
+  pricingModel: string;
+  setPricingModel: (v: string) => void;
+  availability: string;
+  setAvailability: (v: string) => void;
+  uniqueCategories: string[];
+  uniqueListingTypes: string[];
+  uniqueVendors: string[];
+  uniquePricingModels: { value: string; label: string }[];
+  onReset: () => void;
 }) {
-  const c = colorClasses(listing.imageColor);
-  const icon = iconForCategory(listing.category);
-
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:shadow-md">
-      {/* Banner */}
-      <div className={cn("relative flex h-24 items-center justify-center", c.bg)}>
-        <CategoryIcon icon={icon} className="h-9 w-9 text-white/90" />
-        <div className="absolute right-3 top-3">
-          <VerificationBadge verified={listing.verified} status={listing.reviewStatus} className="bg-white/90" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+        <Button variant="ghost" size="sm" onClick={props.onReset} className="h-7 text-xs text-muted-foreground">
+          <X className="mr-1 h-3 w-3" /> Reset
+        </Button>
+      </div>
+
+      <div className="grid gap-1.5">
+        <Label className="text-xs">Keyword</Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search catalog…"
+            value={props.query}
+            onChange={(e) => props.setQuery(e.target.value)}
+            className="pl-9"
+          />
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {listing.vendorName}
-        </p>
-        <h3 className="mt-1 text-base font-semibold leading-tight text-foreground">{listing.title}</h3>
+      <SelectField label="Category" value={props.category} onChange={props.setCategory}
+        options={[{ value: "all", label: "All categories" }, ...props.uniqueCategories.map((c) => ({ value: c, label: c }))]} />
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <StatusPill tone="teal">{listing.category}</StatusPill>
-          <StatusPill tone="muted">{listing.listingType}</StatusPill>
-        </div>
+      <SelectField label="Listing type" value={props.listingType} onChange={props.setListingType}
+        options={[{ value: "all", label: "All types" }, ...props.uniqueListingTypes.map((t) => ({ value: t, label: t }))]} />
 
-        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-          {listing.description}
-        </p>
+      <SelectField label="Vendor" value={props.vendorName} onChange={props.setVendorName}
+        options={[{ value: "all", label: "All vendors" }, ...props.uniqueVendors.map((v) => ({ value: v, label: v }))]} />
 
-        <div className="mt-3 space-y-1.5">
-          {listing.priceNote && (
-            <p className="text-sm font-semibold text-foreground">{listing.priceNote}</p>
-          )}
-          {listing.pricingModel && (
-            <p className="text-xs text-muted-foreground">Pricing: {listing.pricingModel}</p>
-          )}
-        </div>
+      <SelectField label="Pricing model" value={props.pricingModel} onChange={props.setPricingModel}
+        options={[{ value: "all", label: "Any model" }, ...props.uniquePricingModels]} />
 
-        <div className="mt-3">
-          <StatusPill tone={listing.availability.toLowerCase().includes("avail") ? "emerald" : "amber"}>
-            {listing.availability}
-          </StatusPill>
-        </div>
+      <SelectField label="Availability" value={props.availability} onChange={props.setAvailability}
+        options={[{ value: "all", label: "Any availability" }, ...AVAILABILITY_FILTERS]} />
 
-        <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row">
-          <Button
-            size="sm"
-            className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
-            onClick={onQuote}
-          >
-            Request Quote
-          </Button>
-          <Button size="sm" variant="outline" className="flex-1" onClick={onContact}>
-            Contact Vendor
-          </Button>
-          <Button size="sm" variant="outline" className="flex-1" onClick={onDetails}>
-            View Details
-          </Button>
-        </div>
-      </div>
+      <label className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card p-3">
+        <span className="flex items-center gap-2 text-sm text-foreground">
+          <ShieldCheck className="h-4 w-4 text-teal-600" /> Verified suppliers only
+        </span>
+        <Switch checked={props.verifiedOnly} onCheckedChange={props.setVerifiedOnly} />
+      </label>
     </div>
   );
 }
 
-function QuoteForm({
-  listingId,
-  listingTitle,
-  onDone,
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
 }: {
-  listingId: string;
-  listingTitle: string;
-  onDone?: () => void;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
 }) {
-  const [form, setForm] = useState<QuoteFormState>(emptyForm);
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-xs">{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Listing card
+   ─────────────────────────────────────────────────────────────── */
+function ListingCard({
+  listing,
+  vendors,
+  view,
+  onQuote,
+}: {
+  listing: MarketplaceListingT;
+  vendors: VendorT[];
+  view: string;
+  onQuote: () => void;
+}) {
+  const savedProducts = useSaved((s) => s.products);
+  const toggleSaved = useSaved((s) => s.toggle);
+  const compareProducts = useCompare((s) => s.products);
+  const toggleCompare = useCompare((s) => s.toggle);
+
+  const isSaved = savedProducts.includes(listing.id);
+  const isComparing = compareProducts.includes(listing.id);
+  const c = colorClasses(listing.imageColor);
+  const avail = availabilityMeta(listing.availability);
+  const financingEligible = showsFinancingTag(listing);
+  const vendorId = vendorIdForName(vendors, listing.vendorName);
+
+  function goVendor() {
+    if (vendorId) navigate("vendor-profile", undefined, { id: vendorId });
+  }
+  function goProduct() {
+    navigate("product-detail", undefined, { id: listing.id });
+  }
+
+  if (view === "list") {
+    return (
+      <PremiumCard hover className="flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch">
+        <button
+          onClick={goProduct}
+          className={cn(
+            "relative flex h-24 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl sm:h-auto sm:w-40",
+            c.bg,
+          )}
+          aria-label={listing.title}
+        >
+          <CategoryIcon category={listing.category} className="h-8 w-8 text-white/90" />
+        </button>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <button onClick={goVendor} className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-teal-700">
+                {listing.vendorName}
+              </button>
+              <button onClick={goProduct} className="block text-left text-base font-semibold leading-tight text-foreground transition hover:text-teal-700">
+                {listing.title}
+              </button>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
+              <CompareToggle active={isComparing} onClick={() => toggleCompare("product", listing.id)} />
+            </div>
+          </div>
+          <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <StatusPill tone="muted">{listing.category}</StatusPill>
+            <StatusPill tone="teal">{listing.listingType}</StatusPill>
+            <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+            {financingEligible && <StatusPill tone="violet"><Banknote className="h-3 w-3" /> Financing available</StatusPill>}
+          </div>
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">{listing.priceNote || "Request quote"}</p>
+              <p className="text-xs text-muted-foreground">{listing.pricingModel || "—"}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={goProduct}>Details</Button>
+              <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onQuote}>
+                <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PremiumCard>
+    );
+  }
+
+  return (
+    <PremiumCard hover className="flex flex-col overflow-hidden">
+      {/* Banner */}
+      <div className={cn("relative h-28 w-full", c.bg)}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <CategoryIcon category={listing.category} className="h-9 w-9 text-white/90" />
+        </div>
+        <div className="absolute right-2 top-2 flex items-center gap-1.5">
+          <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
+          <CompareToggle active={isComparing} onClick={() => toggleCompare("product", listing.id)} />
+        </div>
+        <div className="absolute left-2 top-2">
+          {listing.verified ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-teal-700 backdrop-blur-sm">
+              <ShieldCheck className="h-3 w-3" /> Verified
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-amber-700 backdrop-blur-sm">
+              <Clock className="h-3 w-3" /> Under review
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={goVendor}
+            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-teal-700"
+          >
+            {listing.vendorName}
+          </button>
+          <VerificationBadge verified={listing.verified} status={listing.reviewStatus} />
+        </div>
+
+        <button
+          onClick={goProduct}
+          className="mt-1 text-left text-base font-semibold leading-snug text-foreground transition hover:text-teal-700"
+        >
+          {listing.title}
+        </button>
+
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <StatusPill tone="muted">{listing.category}</StatusPill>
+          <StatusPill tone="teal">{listing.listingType}</StatusPill>
+        </div>
+
+        <p className="mt-2.5 line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
+
+        <div className="mt-3 flex items-end justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-foreground">{listing.priceNote || "Request quote"}</p>
+            <p className="text-xs text-muted-foreground">{listing.pricingModel || "—"}</p>
+          </div>
+          <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+        </div>
+
+        {financingEligible && (
+          <div className="mt-2.5 inline-flex items-center gap-1.5 self-start rounded-md bg-violet-50 px-2 py-1 text-[11px] font-medium text-violet-700">
+            <Banknote className="h-3 w-3" /> Financing available (platform inquiry)
+          </div>
+        )}
+
+        <div className="mt-4 flex gap-2 border-t border-border pt-4">
+          <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={onQuote}>
+            <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1" onClick={goProduct}>
+            Details
+          </Button>
+        </div>
+      </div>
+    </PremiumCard>
+  );
+}
+
+function CompareToggle({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClick(); }}
+      aria-pressed={active}
+      title={active ? "Remove from compare" : "Add to compare"}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition",
+        active
+          ? "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100"
+          : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700",
+      )}
+    >
+      <GitCompare className="h-3.5 w-3.5" />
+      <span className="hidden sm:inline">{active ? "Comparing" : "Compare"}</span>
+    </button>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Quote dialog
+   ─────────────────────────────────────────────────────────────── */
+function QuoteDialog({
+  listing,
+  onClose,
+}: {
+  listing: MarketplaceListingT | null;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState({
+    requesterName: "",
+    requesterEmail: "",
+    requesterOrg: "",
+    quantity: "",
+    notes: "",
+    consent: false,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
+  // Reset form whenever a new listing is opened
+  useEffect(() => {
+    if (listing) {
+      setForm({ requesterName: "", requesterEmail: "", requesterOrg: "", quantity: "", notes: "", consent: false });
+      setDone(false);
+      setSubmitting(false);
+    }
+  }, [listing]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!listing) return;
     if (!form.consent) {
-      toast.error("Please acknowledge the consent statement before submitting.");
+      toast.error("Please acknowledge the platform terms before submitting.");
       return;
     }
     setSubmitting(true);
@@ -486,7 +1105,7 @@ function QuoteForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          listingId,
+          listingId: listing.id,
           requesterName: form.requesterName,
           requesterEmail: form.requesterEmail,
           requesterOrg: form.requesterOrg || null,
@@ -494,10 +1113,11 @@ function QuoteForm({
           notes: form.notes || null,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("failed");
       setDone(true);
-      toast.success("Quote request sent. The vendor will follow up.");
-      onDone?.();
+      toast.success("Quote request submitted", {
+        description: `${listing.vendorName} will follow up via email.`,
+      });
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -505,213 +1125,123 @@ function QuoteForm({
     }
   }
 
-  if (done) {
-    return (
-      <div className="flex flex-col items-center gap-2 py-6 text-center">
-        <CheckCircle2 className="h-9 w-9 text-teal-600" />
-        <p className="text-sm font-medium">Quote request sent for &ldquo;{listingTitle}&rdquo;</p>
-        <p className="text-xs text-muted-foreground">The vendor will reach out using the contact details you provided.</p>
-      </div>
-    );
+  function close() {
+    onClose();
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
-      <div className="grid gap-1.5">
-        <Label htmlFor="qf-name" className="text-xs">Requester name *</Label>
-        <Input
-          id="qf-name"
-          required
-          placeholder="Full name"
-          value={form.requesterName}
-          onChange={(e) => setForm({ ...form, requesterName: e.target.value })}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="qf-email" className="text-xs">Email *</Label>
-        <Input
-          id="qf-email"
-          required
-          type="email"
-          placeholder="you@clinic.com"
-          value={form.requesterEmail}
-          onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="qf-org" className="text-xs">Organization (optional)</Label>
-        <Input
-          id="qf-org"
-          placeholder="Clinic or company"
-          value={form.requesterOrg}
-          onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })}
-        />
-      </div>
-      <div className="grid gap-1.5">
-        <Label htmlFor="qf-qty" className="text-xs">Quantity (optional)</Label>
-        <Input
-          id="qf-qty"
-          placeholder="e.g. 5 units, 12 months"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-        />
-      </div>
-      <div className="grid gap-1.5 sm:col-span-2">
-        <Label htmlFor="qf-notes" className="text-xs">Notes (optional)</Label>
-        <Textarea
-          id="qf-notes"
-          rows={3}
-          placeholder="Questions, delivery timelines, integrations, etc."
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-        />
-      </div>
-      <label className="flex items-start gap-2 text-xs text-muted-foreground sm:col-span-2">
-        <Checkbox
-          checked={form.consent}
-          onCheckedChange={(v) => setForm({ ...form, consent: v === true })}
-          className="mt-0.5"
-        />
-        <span>
-          I understand Novalyte AI is a technology platform and does not sell, endorse, or warrant
-          vendor products. Quotes are provided directly by the vendor. Medical or clinical claims
-          are subject to moderation.
-        </span>
-      </label>
-      <Button
-        type="submit"
-        className="sm:col-span-2 bg-teal-600 text-white hover:bg-teal-700"
-        disabled={submitting || !form.consent}
-      >
-        {submitting ? "Sending..." : "Submit quote request"} <ArrowRight className="ml-1 h-4 w-4" />
-      </Button>
-    </form>
-  );
-}
-
-function QuoteRequestDialog({
-  listing,
-  onClose,
-}: {
-  listing: MarketplaceListingT | null;
-  onClose: () => void;
-}) {
-  return (
-    <Dialog open={!!listing} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog open={!!listing} onOpenChange={(v) => { if (!v) close(); }}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
         {listing && (
           <>
             <DialogHeader>
-              <DialogTitle>Request a quote</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Quote className="h-4 w-4 text-teal-600" /> Request a quote
+              </DialogTitle>
               <DialogDescription>
-                For <span className="font-medium text-foreground">{listing.title}</span> by {listing.vendorName}.
+                {listing.title} · <span className="text-foreground/80">{listing.vendorName}</span>
               </DialogDescription>
             </DialogHeader>
-            <QuoteForm
-              key={listing.id}
-              listingId={listing.id}
-              listingTitle={listing.title}
-            />
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
 
-function ListingDetailDialog({
-  listing,
-  onClose,
-  onQuote,
-  onContact,
-}: {
-  listing: MarketplaceListingT | null;
-  onClose: () => void;
-  onQuote: (l: MarketplaceListingT) => void;
-  onContact: () => void;
-}) {
-  const c = listing ? colorClasses(listing.imageColor) : colorClasses("teal");
-  const icon = listing ? iconForCategory(listing.category) : "package";
-
-  return (
-    <Dialog open={!!listing} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
-        {listing && (
-          <>
-            <DialogHeader>
-              <div className={cn("mb-3 flex h-24 w-full items-center justify-center rounded-xl", c.bg)}>
-                <CategoryIcon icon={icon} className="h-9 w-9 text-white/90" />
+            {/* Snapshot */}
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border">
+              <div className="bg-card p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Price</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{listing.priceNote || "Quote-based"}</p>
               </div>
-              <DialogTitle className="text-xl">{listing.title}</DialogTitle>
-              <DialogDescription className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                  {listing.vendorName}
+              <div className="bg-card p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Pricing model</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{listing.pricingModel || "—"}</p>
+              </div>
+              <div className="bg-card p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Availability</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{availabilityMeta(listing.availability).label}</p>
+              </div>
+              <div className="bg-card p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Type</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{listing.listingType}</p>
+              </div>
+            </div>
+
+            {!done ? (
+              <form onSubmit={submit} className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Full name" required>
+                    <Input
+                      required
+                      value={form.requesterName}
+                      onChange={(e) => setForm({ ...form, requesterName: e.target.value })}
+                      placeholder="Your name"
+                    />
+                  </Field>
+                  <Field label="Work email" required>
+                    <Input
+                      required
+                      type="email"
+                      value={form.requesterEmail}
+                      onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })}
+                      placeholder="you@clinic.com"
+                    />
+                  </Field>
+                </div>
+                <Field label="Organization / clinic">
+                  <Input
+                    value={form.requesterOrg}
+                    onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })}
+                    placeholder="Clinic or company name"
+                  />
+                </Field>
+                <Field label="Quantity / scope">
+                  <Input
+                    value={form.quantity}
+                    onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                    placeholder="e.g. 10 units, 200 panels/mo"
+                  />
+                </Field>
+                <Field label="Notes for vendor">
+                  <Textarea
+                    rows={3}
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    placeholder="Timeline, deployment context, bulk-pricing or financing interest, specific requirements…"
+                  />
+                </Field>
+                <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={form.consent}
+                    onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    I understand Novalyte AI is a technology platform that facilitates commerce
+                    inquiries. Novalyte does not sell, warranty, or fulfill products directly —
+                    quotes and terms come from the vendor. Vendors are independently operated and
+                    verification does not constitute endorsement.
+                  </span>
+                </label>
+                <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={submitting}>
+                  {submitting ? "Sending…" : <>Send quote request <ArrowRight className="ml-1 h-4 w-4" /></>}
+                </Button>
+              </form>
+            ) : (
+              <div className="flex flex-col items-center gap-2 py-6 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50">
+                  <CheckCircle2 className="h-6 w-6 text-teal-600" />
                 </span>
-                <VerificationBadge verified={listing.verified} status={listing.reviewStatus} />
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-wrap gap-1.5">
-              <StatusPill tone="teal">{listing.category}</StatusPill>
-              <StatusPill tone="muted">{listing.listingType}</StatusPill>
-              <StatusPill tone={listing.availability.toLowerCase().includes("avail") ? "emerald" : "amber"}>
-                {listing.availability}
-              </StatusPill>
-            </div>
-
-            <p className="text-sm leading-relaxed text-muted-foreground">{listing.description}</p>
-
-            <div className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm sm:grid-cols-2">
-              {listing.pricingModel && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pricing model</p>
-                  <p className="mt-0.5 text-foreground">{listing.pricingModel}</p>
-                </div>
-              )}
-              {listing.priceNote && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price</p>
-                  <p className="mt-0.5 font-semibold text-foreground">{listing.priceNote}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Verification</p>
-                <p className="mt-0.5 text-foreground">
-                  {listing.verified ? "Verified vendor" : listing.reviewStatus.replace(/_/g, " ")}
+                <p className="text-base font-semibold text-foreground">Quote request submitted</p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  We routed your inquiry to <span className="font-medium text-foreground">{listing.vendorName}</span>. Expect a follow-up at the email you provided.
                 </p>
+                <Button variant="outline" size="sm" onClick={close} className="mt-2">Close</Button>
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Listing type</p>
-                <p className="mt-0.5 text-foreground">{listing.listingType}</p>
-              </div>
-            </div>
+            )}
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
-                onClick={() => onQuote(listing)}
-              >
-                Request Quote <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-              <Button variant="outline" className="flex-1" onClick={onContact}>
-                Contact Vendor
-              </Button>
-            </div>
-
-            <div className="rounded-xl border border-teal-200 bg-teal-50/30 p-5">
-              <h4 className="text-sm font-semibold text-foreground">Request a quote</h4>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Submit your details and the vendor will respond directly. Novalyte AI does not
-                intermediate transactions.
-              </p>
-              <div className="mt-4">
-                <QuoteForm
-                  key={listing.id}
-                  listingId={listing.id}
-                  listingTitle={listing.title}
-                />
-              </div>
-            </div>
+            <DisclaimerBanner tone="muted">
+              Novalyte AI facilitates discovery and inquiry routing. We do not sell, ship, or
+              warranty products. Vendor terms, lead times, and pricing are confirmed directly with
+              the vendor.
+            </DisclaimerBanner>
           </>
         )}
       </DialogContent>
@@ -719,67 +1249,16 @@ function ListingDetailDialog({
   );
 }
 
-function EmptyState({ onReset }: { onReset: () => void }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
-    <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 text-center">
-      <Search className="h-8 w-8 text-muted-foreground/60" />
-      <h3 className="mt-3 text-base font-semibold">No listings match your filters</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        Try widening your search or clearing filters to see more marketplace listings.
-      </p>
-      <Button variant="outline" size="sm" className="mt-4" onClick={onReset}>Clear filters</Button>
+    <div className="grid gap-1.5">
+      <Label className="text-xs">
+        {label} {required && <span className="text-rose-500">*</span>}
+      </Label>
+      {children}
     </div>
   );
 }
 
-const VENDOR_FEATURES: { title: string; description: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  {
-    title: "Create company profile",
-    description: "Establish a verified vendor profile with capabilities, coverage area, and contact details.",
-    icon: Store,
-  },
-  {
-    title: "Submit products & services",
-    description: "Publish equipment, supplies, software, and service offerings with full descriptions.",
-    icon: Package,
-  },
-  {
-    title: "Upload media",
-    description: "Add product images, spec sheets, demo videos, and brand assets to your listings.",
-    icon: ImageIcon,
-  },
-  {
-    title: "Manage listings",
-    description: "Edit pricing, availability, categories, and listing types from a single dashboard.",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Receive inquiries",
-    description: "Get notified when clinics request quotes or reach out about your offerings.",
-    icon: Inbox,
-  },
-  {
-    title: "Respond to quote requests",
-    description: "Reply to qualified buyers with pricing, lead times, and terms.",
-    icon: MessageSquare,
-  },
-  {
-    title: "Track listing performance",
-    description: "Monitor views, inquiries, and quote conversions across your catalog.",
-    icon: FileBarChart,
-  },
-  {
-    title: "Subscription & commission",
-    description: "Manage your vendor subscription tier and any applicable marketplace commission.",
-    icon: Wallet,
-  },
-];
-
-const REVIEW_TYPES: string[] = [
-  "Vendor verification",
-  "Product review",
-  "Service review",
-  "Claim review",
-  "Category approval",
-  "Listing approval",
-];
+// Re-export for downstream (unused but kept stable for AppShell contract)
+// (no exports — MarketplaceView is the only public symbol)

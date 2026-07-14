@@ -1,0 +1,925 @@
+     1→"use client";
+     2→
+     3→import { useMemo, useState } from "react";
+     4→import { SectionShell, SectionHeading } from "@/components/shared/section";
+     5→import { VerificationBadge, StatusPill } from "@/components/shared/badges";
+     6→import { DisclaimerBanner } from "@/components/shared/disclaimer";
+     7→import { CTASection } from "@/components/shared/cta";
+     8→import { Input } from "@/components/ui/input";
+     9→import { Label } from "@/components/ui/label";
+    10→import { Button } from "@/components/ui/button";
+    11→import { Badge } from "@/components/ui/badge";
+    12→import { Card } from "@/components/ui/card";
+    13→import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+    14→import {
+    15→  Select,
+    16→  SelectContent,
+    17→  SelectItem,
+    18→  SelectTrigger,
+    19→  SelectValue,
+    20→} from "@/components/ui/select";
+    21→import { Switch } from "@/components/ui/switch";
+    22→import {
+    23→  Dialog,
+    24→  DialogContent,
+    25→  DialogHeader,
+    26→  DialogTitle,
+    27→  DialogDescription,
+    28→  DialogFooter,
+    29→} from "@/components/ui/dialog";
+    30→import { Textarea } from "@/components/ui/textarea";
+    31→import { toast } from "sonner";
+    32→import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
+    33→import type { ProfessionalT, JobPostingT } from "@/lib/types";
+    34→import { cn } from "@/lib/utils";
+    35→import {
+    36→  Users,
+    37→  MapPin,
+    38→  Briefcase,
+    39→  CheckCircle2,
+    40→  X,
+    41→  Video,
+    42→  ArrowRight,
+    43→  Send,
+    44→  Stethoscope,
+    45→  Clock,
+    46→  CalendarDays,
+    47→  DollarSign,
+    48→  Award,
+    49→  ShieldCheck,
+    50→  UserCheck,
+    51→  BriefcaseBusiness,
+    52→  ListChecks,
+    53→} from "lucide-react";
+    54→
+    55→const AVATAR_COLORS = ["teal", "emerald", "sky", "violet", "amber"] as const;
+    56→
+    57→const MATCHING_FACTORS = [
+    58→  { label: "Role", icon: Briefcase },
+    59→  { label: "Location", icon: MapPin },
+    60→  { label: "Licensure", icon: ShieldCheck },
+    61→  { label: "Licensed states", icon: Award },
+    62→  { label: "Specialty", icon: Stethoscope },
+    63→  { label: "Remote availability", icon: Video },
+    64→  { label: "Experience", icon: Clock },
+    65→  { label: "Employment preference", icon: BriefcaseBusiness },
+    66→  { label: "Schedule", icon: CalendarDays },
+    67→  { label: "Credential status", icon: UserCheck },
+    68→] as const;
+    69→
+    70→function avatarColor(index: number) {
+    71→  const key = AVATAR_COLORS[index % AVATAR_COLORS.length];
+    72→  // colorClasses() exposes "blue" mapped to sky tones; treat "sky" as blue.
+    73→  return colorClasses(key === "sky" ? "blue" : key);
+    74→}
+    75→
+    76→function formatComp(min: number | null, max: number | null): string | null {
+    77→  const isHourly = (n: number | null) => n != null && n < 1000;
+    78→  const hourly = isHourly(min) || isHourly(max);
+    79→  const fmt = (n: number) => (hourly ? `$${n}/hr` : `$${Math.round(n / 1000)}k`);
+    80→  if (min != null && max != null) return `${fmt(min)} – ${fmt(max)}`;
+    81→  if (min != null) return `From ${fmt(min)}`;
+    82→  if (max != null) return `Up to ${fmt(max)}`;
+    83→  return null;
+    84→}
+    85→
+    86→export function WorkforceView({
+    87→  professionals,
+    88→  jobs,
+    89→  onGetStarted,
+    90→}: {
+    91→  professionals: ProfessionalT[];
+    92→  jobs: JobPostingT[];
+    93→  onGetStarted: () => void;
+    94→}) {
+    95→  return (
+    96→    <>
+    97→      {/* 1. Hero */}
+    98→      <section className="border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-14 sm:py-20">
+    99→        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+   100→          <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-teal-700">
+   101→            <Users className="h-3.5 w-3.5" /> Workforce Hub
+   102→          </div>
+   103→          <h1 className="mt-4 max-w-4xl text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+   104→            Specialized Talent for the Future of Men&apos;s Health
+   105→          </h1>
+   106→          <p className="mt-5 max-w-3xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+   107→            Novalyte AI connects men&apos;s health clinics with qualified physicians,
+   108→            nurse practitioners, physician assistants, registered nurses, medical
+   109→            assistants, phlebotomists, medical directors, patient coordinators, and
+   110→            revenue cycle specialists. Browse verified professionals and open roles,
+   111→            then start a structured introduction through the platform.
+   112→          </p>
+   113→          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+   114→            <Button
+   115→              size="lg"
+   116→              className="bg-teal-600 text-white hover:bg-teal-700"
+   117→              onClick={onGetStarted}
+   118→            >
+   119→              Join as a Professional <ArrowRight className="ml-1 h-4 w-4" />
+   120→            </Button>
+   121→            <Button size="lg" variant="outline" onClick={onGetStarted}>
+   122→              <Briefcase className="mr-1 h-4 w-4" /> Post a Role
+   123→            </Button>
+   124→          </div>
+   125→        </div>
+   126→      </section>
+   127→
+   128→      {/* 2 + 3 + 4. Tabs with Professionals & Jobs */}
+   129→      <SectionShell className="!pt-10">
+   130→        <Tabs defaultValue="professionals" className="w-full">
+   131→          <TabsList className="h-auto">
+   132→            <TabsTrigger value="professionals" className="gap-1.5 px-4 py-1.5">
+   133→              <Users className="h-4 w-4" /> Browse Professionals
+   134→            </TabsTrigger>
+   135→            <TabsTrigger value="jobs" className="gap-1.5 px-4 py-1.5">
+   136→              <Briefcase className="h-4 w-4" /> Browse Jobs
+   137→            </TabsTrigger>
+   138→          </TabsList>
+   139→
+   140→          <TabsContent value="professionals" className="mt-6">
+   141→            <ProfessionalsPanel professionals={professionals} />
+   142→          </TabsContent>
+   143→
+   144→          <TabsContent value="jobs" className="mt-6">
+   145→            <JobsPanel jobs={jobs} />
+   146→          </TabsContent>
+   147→        </Tabs>
+   148→      </SectionShell>
+   149→
+   150→      {/* 6. Matching logic */}
+   151→      <SectionShell tone="muted" className="!pt-12 !pb-12">
+   152→        <SectionHeading
+   153→          eyebrow="How Matching Works"
+   154→          title="How matching works on Novalyte AI"
+   155→          description="When a clinic posts a role or a professional searches for opportunities, the platform aligns profiles and postings across ten structured factors to surface relevant, licensure-aware matches."
+   156→        />
+   157→        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+   158→          {MATCHING_FACTORS.map((f) => (
+   159→            <div
+   160→              key={f.label}
+   161→              className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-3 shadow-sm"
+   162→            >
+   163→              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+   164→                <f.icon className="h-4 w-4" />
+   165→              </span>
+   166→              <div className="flex min-w-0 items-center gap-1.5">
+   167→                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-teal-600" />
+   168→                <span className="truncate text-sm font-medium text-foreground">
+   169→                  {f.label}
+   170→                </span>
+   171→              </div>
+   172→            </div>
+   173→          ))}
+   174→        </div>
+   175→      </SectionShell>
+   176→
+   177→      {/* 7. Disclaimer */}
+   178→      <SectionShell tone="default" className="!pt-0 !pb-12">
+   179→        <DisclaimerBanner tone="amber">
+   180→          Novalyte AI facilitates discovery and communication. Clinics remain
+   181→          responsible for background checks, credential verification, licensing
+   182→          confirmation, employment compliance, clinical supervision, and hiring
+   183→          decisions.
+   184→        </DisclaimerBanner>
+   185→      </SectionShell>
+   186→
+   187→      {/* 8. CTA */}
+   188→      <CTASection
+   189→        title="Hiring for your men's health clinic?"
+   190→        description="Post a role to reach verified physicians, advanced practitioners, nurses, and operational staff. Novalyte AI helps you find aligned candidates — you stay in control of hiring."
+   191→        primaryLabel="Post a Role"
+   192→        onPrimary={onGetStarted}
+   193→        secondaryLabel="Browse Marketplace"
+   194→        secondaryView="marketplace"
+   195→      />
+   196→    </>
+   197→  );
+   198→}
+   199→
+   200→/* ----------------------------------------------------------------------- */
+   201→/* 3. Browse Professionals                                                 */
+   202→/* ----------------------------------------------------------------------- */
+   203→
+   204→function ProfessionalsPanel({ professionals }: { professionals: ProfessionalT[] }) {
+   205→  const [state, setState] = useState("all");
+   206→  const [title, setTitle] = useState("all");
+   207→  const [remoteOnly, setRemoteOnly] = useState(false);
+   208→  const [verifiedOnly, setVerifiedOnly] = useState(false);
+   209→
+   210→  const allTitles = useMemo(() => {
+   211→    const set = new Set<string>();
+   212→    professionals.forEach((p) => set.add(p.title));
+   213→    return Array.from(set).sort();
+   214→  }, [professionals]);
+   215→
+   216→  const filtered = useMemo(() => {
+   217→    return professionals.filter((p) => {
+   218→      if (state !== "all" && p.state !== state) return false;
+   219→      if (title !== "all" && p.title !== title) return false;
+   220→      if (remoteOnly && !p.remote) return false;
+   221→      if (verifiedOnly && !p.verified) return false;
+   222→      return true;
+   223→    });
+   224→  }, [professionals, state, title, remoteOnly, verifiedOnly]);
+   225→
+   226→  function resetFilters() {
+   227→    setState("all");
+   228→    setTitle("all");
+   229→    setRemoteOnly(false);
+   230→    setVerifiedOnly(false);
+   231→  }
+   232→
+   233→  return (
+   234→    <div>
+   235→      {/* Filter bar */}
+   236→      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+   237→        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto_auto]">
+   238→          <div className="grid gap-1.5">
+   239→            <Label className="text-xs text-muted-foreground">State</Label>
+   240→            <Select value={state} onValueChange={setState}>
+   241→              <SelectTrigger className="w-full">
+   242→                <SelectValue placeholder="All states" />
+   243→              </SelectTrigger>
+   244→              <SelectContent>
+   245→                <SelectItem value="all">All states</SelectItem>
+   246→                {US_STATES.map((s) => (
+   247→                  <SelectItem key={s} value={s}>
+   248→                    {s}
+   249→                  </SelectItem>
+   250→                ))}
+   251→              </SelectContent>
+   252→            </Select>
+   253→          </div>
+   254→          <div className="grid gap-1.5">
+   255→            <Label className="text-xs text-muted-foreground">Title</Label>
+   256→            <Select value={title} onValueChange={setTitle}>
+   257→              <SelectTrigger className="w-full">
+   258→                <SelectValue placeholder="All titles" />
+   259→              </SelectTrigger>
+   260→              <SelectContent>
+   261→                <SelectItem value="all">All titles</SelectItem>
+   262→                {allTitles.map((t) => (
+   263→                  <SelectItem key={t} value={t}>
+   264→                    {t}
+   265→                  </SelectItem>
+   266→                ))}
+   267→              </SelectContent>
+   268→            </Select>
+   269→          </div>
+   270→          <label className="flex items-center gap-2 self-end pb-2 text-sm">
+   271→            <Switch checked={remoteOnly} onCheckedChange={setRemoteOnly} />
+   272→            <span className="flex items-center gap-1 text-muted-foreground">
+   273→              <Video className="h-3.5 w-3.5" /> Remote
+   274→            </span>
+   275→          </label>
+   276→          <label className="flex items-center gap-2 self-end pb-2 text-sm">
+   277→            <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+   278→            <span className="flex items-center gap-1 text-muted-foreground">
+   279→              <ShieldCheck className="h-3.5 w-3.5" /> Verified
+   280→            </span>
+   281→          </label>
+   282→        </div>
+   283→        <div className="mt-4 flex items-center justify-between border-t pt-3 text-sm">
+   284→          <span className="text-muted-foreground">
+   285→            Showing <span className="font-semibold text-foreground">{filtered.length}</span> of{" "}
+   286→            {professionals.length} professionals
+   287→          </span>
+   288→          <Button variant="ghost" size="sm" onClick={resetFilters}>
+   289→            <X className="mr-1 h-3.5 w-3.5" /> Reset
+   290→          </Button>
+   291→        </div>
+   292→      </div>
+   293→
+   294→      {/* Results */}
+   295→      {filtered.length === 0 ? (
+   296→        <ProfessionalsEmptyState onReset={resetFilters} />
+   297→      ) : (
+   298→        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+   299→          {filtered.map((p, idx) => (
+   300→            <ProfessionalCard key={p.id} professional={p} index={idx} />
+   301→          ))}
+   302→        </div>
+   303→      )}
+   304→    </div>
+   305→  );
+   306→}
+   307→
+   308→function ProfessionalCard({
+   309→  professional,
+   310→  index,
+   311→}: {
+   312→  professional: ProfessionalT;
+   313→  index: number;
+   314→}) {
+   315→  const c = avatarColor(index);
+   316→  const licensedStates = splitCsv(professional.licensedStates);
+   317→  const specialties = splitCsv(professional.specialties).slice(0, 3);
+   318→
+   319→  return (
+   320→    <Card className="gap-0 p-5">
+   321→      <div className="flex items-start justify-between gap-3">
+   322→        <div className="flex items-center gap-3">
+   323→          <span
+   324→            className={cn(
+   325→              "flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-white",
+   326→              c.bg,
+   327→            )}
+   328→          >
+   329→            {initials(professional.name)}
+   330→          </span>
+   331→          <div className="min-w-0">
+   332→            <h3 className="truncate text-base font-semibold leading-tight text-foreground">
+   333→              {professional.name}
+   334→            </h3>
+   335→            <p className="mt-0.5 text-xs text-muted-foreground">{professional.title}</p>
+   336→          </div>
+   337→        </div>
+   338→        <VerificationBadge verified={professional.verified} />
+   339→      </div>
+   340→
+   341→      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+   342→        <span className="flex items-center gap-1">
+   343→          <MapPin className="h-3.5 w-3.5" /> {professional.city}, {professional.state}
+   344→        </span>
+   345→        {professional.remote && <StatusPill tone="sky">Remote</StatusPill>}
+   346→      </div>
+   347→
+   348→      {licensedStates.length > 0 && (
+   349→        <div className="mt-3">
+   350→          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   351→            Licensed states
+   352→          </p>
+   353→          <div className="flex flex-wrap gap-1.5">
+   354→            {licensedStates.map((s) => (
+   355→              <Badge
+   356→                key={s}
+   357→                variant="outline"
+   358→                className="border-border bg-muted/40 text-xs text-foreground/80"
+   359→              >
+   360→                {s}
+   361→              </Badge>
+   362→            ))}
+   363→          </div>
+   364→        </div>
+   365→      )}
+   366→
+   367→      {specialties.length > 0 && (
+   368→        <div className="mt-3">
+   369→          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   370→            Specialties
+   371→          </p>
+   372→          <div className="flex flex-wrap gap-1.5">
+   373→            {specialties.map((s) => (
+   374→              <Badge
+   375→                key={s}
+   376→                variant="outline"
+   377→                className="border-teal-200 bg-teal-50/50 text-xs text-teal-700"
+   378→              >
+   379→                {s}
+   380→              </Badge>
+   381→            ))}
+   382→          </div>
+   383→        </div>
+   384→      )}
+   385→
+   386→      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+   387→        <span className="flex items-center gap-1">
+   388→          <Clock className="h-3.5 w-3.5" /> {professional.yearsExperience}y exp
+   389→        </span>
+   390→        <span className="flex items-center gap-1">
+   391→          <CalendarDays className="h-3.5 w-3.5" /> {professional.availability}
+   392→        </span>
+   393→        <span className="flex items-center gap-1">
+   394→          <Briefcase className="h-3.5 w-3.5" /> {professional.employmentPref}
+   395→        </span>
+   396→      </div>
+   397→
+   398→      {professional.bio && (
+   399→        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{professional.bio}</p>
+   400→      )}
+   401→    </Card>
+   402→  );
+   403→}
+   404→
+   405→function ProfessionalsEmptyState({ onReset }: { onReset: () => void }) {
+   406→  return (
+   407→    <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 text-center">
+   408→      <Users className="h-8 w-8 text-muted-foreground/60" />
+   409→      <h3 className="mt-3 text-base font-semibold">No professionals match your filters</h3>
+   410→      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+   411→        Try widening your filters or clearing them to see more professionals in the
+   412→        network.
+   413→      </p>
+   414→      <Button variant="outline" size="sm" className="mt-4" onClick={onReset}>
+   415→        Clear filters
+   416→      </Button>
+   417→    </div>
+   418→  );
+   419→}
+   420→
+   421→/* ----------------------------------------------------------------------- */
+   422→/* 4. Browse Jobs                                                          */
+   423→/* ----------------------------------------------------------------------- */
+   424→
+   425→function JobsPanel({ jobs }: { jobs: JobPostingT[] }) {
+   426→  const [state, setState] = useState("all");
+   427→  const [empType, setEmpType] = useState("all");
+   428→  const [remoteOnly, setRemoteOnly] = useState(false);
+   429→  const [selected, setSelected] = useState<JobPostingT | null>(null);
+   430→
+   431→  const allEmpTypes = useMemo(() => {
+   432→    const set = new Set<string>();
+   433→    jobs.forEach((j) => set.add(j.employmentType));
+   434→    return Array.from(set).sort();
+   435→  }, [jobs]);
+   436→
+   437→  const filtered = useMemo(() => {
+   438→    return jobs.filter((j) => {
+   439→      if (state !== "all" && j.state !== state) return false;
+   440→      if (empType !== "all" && j.employmentType !== empType) return false;
+   441→      if (remoteOnly && !j.remote) return false;
+   442→      return true;
+   443→    });
+   444→  }, [jobs, state, empType, remoteOnly]);
+   445→
+   446→  function resetFilters() {
+   447→    setState("all");
+   448→    setEmpType("all");
+   449→    setRemoteOnly(false);
+   450→  }
+   451→
+   452→  return (
+   453→    <div>
+   454→      {/* Filter bar */}
+   455→      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+   456→        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto]">
+   457→          <div className="grid gap-1.5">
+   458→            <Label className="text-xs text-muted-foreground">State</Label>
+   459→            <Select value={state} onValueChange={setState}>
+   460→              <SelectTrigger className="w-full">
+   461→                <SelectValue placeholder="All states" />
+   462→              </SelectTrigger>
+   463→              <SelectContent>
+   464→                <SelectItem value="all">All states</SelectItem>
+   465→                {US_STATES.map((s) => (
+   466→                  <SelectItem key={s} value={s}>
+   467→                    {s}
+   468→                  </SelectItem>
+   469→                ))}
+   470→              </SelectContent>
+   471→            </Select>
+   472→          </div>
+   473→          <div className="grid gap-1.5">
+   474→            <Label className="text-xs text-muted-foreground">Employment type</Label>
+   475→            <Select value={empType} onValueChange={setEmpType}>
+   476→              <SelectTrigger className="w-full">
+   477→                <SelectValue placeholder="All types" />
+   478→              </SelectTrigger>
+   479→              <SelectContent>
+   480→                <SelectItem value="all">All types</SelectItem>
+   481→                {allEmpTypes.map((t) => (
+   482→                  <SelectItem key={t} value={t}>
+   483→                    {t}
+   484→                  </SelectItem>
+   485→                ))}
+   486→              </SelectContent>
+   487→            </Select>
+   488→          </div>
+   489→          <label className="flex items-center gap-2 self-end pb-2 text-sm">
+   490→            <Switch checked={remoteOnly} onCheckedChange={setRemoteOnly} />
+   491→            <span className="flex items-center gap-1 text-muted-foreground">
+   492→              <Video className="h-3.5 w-3.5" /> Remote
+   493→            </span>
+   494→          </label>
+   495→        </div>
+   496→        <div className="mt-4 flex items-center justify-between border-t pt-3 text-sm">
+   497→          <span className="text-muted-foreground">
+   498→            Showing <span className="font-semibold text-foreground">{filtered.length}</span> of{" "}
+   499→            {jobs.length} jobs
+   500→          </span>
+   501→          <Button variant="ghost" size="sm" onClick={resetFilters}>
+   502→            <X className="mr-1 h-3.5 w-3.5" /> Reset
+   503→          </Button>
+   504→        </div>
+   505→      </div>
+   506→
+   507→      {/* Results */}
+   508→      {filtered.length === 0 ? (
+   509→        <JobsEmptyState onReset={resetFilters} />
+   510→      ) : (
+   511→        <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+   512→          {filtered.map((j) => (
+   513→            <JobCard key={j.id} job={j} onView={() => setSelected(j)} />
+   514→          ))}
+   515→        </div>
+   516→      )}
+   517→
+   518→      <JobApplicationDialog job={selected} onClose={() => setSelected(null)} />
+   519→    </div>
+   520→  );
+   521→}
+   522→
+   523→function JobCard({ job, onView }: { job: JobPostingT; onView: () => void }) {
+   524→  const licenses = splitCsv(job.requiredLicenses);
+   525→  const specialties = splitCsv(job.treatmentSpecialties);
+   526→  const comp = formatComp(job.compMin, job.compMax);
+   527→
+   528→  return (
+   529→    <Card className="gap-0 p-5">
+   530→      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   531→        {job.clinicName}
+   532→      </p>
+   533→      <h3 className="mt-1 text-base font-semibold leading-tight text-foreground">
+   534→        {job.title}
+   535→      </h3>
+   536→
+   537→      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+   538→        <span className="flex items-center gap-1">
+   539→          <MapPin className="h-3.5 w-3.5" /> {job.city}, {job.state}
+   540→        </span>
+   541→        <span className="flex items-center gap-1">
+   542→          <Briefcase className="h-3.5 w-3.5" /> {job.employmentType}
+   543→        </span>
+   544→        {job.remote && <StatusPill tone="sky">Remote</StatusPill>}
+   545→      </div>
+   546→
+   547→      {licenses.length > 0 && (
+   548→        <div className="mt-3 flex flex-wrap gap-1.5">
+   549→          {licenses.map((l) => (
+   550→            <Badge
+   551→              key={l}
+   552→              variant="outline"
+   553→              className="border-border bg-muted/40 text-xs text-foreground/80"
+   554→            >
+   555→              {l}
+   556→            </Badge>
+   557→          ))}
+   558→        </div>
+   559→      )}
+   560→
+   561→      {specialties.length > 0 && (
+   562→        <div className="mt-2 flex flex-wrap gap-1.5">
+   563→          {specialties.map((s) => (
+   564→            <Badge
+   565→              key={s}
+   566→              variant="outline"
+   567→              className="border-teal-200 bg-teal-50/50 text-xs text-teal-700"
+   568→            >
+   569→              {s}
+   570→            </Badge>
+   571→          ))}
+   572→        </div>
+   573→      )}
+   574→
+   575→      {comp && (
+   576→        <div className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+   577→          <DollarSign className="h-4 w-4" /> {comp}
+   578→        </div>
+   579→      )}
+   580→
+   581→      {job.schedule && (
+   582→        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+   583→          <CalendarDays className="h-3.5 w-3.5" /> {job.schedule}
+   584→        </div>
+   585→      )}
+   586→
+   587→      <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{job.description}</p>
+   588→
+   589→      <div className="mt-4 flex gap-2 border-t pt-4">
+   590→        <Button
+   591→          size="sm"
+   592→          className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
+   593→          onClick={onView}
+   594→        >
+   595→          View &amp; Apply <ArrowRight className="ml-1 h-3.5 w-3.5" />
+   596→        </Button>
+   597→        <Button size="sm" variant="outline" className="flex-1" onClick={onView}>
+   598→          Details
+   599→        </Button>
+   600→      </div>
+   601→    </Card>
+   602→  );
+   603→}
+   604→
+   605→function JobsEmptyState({ onReset }: { onReset: () => void }) {
+   606→  return (
+   607→    <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 text-center">
+   608→      <Briefcase className="h-8 w-8 text-muted-foreground/60" />
+   609→      <h3 className="mt-3 text-base font-semibold">No jobs match your filters</h3>
+   610→      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+   611→        Try widening your filters or clearing them to see more open roles in the
+   612→        network.
+   613→      </p>
+   614→      <Button variant="outline" size="sm" className="mt-4" onClick={onReset}>
+   615→        Clear filters
+   616→      </Button>
+   617→    </div>
+   618→  );
+   619→}
+   620→
+   621→/* ----------------------------------------------------------------------- */
+   622→/* 5. Job Application Dialog                                               */
+   623→/* ----------------------------------------------------------------------- */
+   624→
+   625→type ApplicationForm = {
+   626→  applicantName: string;
+   627→  applicantEmail: string;
+   628→  applicantPhone: string;
+   629→  coverNote: string;
+   630→  consent: boolean;
+   631→};
+   632→
+   633→const EMPTY_FORM: ApplicationForm = {
+   634→  applicantName: "",
+   635→  applicantEmail: "",
+   636→  applicantPhone: "",
+   637→  coverNote: "",
+   638→  consent: false,
+   639→};
+   640→
+   641→function JobApplicationDialog({
+   642→  job,
+   643→  onClose,
+   644→}: {
+   645→  job: JobPostingT | null;
+   646→  onClose: () => void;
+   647→}) {
+   648→  const [form, setForm] = useState<ApplicationForm>(EMPTY_FORM);
+   649→  const [submitting, setSubmitting] = useState(false);
+   650→  const [done, setDone] = useState(false);
+   651→
+   652→  const licenses = job ? splitCsv(job.requiredLicenses) : [];
+   653→  const specialties = job ? splitCsv(job.treatmentSpecialties) : [];
+   654→  const comp = job ? formatComp(job.compMin, job.compMax) : null;
+   655→
+   656→  function close() {
+   657→    onClose();
+   658→    // Reset after the close animation finishes so users see a clean form next time.
+   659→    setTimeout(() => {
+   660→      setForm(EMPTY_FORM);
+   661→      setDone(false);
+   662→      setSubmitting(false);
+   663→    }, 200);
+   664→  }
+   665→
+   666→  async function submit(e: React.FormEvent) {
+   667→    e.preventDefault();
+   668→    if (!job) return;
+   669→    if (!form.consent) {
+   670→      toast.error("Please acknowledge the platform disclosure to continue.");
+   671→      return;
+   672→    }
+   673→    setSubmitting(true);
+   674→    try {
+   675→      const res = await fetch("/api/job-application", {
+   676→        method: "POST",
+   677→        headers: { "Content-Type": "application/json" },
+   678→        body: JSON.stringify({
+   679→          jobPostingId: job.id,
+   680→          applicantName: form.applicantName,
+   681→          applicantEmail: form.applicantEmail,
+   682→          applicantPhone: form.applicantPhone || null,
+   683→          coverNote: form.coverNote || null,
+   684→        }),
+   685→      });
+   686→      if (!res.ok) throw new Error();
+   687→      setDone(true);
+   688→      toast.success("Application submitted. The clinic will reach out if there is a fit.");
+   689→    } catch {
+   690→      toast.error("Something went wrong. Please try again.");
+   691→    } finally {
+   692→      setSubmitting(false);
+   693→    }
+   694→  }
+   695→
+   696→  return (
+   697→    <Dialog
+   698→      open={!!job}
+   699→      onOpenChange={(v) => {
+   700→        if (!v) close();
+   701→      }}
+   702→    >
+   703→      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+   704→        {job && (
+   705→          <>
+   706→            <DialogHeader>
+   707→              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   708→                {job.clinicName}
+   709→              </p>
+   710→              <DialogTitle className="text-xl">{job.title}</DialogTitle>
+   711→              <DialogDescription className="flex flex-wrap items-center gap-2">
+   712→                <span className="flex items-center gap-1">
+   713→                  <MapPin className="h-3.5 w-3.5" /> {job.city}, {job.state}
+   714→                </span>
+   715→                <span className="flex items-center gap-1">
+   716→                  <Briefcase className="h-3.5 w-3.5" /> {job.employmentType}
+   717→                </span>
+   718→                {job.remote && <StatusPill tone="sky">Remote</StatusPill>}
+   719→              </DialogDescription>
+   720→            </DialogHeader>
+   721→
+   722→            {/* Job summary */}
+   723→            <div className="grid gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm sm:grid-cols-2">
+   724→              {comp && (
+   725→                <div className="flex items-center gap-2">
+   726→                  <DollarSign className="h-4 w-4 text-emerald-700" />
+   727→                  <span className="font-semibold text-emerald-700">{comp}</span>
+   728→                </div>
+   729→              )}
+   730→              {job.schedule && (
+   731→                <div className="flex items-center gap-2 text-muted-foreground">
+   732→                  <CalendarDays className="h-4 w-4" /> {job.schedule}
+   733→                </div>
+   734→              )}
+   735→              {job.requiredExperience && (
+   736→                <div className="flex items-center gap-2 text-muted-foreground">
+   737→                  <Clock className="h-4 w-4" /> {job.requiredExperience}
+   738→                </div>
+   739→              )}
+   740→              {job.remote && (
+   741→                <div className="flex items-center gap-2 text-muted-foreground">
+   742→                  <Video className="h-4 w-4 text-teal-600" /> Remote available
+   743→                </div>
+   744→              )}
+   745→            </div>
+   746→
+   747→            <p className="text-sm leading-relaxed text-muted-foreground">{job.description}</p>
+   748→
+   749→            {licenses.length > 0 && (
+   750→              <div>
+   751→                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   752→                  Required licenses
+   753→                </p>
+   754→                <div className="flex flex-wrap gap-1.5">
+   755→                  {licenses.map((l) => (
+   756→                    <Badge
+   757→                      key={l}
+   758→                      variant="outline"
+   759→                      className="border-border bg-muted/40 text-xs text-foreground/80"
+   760→                    >
+   761→                      {l}
+   762→                    </Badge>
+   763→                  ))}
+   764→                </div>
+   765→              </div>
+   766→            )}
+   767→
+   768→            {specialties.length > 0 && (
+   769→              <div>
+   770→                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   771→                  Treatment specialties
+   772→                </p>
+   773→                <div className="flex flex-wrap gap-1.5">
+   774→                  {specialties.map((s) => (
+   775→                    <Badge
+   776→                      key={s}
+   777→                      variant="outline"
+   778→                      className="border-teal-200 bg-teal-50/50 text-xs text-teal-700"
+   779→                    >
+   780→                      {s}
+   781→                    </Badge>
+   782→                  ))}
+   783→                </div>
+   784→              </div>
+   785→            )}
+   786→
+   787→            {/* Application form / success */}
+   788→            <div className="rounded-xl border border-teal-200 bg-teal-50/30 p-5">
+   789→              <div className="flex items-center gap-2">
+   790→                <ListChecks className="h-4 w-4 text-teal-700" />
+   791→                <h4 className="text-sm font-semibold text-foreground">Apply for this role</h4>
+   792→              </div>
+   793→              <p className="mt-1 text-xs text-muted-foreground">
+   794→                Your application is sent to the hiring clinic. Novalyte AI is a
+   795→                technology platform and does not employ or supervise providers.
+   796→              </p>
+   797→
+   798→              {!done ? (
+   799→                <form onSubmit={submit} className="mt-4 grid gap-3 sm:grid-cols-2">
+   800→                  <div className="grid gap-1.5">
+   801→                    <Label htmlFor="ja-name" className="text-xs">
+   802→                      Full name <span className="text-destructive">*</span>
+   803→                    </Label>
+   804→                    <Input
+   805→                      id="ja-name"
+   806→                      required
+   807→                      placeholder="Jane Doe"
+   808→                      value={form.applicantName}
+   809→                      onChange={(e) =>
+   810→                        setForm({ ...form, applicantName: e.target.value })
+   811→                      }
+   812→                    />
+   813→                  </div>
+   814→                  <div className="grid gap-1.5">
+   815→                    <Label htmlFor="ja-email" className="text-xs">
+   816→                      Email <span className="text-destructive">*</span>
+   817→                    </Label>
+   818→                    <Input
+   819→                      id="ja-email"
+   820→                      type="email"
+   821→                      required
+   822→                      placeholder="jane@example.com"
+   823→                      value={form.applicantEmail}
+   824→                      onChange={(e) =>
+   825→                        setForm({ ...form, applicantEmail: e.target.value })
+   826→                      }
+   827→                    />
+   828→                  </div>
+   829→                  <div className="grid gap-1.5">
+   830→                    <Label htmlFor="ja-phone" className="text-xs">
+   831→                      Phone <span className="text-muted-foreground">(optional)</span>
+   832→                    </Label>
+   833→                    <Input
+   834→                      id="ja-phone"
+   835→                      placeholder="(555) 123-4567"
+   836→                      value={form.applicantPhone}
+   837→                      onChange={(e) =>
+   838→                        setForm({ ...form, applicantPhone: e.target.value })
+   839→                      }
+   840→                    />
+   841→                  </div>
+   842→                  <div className="grid gap-1.5 sm:col-span-2">
+   843→                    <Label htmlFor="ja-note" className="text-xs">
+   844→                      Cover note <span className="text-muted-foreground">(optional)</span>
+   845→                    </Label>
+   846→                    <Textarea
+   847→                      id="ja-note"
+   848→                      rows={3}
+   849→                      placeholder="Why are you a strong fit for this role?"
+   850→                      value={form.coverNote}
+   851→                      onChange={(e) =>
+   852→                        setForm({ ...form, coverNote: e.target.value })
+   853→                      }
+   854→                    />
+   855→                  </div>
+   856→                  <label className="flex items-start gap-2 text-xs text-muted-foreground sm:col-span-2">
+   857→                    <input
+   858→                      type="checkbox"
+   859→                      checked={form.consent}
+   860→                      onChange={(e) =>
+   861→                        setForm({ ...form, consent: e.target.checked })
+   862→                      }
+   863→                      className="mt-0.5"
+   864→                    />
+   865→                    <span>
+   866→                      I understand Novalyte AI is a technology platform and does not
+   867→                      employ providers or make hiring decisions. Hiring clinics are
+   868→                      responsible for background checks, credential verification,
+   869→                      licensing confirmation, employment compliance, clinical
+   870→                      supervision, and hiring decisions.
+   871→                    </span>
+   872→                  </label>
+   873→                  <DialogFooter className="sm:col-span-2">
+   874→                    <Button
+   875→                      type="button"
+   876→                      variant="outline"
+   877→                      onClick={close}
+   878→                      disabled={submitting}
+   879→                    >
+   880→                      Cancel
+   881→                    </Button>
+   882→                    <Button
+   883→                      type="submit"
+   884→                      className="bg-teal-600 text-white hover:bg-teal-700"
+   885→                      disabled={submitting}
+   886→                    >
+   887→                      {submitting ? (
+   888→                        "Submitting..."
+   889→                      ) : (
+   890→                        <>
+   891→                          Submit application <Send className="ml-1 h-3.5 w-3.5" />
+   892→                        </>
+   893→                      )}
+   894→                    </Button>
+   895→                  </DialogFooter>
+   896→                </form>
+   897→              ) : (
+   898→                <div className="mt-4 flex flex-col items-center gap-2 py-6 text-center">
+   899→                  <CheckCircle2 className="h-10 w-10 text-teal-600" />
+   900→                  <p className="text-sm font-semibold text-foreground">
+   901→                    Application submitted
+   902→                  </p>
+   903→                  <p className="max-w-sm text-xs text-muted-foreground">
+   904→                    Your application for <span className="font-medium">{job.title}</span> at{" "}
+   905→                    {job.clinicName} has been received. The clinic will reach out if
+   906→                    there is a fit.
+   907→                  </p>
+   908→                  <Button variant="outline" size="sm" className="mt-2" onClick={close}>
+   909→                    Close
+   910→                  </Button>
+   911→                </div>
+   912→              )}
+   913→            </div>
+   914→
+   915→            <DisclaimerBanner tone="muted">
+   916→              Applications are routed to the hiring clinic. Novalyte AI does not
+   917→              verify candidate credentials on behalf of clinics.
+   918→            </DisclaimerBanner>
+   919→          </>
+   920→        )}
+   921→      </DialogContent>
+   922→    </Dialog>
+   923→  );
+   924→}
+   925→
