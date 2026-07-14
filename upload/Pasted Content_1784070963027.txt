@@ -1,0 +1,1479 @@
+You are performing an advanced redesign and functional upgrade of the existing Novalyte AI `/clinics` page.
+
+Do not rebuild the website from scratch. Preserve the existing navigation, routes, light-first healthcare design system, typography, brand colors, responsive behavior, and current working functionality.
+
+The current Clinics page is already structurally strong. Your task is to push it substantially further so it feels more sophisticated, more visual, more credible, more enterprise-grade, and more commercially useful.
+
+The most important functional change is at the bottom of the page:
+
+Replace the current lightweight “Request Clinic Access” form with a complete Clinic Directory Listing and Partnership Application.
+
+This must not feel like a generic contact form.
+
+It should feel like a serious healthcare-network application that allows Novalyte AI to collect, verify, review, classify, and operationalize complete clinic information.
+
+==================================================
+PRIMARY OBJECTIVES
+==================================================
+
+Upgrade the Clinics page so a clinic owner, founder, medical director, or operations leader immediately understands:
+
+- Novalyte AI is built specifically for men’s health clinics
+- The platform can help generate relevant patient demand
+- The platform can improve intake quality
+- The platform can improve inquiry-to-consultation conversion
+- The clinic can apply for a free directory listing
+- Novalyte AI can build a complete patient-facing clinic profile
+- The clinic may optionally express interest in patient-acquisition services
+- The clinic may specify how many patient opportunities it can handle
+- The clinic may request workforce, vendor, equipment, or operational support
+- Application submission does not guarantee approval or listing
+- Clinical decisions remain the responsibility of licensed providers
+
+The finished page should feel like a combination of:
+
+- Enterprise healthcare infrastructure
+- Premium clinic growth software
+- Verified provider network
+- Patient-acquisition operating system
+- Clinic expansion platform
+
+It must not feel like:
+
+- A generic SaaS landing page
+- A basic lead-generation website
+- A thin directory signup form
+- A long collection of repetitive feature cards
+- A form asking only for clinic name and email
+- An unverified pay-to-list directory
+- A page making guaranteed revenue promises
+
+==================================================
+1. PUSH THE PAGE DESIGN FURTHER
+==================================================
+
+The current page is strong, but improve its visual sophistication and product realism.
+
+Enhance:
+
+- Section composition
+- Product previews
+- Data visualizations
+- Clinic workflow illustrations
+- Connected ecosystem storytelling
+- Image quality
+- Content hierarchy
+- Interactive elements
+- Page rhythm
+- Section transitions
+- Mobile presentation
+
+Reduce:
+
+- Repetitive text
+- Identical card grids
+- Large empty white regions
+- Placeholder visuals
+- Repeated explanations of the same feature
+- Oversized sections that do not add new information
+
+Use stronger visual contrast between sections through:
+
+- Soft off-white backgrounds
+- White product surfaces
+- Light teal-tinted sections
+- Deep navy feature bands
+- Subtle grids and data patterns
+- High-quality clinic photography
+- Product-interface previews
+- Connected workflow illustrations
+
+Do not turn the page into a dark dashboard. It must remain light-first and healthcare-appropriate.
+
+==================================================
+2. FIX ALL BROKEN AND PLACEHOLDER IMAGES
+==================================================
+
+The current page still contains images using placeholder values such as:
+
+`src="image"`
+
+Remove every broken placeholder source.
+
+Search the entire Clinics page and its child components for:
+
+- `src="image"`
+- Empty image sources
+- Broken remote URLs
+- Generic gray placeholders
+- Missing product imagery
+- Repeated temporary images
+
+Replace them with real, high-quality assets.
+
+Required image categories:
+
+- Modern men’s health clinic team
+- Clinic owner or operator reviewing performance
+- Premium clinic interior
+- Provider-patient consultation
+- Clinic profile cover image
+- Licensed healthcare professional
+- Medical equipment and supplies
+- Telehealth operations
+- Workforce professionals
+- Clinic expansion or team collaboration
+
+Every image must:
+
+- Render correctly
+- Use a valid path
+- Have accurate alt text
+- Use responsive dimensions
+- Be optimized for performance
+- Maintain correct focal points on mobile
+- Avoid competitor logos
+- Avoid low-resolution crops
+- Avoid distorted AI-generated medical details
+
+==================================================
+3. MAKE THE HERO MORE ENTERPRISE-GRADE
+==================================================
+
+Retain the clinic-growth positioning but increase the visual and commercial sophistication.
+
+Recommended eyebrow:
+
+BUILT FOR MODERN MEN’S HEALTH CLINICS
+
+Recommended headline:
+
+Turn Patient Demand Into Predictable, Measurable Clinic Growth
+
+Recommended supporting copy:
+
+Novalyte AI connects treatment-specific patient acquisition, structured intake, clinic discovery, consultation workflows, workforce access, and operational resources through one men’s health growth ecosystem.
+
+Primary CTA:
+
+Apply for a Free Clinic Listing
+
+Secondary CTA:
+
+Explore Clinic Growth Services
+
+Text link:
+
+See the Platform in Action
+
+Add a compact trust row:
+
+- Free directory application
+- Built specifically for men’s health
+- Structured patient-intent data
+- Listings subject to verification
+- No clinical control by Novalyte AI
+
+Use a high-quality hero image paired with a polished clinic-growth interface preview.
+
+The product preview may show:
+
+- New patient inquiries
+- Completed assessments
+- Consultation requests
+- Clinic match activity
+- Follow-up status
+- Treatment demand
+- Directory profile views
+
+Clearly label all interface numbers:
+
+“Demonstration data”
+
+==================================================
+4. ADD A CLINIC GROWTH COMMAND CENTER VISUAL
+==================================================
+
+Create a more sophisticated product-preview section that demonstrates how a clinic could manage growth.
+
+Recommended heading:
+
+A Unified View of Patient Demand and Clinic Growth
+
+Show an enterprise-grade dashboard preview containing:
+
+- Total patient inquiries
+- Treatment-specific assessments
+- Validated patient contacts
+- Consultation requests
+- Patients awaiting follow-up
+- Consultations booked
+- Directory profile views
+- Inquiry sources
+- Demand by treatment
+- Geographic demand
+- Average response time
+- Clinic capacity
+- Workforce requests
+- Marketplace requests
+
+Add useful visualizations:
+
+- Inquiry-to-consultation funnel
+- Weekly patient-demand trend
+- Treatment demand breakdown
+- Source attribution
+- Geographic heat map
+- Follow-up status pipeline
+- Clinic-location comparison
+
+Do not use unfinished metrics containing dashes.
+
+Use polished fictional demonstration values and label them prominently:
+
+“Product preview · Demonstration data only · Not actual customer results”
+
+==================================================
+5. ADD A “PATIENT OPPORTUNITY” DETAIL VIEW
+==================================================
+
+Show clinic owners what a structured patient opportunity could contain.
+
+Create a detailed patient-opportunity preview with demonstration data.
+
+Include:
+
+- Treatment requested
+- Patient goals
+- ZIP code
+- State
+- Age range
+- Telehealth preference
+- Preferred clinic distance
+- Consultation timeline
+- Self-pay openness
+- Cost preference
+- Previous treatment experience
+- Lab availability where relevant
+- Email validation status
+- Phone validation status
+- Contact consent
+- SMS consent
+- Assigned clinic location
+- Assigned team member
+- Follow-up status
+- Date received
+- Source
+- UTM campaign information where available
+
+Do not display unnecessary medical information.
+
+Do not present the record as a medical diagnosis.
+
+Label it:
+
+“Demonstration patient opportunity · No real patient information”
+
+==================================================
+6. MAKE THE PAGE MORE INTERACTIVE
+==================================================
+
+Add refined, useful interactions.
+
+Examples:
+
+- Treatment selector that updates the patient-acquisition workflow
+- Clinic-type selector that updates relevant use cases
+- Interactive inquiry funnel
+- Expandable growth systems
+- Hoverable dashboard explanations
+- Capacity calculator
+- Directory-profile preview
+- Patient-opportunity detail drawer
+- ROI scenario calculator
+- Clinic-readiness checklist
+
+Interactions must add clarity.
+
+Do not add animations or tabs merely for decoration.
+
+==================================================
+7. ADD CLINIC TYPE PERSONALIZATION
+==================================================
+
+Create a compact section titled:
+
+How Novalyte AI Supports Your Clinic Model
+
+Allow the visitor to select:
+
+- Independent clinic
+- Multi-location clinic group
+- Telehealth provider
+- New clinic launch
+- Existing clinic adding a treatment
+- Medical weight-loss clinic
+- TRT and hormone clinic
+- Longevity and performance clinic
+
+When a clinic type is selected, update:
+
+- Main challenges
+- Recommended Novalyte services
+- Relevant workflow
+- Suggested directory features
+- Relevant workforce roles
+- Marketplace needs
+- Patient-acquisition opportunities
+
+This should make the page feel personalized rather than generic.
+
+==================================================
+8. STRENGTHEN THE DIRECTORY LISTING VALUE
+==================================================
+
+Create a stronger section explaining what the clinic receives through a verified directory presence.
+
+Recommended heading:
+
+Build a Clinic Profile Patients Can Trust
+
+Explain that an approved profile may include:
+
+- Clinic name
+- Clinic logo
+- Cover photography
+- Clinic gallery
+- Full address
+- Service areas
+- Phone number
+- Website
+- Appointment link
+- Hours
+- Telehealth availability
+- Treatment categories
+- Provider profiles
+- Provider credentials
+- NPI information where appropriate
+- States served
+- Pricing approach
+- Insurance information
+- Self-pay information
+- Consultation process
+- Patient eligibility information
+- Clinic amenities
+- Accessibility information
+- Frequently asked questions
+- Journal contributions
+- Verified reviews where supported
+- Request consultation CTA
+
+Use a sophisticated clinic-profile preview rather than only a list.
+
+Include:
+
+- Desktop profile preview
+- Mobile profile preview
+- Gallery
+- Treatment tags
+- Provider team
+- Clinic information panel
+- Consultation action
+
+==================================================
+9. EXPLAIN THE FREE LISTING OFFER CLEARLY
+==================================================
+
+Near the clinic application, clearly explain:
+
+- Applying for consideration is free
+- There is no application fee
+- A basic approved directory listing may be free during the current launch phase
+- Submission does not guarantee approval
+- Novalyte AI may verify clinic and provider information
+- Incomplete or unverifiable applications may not be published
+- Optional patient-acquisition, enhanced visibility, workforce, vendor, and growth services may be paid
+- Paid services do not guarantee clinical outcomes or revenue
+- The clinic remains independently responsible for all medical care
+
+Recommended message:
+
+“Applying to join the Novalyte AI Clinic Directory is free. Approved clinics may receive a verified directory profile. Enhanced growth, patient-acquisition, workforce, marketplace, and promotional services are optional and may be offered separately.”
+
+Do not imply that every applicant is automatically listed.
+
+==================================================
+10. REPLACE THE EXISTING FORM COMPLETELY
+==================================================
+
+Remove the current small three-step form.
+
+Replace it with a complete application titled:
+
+Novalyte AI Clinic Directory and Partnership Application
+
+Supporting copy:
+
+“Apply for a free clinic directory listing and tell us which Novalyte AI growth services may be relevant to your organization. Your application will be reviewed before publication.”
+
+Estimated completion time:
+
+“Approximately 8–12 minutes”
+
+Progress stages:
+
+1. Organization
+2. Locations
+3. Decision Maker
+4. Providers and Credentials
+5. Treatments
+6. Patient Operations
+7. Growth Interests
+8. Directory Profile
+9. Verification
+10. Review and Submit
+
+Do not display the entire application as one extremely long page.
+
+Use a premium multi-step application experience with:
+
+- Stage navigation
+- Save progress
+- Resume later
+- Section validation
+- Review screen
+- Conditional questions
+- Clear explanations
+- Mobile optimization
+
+==================================================
+11. APPLICATION STAGE 1 — ORGANIZATION INFORMATION
+==================================================
+
+Collect:
+
+- Legal business name
+- Clinic or DBA name
+- Parent organization name
+- Business type
+- Year established
+- Primary website
+- Main clinic phone number
+- General clinic email
+- Organization description
+- Number of locations
+- Number of providers
+- Approximate total employees
+- Ownership type
+
+Business type options:
+
+- Independent clinic
+- Multi-location clinic group
+- Telehealth provider
+- Medical group
+- Physician-owned practice
+- Private-equity-backed group
+- Franchise
+- Hospital-affiliated clinic
+- Management services organization
+- Other
+
+Ownership options:
+
+- Physician-owned
+- Founder-owned
+- Partnership
+- Private equity
+- Health system
+- Corporate group
+- Other
+- Prefer not to disclose
+
+Do not make optional organizational-finance fields mandatory unless necessary.
+
+==================================================
+12. APPLICATION STAGE 2 — LOCATION INFORMATION
+==================================================
+
+Support one or multiple clinic locations.
+
+For every location, collect:
+
+- Location name
+- Street address
+- Suite number
+- City
+- State
+- ZIP code
+- Location phone number
+- Location email
+- Hours of operation
+- Time zone
+- Appointment URL
+- Google Business Profile URL if available
+- Latitude and longitude automatically derived later
+- In-person care availability
+- Telehealth availability
+- Wheelchair accessibility
+- Parking information
+- Public transportation information
+- Languages supported
+- New-patient availability
+- Estimated consultation wait time
+- Service radius
+- States served through telehealth
+
+Allow:
+
+- Add another location
+- Copy details from primary location
+- Mark primary headquarters
+- Mark location as opening soon
+
+If a clinic is telehealth-only, adapt the form and do not require a physical patient-care address beyond the legally required business information.
+
+==================================================
+13. APPLICATION STAGE 3 — DECISION-MAKER INFORMATION
+==================================================
+
+This information is critical.
+
+Collect:
+
+- First name
+- Last name
+- Job title
+- Role in the buying or partnership decision
+- Work email address
+- Direct telephone number
+- Mobile number
+- Preferred contact method
+- Best time to contact
+- LinkedIn profile URL
+- Is this person authorized to submit the application?
+- Is this person the final decision-maker?
+- Additional decision-maker or stakeholder
+- Operations contact
+- Marketing contact
+- Clinical contact
+
+Decision-maker role options:
+
+- Owner
+- Founder
+- Co-founder
+- Chief Executive Officer
+- President
+- Medical Director
+- Chief Medical Officer
+- Chief Operating Officer
+- Practice Administrator
+- Clinic Director
+- Growth or Marketing Director
+- Business Development
+- Operations Manager
+- Other
+
+Validate:
+
+- Work email format
+- Telephone number
+- Mobile number
+- LinkedIn URL where included
+
+Do not require personal email if a valid work email is provided.
+
+==================================================
+14. APPLICATION STAGE 4 — PROVIDERS AND CREDENTIALS
+==================================================
+
+Collect organization-level verification information:
+
+- Organization NPI
+- NPI type
+- Taxonomy code
+- State business registration number where applicable
+- EIN last four digits only if operationally necessary
+- Accreditation or certifications
+- Medical director name
+- Medical director NPI
+- Medical director license states
+- Supervising physician details where applicable
+- CLIA information if applicable
+- Pharmacy or laboratory partnerships
+- Professional liability coverage confirmation
+- License verification consent
+
+For each provider to be shown publicly, collect:
+
+- Full name
+- Credentials
+- Professional role
+- NPI
+- License state
+- License number
+- Specialty
+- Years of experience
+- Treatment categories
+- Professional biography
+- Professional headshot
+- Telehealth states
+- Languages spoken
+- Public profile consent
+
+Do not display private credential data publicly unless it belongs in the public profile and is legally appropriate.
+
+Do not ask clinics to upload highly sensitive identity documents unless there is a secure and necessary verification workflow.
+
+==================================================
+15. APPLICATION STAGE 5 — TREATMENTS AND SERVICES
+==================================================
+
+Allow multi-select treatment categories.
+
+Include:
+
+- Testosterone Replacement Therapy
+- Hormone Optimization
+- Erectile Dysfunction Care
+- Sexual Wellness
+- Medical Weight Loss
+- GLP-1 Programs
+- Peptide Therapy
+- Hair Restoration
+- Longevity Medicine
+- Preventive Men’s Health
+- Performance Medicine
+- Recovery Services
+- IV Therapy
+- Primary Men’s Health Care
+- Lab Testing
+- Fertility Services
+- Sleep Health
+- Mental and Behavioral Health
+- Telehealth Consultations
+- Other
+
+For each selected treatment, allow the clinic to specify:
+
+- Currently accepting new patients
+- In-person
+- Telehealth
+- States served
+- Typical consultation fee
+- Typical monthly program range
+- Insurance accepted
+- Self-pay
+- Financing available
+- Subscription or membership model
+- Required labs
+- Approximate consultation timeline
+- Treatment eligibility requirements
+- Short patient-facing description
+- Relevant appointment URL
+
+Do not force clinics to publish pricing if they do not wish to, but collect internal pricing information where useful for matching and qualification.
+
+Include:
+
+“May Novalyte AI display pricing information publicly?”
+
+Options:
+
+- Yes
+- Yes, as a range
+- Request quote only
+- No
+
+==================================================
+16. APPLICATION STAGE 6 — CURRENT PATIENT OPERATIONS
+==================================================
+
+Collect operational information that helps Novalyte AI understand clinic capacity and fit.
+
+Include:
+
+- Approximate new patient inquiries per month
+- Approximate consultations booked per month
+- Approximate new patients accepted per month
+- Current patient-acquisition channels
+- Average response time to new inquiries
+- Current intake method
+- CRM or patient-management system
+- Scheduling platform
+- EHR
+- Lead follow-up process
+- Dedicated patient coordinator
+- After-hours response capability
+- Weekend response capability
+- Telehealth intake process
+- Current geographic service areas
+- Current growth constraints
+
+Acquisition-channel options:
+
+- Organic search
+- Google Ads
+- Meta Ads
+- Social media
+- Referrals
+- Existing patient referrals
+- Directory listings
+- Affiliates
+- Partnerships
+- Call center
+- Events
+- Other
+
+Current intake options:
+
+- Website form
+- Phone
+- SMS
+- EHR form
+- CRM
+- Call center
+- Manual spreadsheet
+- Third-party intake platform
+- Other
+
+Do not require exact financial performance information for the free listing application.
+
+==================================================
+17. APPLICATION STAGE 7 — PATIENT-ACQUISITION INTEREST
+==================================================
+
+This stage should determine whether the clinic is interested in receiving qualified patient opportunities.
+
+Use transparent language.
+
+Recommended heading:
+
+Would Your Clinic Like to Receive Additional Patient Opportunities?
+
+Supporting copy:
+
+“Novalyte AI may offer optional patient-acquisition and consultation-request services to approved clinics. These services are separate from the free directory application.”
+
+Ask:
+
+- Are you interested in receiving qualified patient opportunities?
+- Which treatments do you want additional patient demand for?
+- Which locations need more patients?
+- Which states can you serve through telehealth?
+- How many additional patient opportunities can you handle weekly?
+- How many can you handle monthly?
+- How quickly can your team respond?
+- Do you have dedicated follow-up staff?
+- What consultation timeline can you support?
+- Are you currently accepting new patients?
+- Do you prefer exclusive or shared opportunities?
+- Do you prefer local, statewide, multi-state, or national demand?
+- What patient age ranges do you serve?
+- Do you accept self-pay patients?
+- Do you accept insurance?
+- Do you offer financing?
+- What minimum patient criteria matter operationally?
+- What disqualifying factors should be routed elsewhere?
+- Are there treatments you do not offer?
+
+Weekly patient-capacity options:
+
+- 1–5
+- 6–10
+- 11–25
+- 26–50
+- 50+
+- Not sure
+
+Monthly capacity options:
+
+- Under 20
+- 20–49
+- 50–99
+- 100–249
+- 250+
+- Not sure
+
+Interest options:
+
+- Yes, immediately
+- Yes, within 30 days
+- Yes, within 90 days
+- Possibly, send information
+- Directory listing only
+- Not currently
+
+==================================================
+18. APPLICATION STAGE 8 — COMMERCIAL AND GROWTH INTERESTS
+==================================================
+
+Ask which optional services the clinic wants to learn about.
+
+Options:
+
+- Treatment-ready patient opportunities
+- Patient-acquisition campaigns
+- Enhanced directory visibility
+- Featured clinic placement
+- Structured patient intake
+- Consultation workflow management
+- Clinic CRM or dashboard
+- Automated follow-up
+- Multi-location reporting
+- Geographic expansion
+- Telehealth expansion
+- Workforce recruitment
+- Medical director sourcing
+- Credentialing support
+- Vendor and equipment sourcing
+- Laboratory partnerships
+- Marketplace seller participation
+- Journal or educational-content participation
+- Sponsored educational content
+- Referral partnerships
+- Other
+
+Ask:
+
+- Which service is the highest priority?
+- When would the clinic want to begin?
+- Does the clinic have an approved growth budget?
+- Who approves the budget?
+- Preferred commercial model
+
+Commercial model options:
+
+- Pay per patient opportunity
+- Monthly subscription
+- Performance-based
+- Hybrid model
+- Enhanced listing only
+- Not sure
+- Directory listing only
+
+Budget question should be optional or clearly positioned.
+
+Suggested range:
+
+- Under $1,000 per month
+- $1,000–$2,499
+- $2,500–$4,999
+- $5,000–$9,999
+- $10,000+
+- Budget not determined
+- Directory listing only
+
+Do not imply that clinics must purchase services to receive fair listing consideration.
+
+==================================================
+19. APPLICATION STAGE 9 — WORKFORCE AND MARKETPLACE NEEDS
+==================================================
+
+Ask whether the clinic currently needs staff or operational resources.
+
+Workforce interests:
+
+- Medical director
+- Physician
+- Nurse practitioner
+- Physician assistant
+- Registered nurse
+- Medical assistant
+- Phlebotomist
+- Patient coordinator
+- Operations manager
+- Sales or consultation staff
+- Telehealth clinician
+- Credentialing support
+- Marketing support
+- Other
+
+Marketplace and vendor interests:
+
+- Laboratory partners
+- Diagnostic equipment
+- Exam furniture
+- Blood-draw supplies
+- Medical refrigeration
+- Telehealth technology
+- EHR
+- CRM
+- Medical waste services
+- Credentialing services
+- Marketing services
+- Clinic furniture
+- Recovery equipment
+- Hyperbaric equipment
+- IV equipment
+- Pharmacy relationships
+- Payment and financing services
+- Other
+
+Ask:
+
+- Immediate need
+- Need within 30 days
+- Need within 90 days
+- Future interest
+- No current need
+
+==================================================
+20. APPLICATION STAGE 10 — DIRECTORY PROFILE CONTENT
+==================================================
+
+Collect the information needed to create a sophisticated public clinic profile.
+
+Include:
+
+- Short clinic description
+- Full clinic biography
+- Mission statement
+- What makes the clinic different
+- Ideal patient
+- Consultation process
+- What patients should expect
+- New-patient requirements
+- Insurance information
+- Self-pay information
+- Financing information
+- Frequently asked questions
+- Languages supported
+- Accessibility information
+- Clinic amenities
+- Social media URLs
+- Google Business Profile
+- Booking URL
+- Contact URL
+- Patient forms URL
+- Privacy policy URL
+
+Allow uploads for:
+
+- Clinic logo
+- Cover image
+- Exterior photos
+- Reception photos
+- Consultation-room photos
+- Treatment-room photos
+- Provider headshots
+- Team photos
+- Equipment photos
+- Brand guidelines
+- Optional video introduction
+
+Image requirements:
+
+- Show recommended dimensions
+- Validate file type
+- Validate file size
+- Provide crop preview
+- Require clinic confirmation that it owns or has permission to use uploaded media
+
+==================================================
+21. APPLICATION STAGE 11 — REFERENCES AND VERIFICATION
+==================================================
+
+Collect:
+
+- Website verification
+- Organization NPI
+- Provider NPIs
+- Business registration confirmation
+- Clinic phone verification
+- Work email verification
+- License-verification consent
+- Accuracy confirmation
+- Media-usage permission
+- Authorized representative confirmation
+
+Optional:
+
+- Professional reference
+- Laboratory partner
+- Pharmacy partner
+- Existing vendor reference
+- Accreditation documentation
+
+Do not make the process unnecessarily burdensome for small clinics.
+
+Use conditional verification based on organization type and services.
+
+==================================================
+22. APPLICATION STAGE 12 — REVIEW AND SUBMIT
+==================================================
+
+Create a comprehensive review screen.
+
+Group information under:
+
+- Organization
+- Locations
+- Decision maker
+- Providers
+- Treatments
+- Patient operations
+- Patient-acquisition interest
+- Growth services
+- Workforce needs
+- Marketplace needs
+- Directory content
+- Verification
+
+Allow the clinic to edit every section before submission.
+
+Include required confirmations:
+
+- I am authorized to submit this application
+- The information provided is accurate
+- Novalyte AI may verify the information
+- I understand that submission does not guarantee approval
+- I understand that applying is free
+- I understand that optional growth services may have separate fees
+- I agree to the directory terms
+- I agree to be contacted regarding this application
+
+Separate optional marketing consent.
+
+Do not preselect checkboxes.
+
+Primary CTA:
+
+Submit Clinic Application
+
+Do not use:
+
+Submit Form
+
+==================================================
+23. POST-SUBMISSION EXPERIENCE
+==================================================
+
+Do not show only:
+
+“Thank you.”
+
+Create a complete application-confirmation page.
+
+Recommended headline:
+
+Your Clinic Application Has Been Received
+
+Show:
+
+- Application reference number
+- Clinic name
+- Submitted date
+- Application status
+- Expected review steps
+- Verification requirements
+- Missing information if any
+- Ability to upload additional information
+- Ability to save or print application summary
+- Contact information for application questions
+
+Suggested review process:
+
+1. Application completeness review
+2. Clinic and credential verification
+3. Directory-profile preparation
+4. Clinic approval and confirmation
+5. Profile publication
+6. Optional growth-services discussion
+
+Do not promise an exact approval timeframe unless operationally supported.
+
+Use:
+
+“We will contact the authorized representative if additional information is required.”
+
+==================================================
+24. APPLICATION STATUS SYSTEM
+==================================================
+
+Prepare the backend for application statuses:
+
+- Draft
+- In progress
+- Submitted
+- Incomplete
+- Awaiting email verification
+- Awaiting phone verification
+- Under review
+- Verification required
+- Additional information requested
+- Approved
+- Approved with conditions
+- Directory profile in preparation
+- Published
+- Waitlisted
+- Declined
+- Archived
+
+Do not expose internal or disrespectful qualification labels to applicants.
+
+==================================================
+25. BACKEND-READY DATA MODEL
+==================================================
+
+Create a normalized data model supporting:
+
+Clinic application:
+
+- application_id
+- application_status
+- created_at
+- updated_at
+- submitted_at
+- source
+- referral_source
+- UTM parameters
+- assigned_reviewer
+- internal_notes
+
+Organization:
+
+- legal_name
+- DBA_name
+- parent_organization
+- organization_type
+- ownership_type
+- year_established
+- website
+- main_phone
+- general_email
+- organization_description
+- location_count
+- provider_count
+- employee_count
+
+Decision maker:
+
+- first_name
+- last_name
+- job_title
+- role
+- work_email
+- direct_phone
+- mobile_phone
+- preferred_contact_method
+- best_contact_time
+- LinkedIn_URL
+- authority_confirmation
+- final_decision_maker
+
+Credentialing:
+
+- organization_NPI
+- taxonomy_code
+- medical_director
+- provider_NPIs
+- license_states
+- accreditation
+- CLIA_information
+- verification_status
+
+Locations:
+
+- clinic_location_id
+- address
+- city
+- state
+- ZIP
+- phone
+- email
+- hours
+- time_zone
+- booking_URL
+- telehealth
+- service_states
+- languages
+- accessibility
+- parking
+- new_patient_status
+
+Treatments:
+
+- treatment_category
+- location
+- delivery_method
+- states_served
+- pricing_range
+- insurance
+- self_pay
+- financing
+- consultation_timeline
+- accepting_patients
+
+Patient acquisition:
+
+- interest_status
+- treatments_requested
+- locations_requested
+- weekly_capacity
+- monthly_capacity
+- response_time
+- dedicated_follow_up
+- geographic_preference
+- commercial_model
+- optional_budget_range
+
+Partnership interests:
+
+- enhanced_listing
+- patient_acquisition
+- structured_intake
+- CRM
+- automated_follow_up
+- workforce
+- marketplace
+- content
+- expansion
+- credentialing
+
+Directory content:
+
+- short_description
+- full_bio
+- mission
+- differentiators
+- ideal_patient
+- consultation_process
+- FAQs
+- social_links
+- images
+- videos
+- public_display_permissions
+
+Consent:
+
+- authorized_representative
+- accuracy_confirmation
+- verification_consent
+- contact_consent
+- marketing_consent
+- directory_terms
+- media_permission
+
+==================================================
+26. FORM EXPERIENCE AND VALIDATION
+==================================================
+
+The application must feel premium and easy despite its depth.
+
+Use:
+
+- Multi-step structure
+- Save and resume
+- Auto-save
+- Conditional fields
+- Progress indicator
+- Section completion status
+- Clear required fields
+- Inline validation
+- Mobile-friendly input types
+- Address autocomplete where available
+- NPI formatting
+- Phone formatting
+- Email validation
+- File-upload progress
+- Clear error recovery
+- Review before submission
+
+Do not ask the same information twice.
+
+Allow the applicant to:
+
+- Add locations
+- Add providers
+- Add services
+- Remove entries
+- Duplicate location details
+- Save draft
+- Resume using secure verification
+- Invite a colleague to complete another section in a future version
+
+==================================================
+27. SECURITY AND PRIVACY
+==================================================
+
+Protect application data.
+
+Requirements:
+
+- Encrypt data in transit
+- Protect sensitive fields at rest
+- Do not place application details in URLs
+- Do not send complete application data to general analytics tools
+- Do not expose NPI or license-verification workflows in the browser unnecessarily
+- Restrict internal application access by role
+- Log application status changes
+- Track reviewer activity
+- Use secure file uploads
+- Apply rate limiting
+- Use bot protection
+- Validate and sanitize all inputs
+- Do not claim HIPAA compliance unless verified
+
+This application primarily collects business and professional information, but it still requires responsible security controls.
+
+==================================================
+28. CLINIC APPLICATION CTA STRATEGY
+==================================================
+
+Update primary clinic CTAs across the page.
+
+Primary CTA:
+
+Apply for a Free Clinic Listing
+
+Secondary CTA:
+
+Explore Growth Services
+
+Other context-specific CTAs:
+
+- Preview a Clinic Profile
+- See Patient-Acquisition Options
+- Explore Workforce
+- Browse Marketplace
+- Review Directory Benefits
+
+Do not use “Request Clinic Access” everywhere.
+
+Use “Request Clinic Access” only if it refers to platform software access rather than the directory application.
+
+Make the distinction clear:
+
+- Apply for a Free Listing
+- Request Platform Access
+- Explore Patient-Acquisition Services
+
+==================================================
+29. FINAL APPLICATION SECTION DESIGN
+==================================================
+
+The application section must feel like a major destination, not a small form attached to the bottom of the page.
+
+Recommended layout:
+
+Introductory panel:
+
+Eyebrow:
+JOIN THE NOVALYTE AI CLINIC NETWORK
+
+Headline:
+Apply for Your Free Clinic Directory Listing
+
+Supporting copy:
+
+Create a verified clinic profile, improve how patients discover your services, and tell us which patient-acquisition, workforce, marketplace, and growth capabilities may support your organization.
+
+Show benefits:
+
+- Free application
+- Complete patient-facing clinic profile
+- Treatment and location visibility
+- Provider and telehealth information
+- Optional patient-acquisition services
+- Optional workforce and vendor support
+
+Then show the application in a premium full-width interface.
+
+Do not constrain the form to a narrow column with a decorative stock image consuming half the space.
+
+==================================================
+30. PAGE STRUCTURE
+==================================================
+
+Use this recommended page order:
+
+1. Advanced clinic-growth hero
+2. Unified growth-system visual
+3. Clinic owner outcomes
+4. Strategic growth challenges
+5. Four growth systems
+6. Clinic command center preview
+7. Structured patient-opportunity preview
+8. Treatment-specific pathways
+9. Clinic type personalization
+10. Directory profile value
+11. Patient-acquisition services
+12. Workforce value
+13. Marketplace value
+14. Revenue and capacity model
+15. Implementation process
+16. Responsible healthcare growth
+17. Free listing explanation
+18. Complete clinic application
+19. Application process explanation
+20. Final CTA
+
+Combine overlapping sections where possible.
+
+Do not make the page unnecessarily longer through repetition.
+
+==================================================
+31. ACCEPTANCE CRITERIA
+==================================================
+
+Before completing the work, verify:
+
+- The page looks more advanced and enterprise-grade
+- Broken image placeholders are removed
+- All images render correctly
+- Product previews contain polished demonstration data
+- The clinic dashboard feels real and complete
+- The page clearly explains revenue support without guarantees
+- The free directory application is clearly explained
+- Free listing consideration is separated from optional paid services
+- The lightweight request-access form is completely removed
+- The new application captures legal clinic information
+- The application captures complete location information
+- The application captures the real decision-maker
+- Decision-maker work email and direct telephone number are collected
+- Organization and provider NPI information can be collected
+- Treatment categories are detailed
+- Patient-acquisition interest is collected
+- Weekly and monthly patient capacity are collected
+- Response-time capacity is collected
+- Commercial-service interest is collected
+- Workforce needs are collected
+- Marketplace needs are collected
+- Directory-profile content is collected
+- Media uploads are supported
+- Application review and verification consent are included
+- Applicants can save and resume
+- Applicants can review before submission
+- Submission produces a complete confirmation page
+- No listing approval is guaranteed
+- No revenue is guaranteed
+- No clinical outcome is guaranteed
+- The experience works on desktop, tablet, and mobile
+- The existing site routes and navigation remain functional
+
+==================================================
+FINAL EXPECTATION
+==================================================
+
+The upgraded Clinics page must communicate that Novalyte AI is not merely asking clinics to join a directory.
+
+It is inviting qualified men’s health clinics to join a complete growth ecosystem that may support:
+
+- Patient discovery
+- Treatment-specific patient demand
+- Structured intake
+- Consultation opportunities
+- Clinic visibility
+- Workforce access
+- Vendor discovery
+- Equipment sourcing
+- Geographic expansion
+- Operational intelligence
+
+The clinic application must produce a complete, credible organization record that Novalyte AI can verify, review, publish, route, qualify, and use for future partnership discussions.
+
+A clinic owner should finish the page thinking:
+
+“This company understands the full economics and operations of my clinic, and applying to the network is a logical next step.”

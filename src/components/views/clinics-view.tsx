@@ -5,6 +5,7 @@ import { SectionShell } from "@/components/shared/section";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { PremiumCard } from "@/components/shared/enterprise";
+import { ClinicApplication, ApplicationConfirmation } from "@/components/views/clinic-application";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,51 +130,12 @@ const IMPLEMENTATION = [
 export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () => void }) {
   const [activeSystem, setActiveSystem] = useState("growth");
   const [activeTreatment, setActiveTreatment] = useState(TREATMENT_VERTICALS[0].slug);
-  const [formStep, setFormStep] = useState(0);
+  const [activeClinicType, setActiveClinicType] = useState("independent");
+  const [showApplication, setShowApplication] = useState(false);
+  const [submittedApp, setSubmittedApp] = useState<{ id: string; clinicName: string } | null>(null);
 
   // ROI calculator state
   const [roi, setRoi] = useState({ inquiries: 100, consultRate: 30, conversion: 40, value: 1500 });
-
-  // Clinic access form state
-  const [form, setForm] = useState({
-    clinicName: "", website: "", locations: "1", state: "", telehealth: false,
-    treatments: [] as string[], monthlyVolume: "", channels: "", challenge: "", expansion: "",
-    contactName: "", role: "", email: "", phone: "", preferredContact: "", notes: "", consent: false,
-  });
-
-  function toggleTreatment(slug: string) {
-    setForm((f) => ({
-      ...f,
-      treatments: f.treatments.includes(slug) ? f.treatments.filter((t) => t !== slug) : [...f.treatments, slug],
-    }));
-  }
-
-  async function submitForm(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      const res = await fetch("/api/clinic-onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clinicName: form.clinicName,
-          contactName: form.contactName,
-          email: form.email,
-          phone: form.phone,
-          city: "",
-          state: form.state,
-          specialties: form.treatments.join(", "),
-          currentVolume: form.monthlyVolume,
-          goals: `${form.challenge} | ${form.notes}`,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      toast.success("Clinic access requested. Our team will reach out.");
-      setFormStep(0);
-      setForm({ clinicName: "", website: "", locations: "1", state: "", telehealth: false, treatments: [], monthlyVolume: "", channels: "", challenge: "", expansion: "", contactName: "", role: "", email: "", phone: "", preferredContact: "", notes: "", consent: false });
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    }
-  }
 
   const roiResult = Math.round((roi.inquiries * (roi.consultRate / 100) * (roi.conversion / 100) * roi.value));
 
@@ -196,14 +158,14 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
               Novalyte AI helps men's health clinics attract treatment-ready patients, organize intake, improve consultation conversion, increase visibility, access specialized talent, and source operational resources.
             </p>
             <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => document.getElementById("access-form")?.scrollIntoView({ behavior: "smooth" })}>
-                Request Clinic Access <ArrowRight className="ml-1 h-4 w-4" />
+              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => document.getElementById("application")?.scrollIntoView({ behavior: "smooth" })}>
+                Apply for a Free Clinic Listing <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
               <Button size="lg" variant="outline" onClick={() => document.getElementById("growth-model")?.scrollIntoView({ behavior: "smooth" })}>
-                See How It Works
+                Explore Clinic Growth Services
               </Button>
               <button onClick={() => navigate("directory")} className="text-sm font-medium text-teal-700 underline-offset-2 hover:underline sm:ml-2">
-                Explore Directory Benefits
+                See the Platform in Action
               </button>
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
@@ -879,83 +841,101 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
         </div>
       </section>
 
-      {/* ── 18. CLINIC ACCESS FORM ─────────────────────────────── */}
-      <section id="access-form" className="border-b border-border py-12 sm:py-14">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:px-8">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">See how Novalyte AI can support your clinic</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Tell us about your treatments, locations, growth goals, and current operational challenges. We'll use the information to prepare a more relevant clinic-access conversation.</p>
-            <div className="mt-5 relative aspect-[4/3] overflow-hidden rounded-2xl shadow-premium-md">
-              <SmartImage src="/images/clinics/clinic-5.jpg" alt="Modern men's health clinic interior" fill sizes="(max-width: 1024px) 100vw, 40vw" imgClassName="object-cover" />
-            </div>
-          </div>
-          {/* Multi-step form */}
-          <PremiumCard className="p-6">
-            {/* Step indicator */}
-            <div className="mb-5 flex items-center gap-2">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className={cn("h-1.5 flex-1 rounded-full transition", i <= formStep ? "bg-teal-600" : "bg-muted")} />
+      {/* ── 18. FREE LISTING EXPLANATION ───────────────────────── */}
+      <section className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-teal-200 bg-teal-50/40 p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Applying is free</h2>
+            <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+              Applying to join the Novalyte AI Clinic Directory is free. Approved clinics may receive a verified directory profile. Enhanced growth, patient-acquisition, workforce, marketplace, and promotional services are optional and may be offered separately.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {[
+                "Free application — no application fee",
+                "Approved basic listing may be free during launch phase",
+                "Submission does not guarantee approval",
+                "Novalyte AI may verify clinic and provider information",
+                "Incomplete or unverifiable applications may not be published",
+                "Optional growth services are separate and may have fees",
+                "Paid services do not guarantee clinical outcomes or revenue",
+                "Clinics remain independently responsible for all medical care",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" /> {item}
+                </div>
               ))}
             </div>
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-teal-700">
-              Step {formStep + 1} of 3 — {["Clinic details", "Treatments & growth", "Contact"][formStep]}
-            </p>
+          </div>
+        </div>
+      </section>
 
-            {formStep === 0 && (
-              <div className="space-y-3 novalyte-fade-up">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5"><Label className="text-xs">Clinic name *</Label><Input value={form.clinicName} onChange={(e) => setForm({ ...form, clinicName: e.target.value })} /></div>
-                  <div className="grid gap-1.5"><Label className="text-xs">Website</Label><Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="example.com" /></div>
-                  <div className="grid gap-1.5"><Label className="text-xs">Number of locations</Label><Input type="number" min="1" value={form.locations} onChange={(e) => setForm({ ...form, locations: e.target.value })} /></div>
-                  <div className="grid gap-1.5"><Label className="text-xs">Primary state *</Label><Select value={form.state} onValueChange={(v) => setForm({ ...form, state: v })}><SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
-                </div>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.telehealth} onChange={(e) => setForm({ ...form, telehealth: e.target.checked })} className="accent-teal-600" /> We offer telehealth</label>
-                <Button className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={!form.clinicName || !form.state} onClick={() => setFormStep(1)}>Continue <ArrowRight className="ml-1 h-4 w-4" /></Button>
+      {/* ── 19. COMPLETE CLINIC APPLICATION ────────────────────── */}
+      <section id="application" className="border-b border-border py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
+          {submittedApp ? (
+            <ApplicationConfirmation
+              applicationId={submittedApp.id}
+              clinicName={submittedApp.clinicName}
+              onBackToClinics={() => { setSubmittedApp(null); setShowApplication(false); }}
+            />
+          ) : !showApplication ? (
+            <div className="rounded-2xl border border-border bg-card p-8 shadow-premium-sm text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                <Building2 className="h-3.5 w-3.5" /> Join the Novalyte AI Clinic Network
               </div>
-            )}
-
-            {formStep === 1 && (
-              <div className="space-y-3 novalyte-fade-up">
-                <div>
-                  <Label className="text-xs">Treatment specialties</Label>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {TREATMENT_VERTICALS.map((t) => {
-                      const active = form.treatments.includes(t.slug);
-                      return (
-                        <button key={t.slug} type="button" onClick={() => toggleTreatment(t.slug)} className={cn("rounded-full border px-2.5 py-1 text-xs font-medium transition", active ? "border-teal-400 bg-teal-50 text-teal-800" : "border-border bg-card text-foreground/70 hover:border-teal-200")}>
-                          {t.short}
-                        </button>
-                      );
-                    })}
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Apply for your free clinic directory listing</h2>
+              <p className="mx-auto mt-3 max-w-xl text-pretty text-sm text-muted-foreground sm:text-base">
+                Create a verified clinic profile, improve how patients discover your services, and tell us which patient-acquisition, workforce, marketplace, and growth capabilities may support your organization.
+              </p>
+              <div className="mx-auto mt-6 grid max-w-2xl gap-2.5 sm:grid-cols-2">
+                {[
+                  "Free application",
+                  "Complete patient-facing clinic profile",
+                  "Treatment and location visibility",
+                  "Provider and telehealth information",
+                  "Optional patient-acquisition services",
+                  "Optional workforce and vendor support",
+                ].map((b) => (
+                  <div key={b} className="flex items-center justify-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left text-sm text-foreground/80">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-teal-600" /> {b}
                   </div>
-                </div>
-                <div className="grid gap-1.5"><Label className="text-xs">Approximate monthly patient volume</Label><Input value={form.monthlyVolume} onChange={(e) => setForm({ ...form, monthlyVolume: e.target.value })} placeholder="e.g., 120 consults/month" /></div>
-                <div className="grid gap-1.5"><Label className="text-xs">Main growth challenge</Label><Select value={form.challenge} onValueChange={(v) => setForm({ ...form, challenge: v })}><SelectTrigger className="h-9"><SelectValue placeholder="Select challenge" /></SelectTrigger><SelectContent>{["Need more patient demand", "Need better-quality inquiries", "Need stronger intake", "Need more clinic visibility", "Need clinical staff", "Need vendors or equipment", "Expanding to new locations", "Need better reporting", "Other"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
-                <div className="grid gap-1.5"><Label className="text-xs">Expansion plans (optional)</Label><Textarea rows={2} value={form.expansion} onChange={(e) => setForm({ ...form, expansion: e.target.value })} /></div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setFormStep(0)}>Back</Button>
-                  <Button className="flex-1 bg-teal-600 text-white hover:bg-teal-700" disabled={form.treatments.length === 0} onClick={() => setFormStep(2)}>Continue <ArrowRight className="ml-1 h-4 w-4" /></Button>
-                </div>
+                ))}
               </div>
-            )}
+              <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4 text-teal-600" /> Approximately 8–12 minutes · Progress saved automatically
+              </div>
+              <Button size="lg" className="mt-6 bg-teal-600 text-white hover:bg-teal-700" onClick={() => setShowApplication(true)}>
+                Begin Clinic Application <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+              <p className="mt-3 text-xs text-muted-foreground">Your application will be reviewed before publication. Submission does not guarantee approval.</p>
+            </div>
+          ) : (
+            <ClinicApplication onComplete={(appId) => setSubmittedApp({ id: appId, clinicName: "" })} />
+          )}
+        </div>
+      </section>
 
-            {formStep === 2 && (
-              <form onSubmit={submitForm} className="space-y-3 novalyte-fade-up">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5"><Label className="text-xs">Contact name *</Label><Input required value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} /></div>
-                  <div className="grid gap-1.5"><Label className="text-xs">Role</Label><Input value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Owner, Medical Director..." /></div>
-                  <div className="grid gap-1.5"><Label className="text-xs">Work email *</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                  <div className="grid gap-1.5"><Label className="text-xs">Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                </div>
-                <div className="grid gap-1.5"><Label className="text-xs">Additional notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-                <label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" required checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} className="mt-0.5 accent-teal-600" /><span>No obligation. I agree that Novalyte AI may contact me about clinic access. Novalyte AI is a technology platform and does not provide medical care.</span></label>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={() => setFormStep(1)}>Back</Button>
-                  <Button type="submit" className="flex-1 bg-teal-600 text-white hover:bg-teal-700">Request Clinic Access <ArrowRight className="ml-1 h-4 w-4" /></Button>
-                </div>
-              </form>
-            )}
-          </PremiumCard>
+      {/* ── 20. APPLICATION PROCESS ────────────────────────────── */}
+      <section className="border-b border-border bg-muted/30 py-12 sm:py-14">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">What happens after you apply</h2>
+          <div className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { num: "01", title: "Completeness review", desc: "We review your application for completeness." },
+              { num: "02", title: "Verification", desc: "Clinic and credential verification." },
+              { num: "03", title: "Profile preparation", desc: "We prepare your directory profile." },
+              { num: "04", title: "Approval", desc: "Clinic approval and confirmation." },
+              { num: "05", title: "Publication", desc: "Your profile goes live in the directory." },
+              { num: "06", title: "Growth discussion", desc: "Optional growth-services conversation." },
+            ].map((step) => (
+              <div key={step.num} className="rounded-xl border border-border bg-card p-4 text-center shadow-premium-xs">
+                <span className="flex h-8 w-8 mx-auto items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">{step.num}</span>
+                <h4 className="mt-2.5 text-xs font-semibold text-foreground">{step.title}</h4>
+                <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">We will contact the authorized representative if additional information is required. Approval timeframes vary by application complexity.</p>
         </div>
       </section>
 
@@ -966,8 +946,8 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
           <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">Build a more predictable growth engine for your clinic</h2>
           <p className="mt-3 text-pretty text-sm text-white/90 sm:text-base">Connect patient demand, structured intake, clinic visibility, workforce access, and vendor operations through one men's health ecosystem.</p>
           <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
-            <Button size="lg" className="bg-white text-teal-700 hover:bg-white/90" onClick={() => document.getElementById("access-form")?.scrollIntoView({ behavior: "smooth" })}>
-              Request Clinic Access <ArrowRight className="ml-1 h-4 w-4" />
+            <Button size="lg" className="bg-white text-teal-700 hover:bg-white/90" onClick={() => document.getElementById("application")?.scrollIntoView({ behavior: "smooth" })}>
+              Apply for a Free Clinic Listing <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
             <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" onClick={() => navigate("directory")}>View the Clinic Directory</Button>
             <button onClick={() => navigate("marketplace")} className="text-sm font-medium text-white/90 underline-offset-2 hover:underline">Browse the Marketplace</button>

@@ -623,3 +623,43 @@ Stage Summary:
 - All demo data clearly labeled
 - No fake metrics presented as real results
 - Mobile responsive
+
+---
+Task ID: 18
+Agent: Main (Z.ai Code)
+Task: Advanced clinics page upgrade — comprehensive clinic directory & partnership application
+
+Work Log:
+- Added ClinicApplication model to Prisma schema with 60+ fields covering organization, decision maker, credentials, treatments, patient operations, growth interests, workforce/marketplace needs, directory profile, verification/consent, and meta. Ran db:push.
+- Created POST /api/clinic-application route with Zod validation, generates unique human-readable application ID (NCA-XXXXXX format), persists to DB with submittedAt timestamp
+- Built src/components/views/clinic-application.tsx — comprehensive 10-stage multi-step application:
+  - Stage 1: Organization (legal name, DBA, parent org, type, ownership, year, website, phone, email, description, locations, providers, employees)
+  - Stage 2: Locations (primary location name, address, city/state/zip, phone, hours, booking URL, telehealth, telehealth states, new patient status, wait time)
+  - Stage 3: Decision Maker (first/last name, title, role, work email, direct phone, mobile, preferred contact, best time, LinkedIn, authorized checkbox, final decision-maker checkbox)
+  - Stage 4: Providers & Credentials (org NPI, taxonomy, medical director name/NPI, license states chips, accreditation)
+  - Stage 5: Treatments (multi-select treatment chips including all 12 verticals + IV/Primary/Lab/Sleep/Mental/Telehealth, pricing display preference)
+  - Stage 6: Patient Operations (monthly inquiries/consults/new patients, acquisition channels chips, response time, intake method, CRM system)
+  - Stage 7: Growth Interests (acquisition interest, weekly/monthly capacity, growth services chips, commercial model, budget range, workforce needs chips, marketplace needs chips)
+  - Stage 8: Directory Profile (short description, full bio, mission, differentiator, ideal patient, consultation process, insurance/self-pay/financing info, languages, booking URL, social URLs)
+  - Stage 9: Verification (6 consent checkboxes: accuracy, verify consent, terms, contact, media, marketing — all required ones must be checked, none pre-selected)
+  - Stage 10: Review (summary of all sections with edit links to jump back to any stage, submit confirmation)
+  - Progress rail showing all 10 stages with complete/current/upcoming states
+  - "Progress saved automatically" indicator
+  - ApplicationConfirmation component: post-submission page with application reference number, clinic name, submitted date, status badge, 6-step review process, back to clinics button
+- Updated clinics-view.tsx:
+  - Hero CTAs changed to "Apply for a Free Clinic Listing" + "Explore Clinic Growth Services" + "See the Platform in Action"
+  - Removed old 3-step form entirely
+  - Added free listing explanation section (8 bullet points about free application, no guarantee, verification, optional paid services)
+  - Added application intro panel with benefits list, estimated time, "Begin Clinic Application" button
+  - Added application process section (6-step post-submission flow)
+  - Updated final CTA to "Apply for a Free Clinic Listing"
+- Verified with Agent Browser: hero CTAs, free listing section, application intro, 10-stage application (verified stages 1-5 rendering correctly with proper fields, treatment chips, progress rail), stage navigation working, Continue enabled/disabled correctly based on required fields
+
+Stage Summary:
+- Comprehensive 10-stage clinic directory & partnership application replaces the old 3-step form
+- Collects: organization info, locations, decision maker, providers/credentials, treatments, patient operations, growth interests, directory profile content, verification/consent
+- Post-submission confirmation page with application reference number and review process
+- Free listing clearly explained — submission doesn't guarantee approval
+- All consent checkboxes explicit, none pre-selected
+- API persists complete application to DB with unique reference ID
+- Application status system ready (draft/submitted/under_review/approved/declined/waitlisted)

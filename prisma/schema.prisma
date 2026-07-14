@@ -294,6 +294,99 @@ model ClinicOnboarding {
   createdAt     DateTime @default(now())
 }
 
+/// Complete clinic directory & partnership application
+model ClinicApplication {
+  id              String   @id @default(cuid())
+  applicationId   String   @unique // human-readable ref like NCA-XXXXXX
+  status          String   @default("draft") // draft | submitted | under_review | approved | declined | waitlisted
+  // Organization
+  legalName       String
+  dbaName         String?
+  parentOrg       String?
+  orgType         String?
+  ownershipType   String?
+  yearEstablished String?
+  website         String?
+  mainPhone       String?
+  generalEmail    String?
+  orgDescription  String?
+  locationCount   String?
+  providerCount   String?
+  employeeCount   String?
+  // Decision maker
+  dmFirstName     String
+  dmLastName      String
+  dmTitle         String?
+  dmRole          String?
+  dmEmail         String
+  dmPhone         String?
+  dmMobile        String?
+  dmPreferredContact String?
+  dmBestTime      String?
+  dmLinkedin      String?
+  dmAuthorized    Boolean  @default(false)
+  dmFinalDecisionMaker Boolean @default(false)
+  // Credentials
+  orgNpi          String?
+  taxonomyCode    String?
+  medicalDirector String?
+  medicalDirectorNpi String?
+  licenseStates   String? // CSV
+  accreditation   String?
+  // Treatments (CSV of slugs)
+  treatments      String?
+  // Patient operations
+  monthlyInquiries String?
+  monthlyConsults  String?
+  monthlyNewPatients String?
+  acquisitionChannels String?
+  responseTime    String?
+  intakeMethod    String?
+  crmSystem       String?
+  // Growth interests
+  acquisitionInterest String?
+  weeklyCapacity  String?
+  monthlyCapacity String?
+  growthServices  String? // CSV
+  commercialModel String?
+  budgetRange     String?
+  // Workforce & marketplace
+  workforceNeeds  String? // CSV
+  marketplaceNeeds String? // CSV
+  // Directory profile
+  shortDescription String?
+  fullBio          String?
+  mission          String?
+  differentiator   String?
+  idealPatient     String?
+  consultationProcess String?
+  insuranceInfo    String?
+  selfPayInfo      String?
+  financingInfo    String?
+  languages        String?
+  accessibility    String?
+  amenities        String?
+  bookingUrl       String?
+  socialUrls       String?
+  // Verification & consent
+  accuracyConfirm  Boolean @default(false)
+  verifyConsent    Boolean @default(false)
+  mediaConsent     Boolean @default(false)
+  termsConsent     Boolean @default(false)
+  contactConsent   Boolean @default(false)
+  marketingConsent Boolean @default(false)
+  // Meta
+  referralSource   String?
+  notes            String?
+  submittedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status])
+  @@index([generalEmail])
+  @@index([dmEmail])
+}
+
 model ProfessionalOnboarding {
   id           String   @id @default(cuid())
   name         String
