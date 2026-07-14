@@ -1,0 +1,807 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import { SectionShell, SectionHeading } from "@/components/shared/section";
+     5→import { VerificationBadge, StatusPill } from "@/components/shared/badges";
+     6→import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
+     7→import {
+     8→  PremiumCard,
+     9→  MetaRow,
+    10→  EmptyState,
+    11→  SaveButton,
+    12→  Breadcrumbs,
+    13→  SectionDivider,
+    14→} from "@/components/shared/enterprise";
+    15→import { StickyTabNav } from "@/components/shared/sticky-tab-nav";
+    16→import { Input } from "@/components/ui/input";
+    17→import { Label } from "@/components/ui/label";
+    18→import { Button } from "@/components/ui/button";
+    19→import { Textarea } from "@/components/ui/textarea";
+    20→import {
+    21→  Dialog,
+    22→  DialogContent,
+    23→  DialogHeader,
+    24→  DialogTitle,
+    25→  DialogDescription,
+    26→} from "@/components/ui/dialog";
+    27→import { toast } from "sonner";
+    28→import { colorClasses } from "@/lib/constants";
+    29→import type { MarketplaceListingT, VendorT } from "@/lib/types";
+    30→import { navigate, useSaved, useCompare } from "@/lib/nav";
+    31→import { cn } from "@/lib/utils";
+    32→import {
+    33→  ArrowRight,
+    34→  Globe,
+    35→  CheckCircle2,
+    36→  ShieldCheck,
+    37→  Clock,
+    38→  Quote,
+    39→  Package,
+    40→  Building2,
+    41→  Mail,
+    42→  MessageSquare,
+    43→  AlertCircle,
+    44→  ChevronRight,
+    45→  Boxes,
+    46→  ClipboardCheck,
+    47→  Store,
+    48→  Inbox,
+    49→  Sparkles,
+    50→  FlaskConical,
+    51→  Activity,
+    52→  Syringe,
+    53→  Droplet,
+    54→  Armchair,
+    55→  Stethoscope,
+    56→  HeartPulse,
+    57→  Video,
+    58→  Monitor,
+    59→  CreditCard,
+    60→  BadgeCheck,
+    61→  Megaphone,
+    62→  Users,
+    63→} from "lucide-react";
+    64→
+    65→/* Category icon — stable wrapper (switch with literal JSX so the React
+    66→   Compiler treats it as a static element) */
+    67→function CategoryIcon({ category, className }: { category: string; className?: string }) {
+    68→  switch (category) {
+    69→    case "Laboratory Services": return <FlaskConical className={className} />;
+    70→    case "Diagnostic Equipment": return <Activity className={className} />;
+    71→    case "Injection Supplies": return <Syringe className={className} />;
+    72→    case "Phlebotomy Supplies": return <Droplet className={className} />;
+    73→    case "Medical Furniture": return <Armchair className={className} />;
+    74→    case "Body-Composition Systems": return <Stethoscope className={className} />;
+    75→    case "Recovery Technology": return <HeartPulse className={className} />;
+    76→    case "Telehealth Tools": return <Video className={className} />;
+    77→    case "Clinic Software": return <Monitor className={className} />;
+    78→    case "Billing Services": return <CreditCard className={className} />;
+    79→    case "Credentialing Services": return <BadgeCheck className={className} />;
+    80→    case "Compliance Support": return <ShieldCheck className={className} />;
+    81→    case "Marketing Services": return <Megaphone className={className} />;
+    82→    case "Staffing Services": return <Users className={className} />;
+    83→    case "Patient Engagement Tools": return <MessageSquare className={className} />;
+    84→    case "Clinic Expansion Services": return <Building2 className={className} />;
+    85→    default: return <Package className={className} />;
+    86→  }
+    87→}
+    88→
+    89→function availabilityMeta(av: string): { tone: "teal" | "amber" | "sky" | "violet"; label: string } {
+    90→  const a = av.toLowerCase();
+    91→  if (a.includes("order")) return { tone: "amber", label: "Made to order" };
+    92→  if (a.includes("limit")) return { tone: "violet", label: "Limited" };
+    93→  if (a.includes("pre") || a.includes("back")) return { tone: "sky", label: "Pre-order" };
+    94→  return { tone: "teal", label: "In stock" };
+    95→}
+    96→
+    97→const TABS = [
+    98→  { id: "overview", label: "Overview", icon: Building2 },
+    99→  { id: "catalog", label: "Products & Services", icon: Package },
+   100→  { id: "verification", label: "Verification", icon: ShieldCheck },
+   101→  { id: "contact", label: "Contact", icon: Mail },
+   102→];
+   103→
+   104→const WHAT_VERIFICATION_MEANS = [
+   105→  "Submitted business information has been reviewed by Novalyte AI.",
+   106→  "Listing categories are reviewed for fit with the men's health operations marketplace.",
+   107→  "Clinical and outcome claims are subject to moderation before publication.",
+   108→  "Vendor maintains an active catalog and inquiry-routing channel through Novalyte.",
+   109→];
+   110→
+   111→const VERIFICATION_IS_NOT = [
+   112→  "An endorsement of clinical outcomes, product efficacy, or service quality.",
+   113→  "A guarantee of regulatory compliance, licensure, or certifications.",
+   114→  "A warranty, insurance, or fulfillment commitment by Novalyte AI.",
+   115→  "A substitute for independent due diligence before purchase.",
+   116→];
+   117→
+   118→/* ───────────────────────────────────────────────────────────────
+   119→   Main view
+   120→   ─────────────────────────────────────────────────────────────── */
+   121→export function VendorProfileView({
+   122→  vendor,
+   123→  listings,
+   124→}: {
+   125→  vendor: VendorT;
+   126→  listings: MarketplaceListingT[];
+   127→}) {
+   128→  const [activeTab, setActiveTab] = useState("overview");
+   129→  const [contactOpen, setContactOpen] = useState(false);
+   130→
+   131→  const c = colorClasses("teal");
+   132→
+   133→  // Derive categories served from their listings
+   134→  const categoriesServed = useMemo(() => {
+   135→    return Array.from(new Set(listings.map((l) => l.category))).sort();
+   136→  }, [listings]);
+   137→
+   138→  const verifiedListings = useMemo(() => listings.filter((l) => l.verified), [listings]);
+   139→
+   140→  // Reset active tab whenever the vendor changes — uses "adjusting state during
+   141→  // render" pattern (endorsed by React docs) to avoid setState-in-effect.
+   142→  const [lastVendorId, setLastVendorId] = useState(vendor.id);
+   143→  if (lastVendorId !== vendor.id) {
+   144→    setLastVendorId(vendor.id);
+   145→    setActiveTab("overview");
+   146→  }
+   147→
+   148→  // Scroll to top on vendor change (genuine side effect — OK in useEffect).
+   149→  useEffect(() => {
+   150→    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
+   151→  }, [vendor.id]);
+   152→
+   153→  return (
+   154→    <div className="bg-background">
+   155→      {/* ── Breadcrumbs ───────────────────────────────────────── */}
+   156→      <div className="border-b border-border bg-background">
+   157→        <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+   158→          <Breadcrumbs
+   159→            items={[
+   160→              { label: "Marketplace", onClick: () => navigate("marketplace") },
+   161→              { label: "Vendors", onClick: () => navigate("marketplace") },
+   162→              { label: vendor.name },
+   163→            ]}
+   164→          />
+   165→        </div>
+   166→      </div>
+   167→
+   168→      {/* ── Hero header ──────────────────────────────────────── */}
+   169→      <section className="border-b border-border bg-gradient-to-b from-teal-50/40 to-background py-10 sm:py-14">
+   170→        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+   171→          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+   172→            <div className={cn("flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl text-3xl font-bold text-white shadow-premium-sm", c.bg)}>
+   173→              {vendor.name.slice(0, 1)}
+   174→            </div>
+   175→            <div className="min-w-0 flex-1">
+   176→              <div className="flex flex-wrap items-center gap-3">
+   177→                <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+   178→                  {vendor.name}
+   179→                </h1>
+   180→                <VerificationBadge verified={vendor.verified} />
+   181→              </div>
+   182→              {vendor.website && (
+   183→                <a
+   184→                  href={vendor.website}
+   185→                  target="_blank"
+   186→                  rel="noopener noreferrer"
+   187→                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-teal-700 transition hover:text-teal-800"
+   188→                >
+   189→                  <Globe className="h-4 w-4" />
+   190→                  {vendor.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+   191→                  <ArrowRight className="h-3 w-3" />
+   192→                </a>
+   193→              )}
+   194→              <p className="mt-4 max-w-3xl text-pretty text-base leading-relaxed text-muted-foreground">
+   195→                {vendor.overview || `${vendor.name} is a vendor on the Novalyte AI healthcare services marketplace.`}
+   196→              </p>
+   197→
+   198→              <div className="mt-6 flex flex-wrap items-center gap-2">
+   199→                <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setContactOpen(true)}>
+   200→                  <Mail className="mr-1 h-4 w-4" /> Contact vendor
+   201→                </Button>
+   202→                <Button variant="outline" onClick={() => navigate("marketplace")}>
+   203→                  <Store className="mr-1 h-4 w-4" /> Browse marketplace
+   204→                </Button>
+   205→                <Button variant="ghost" onClick={() => navigate("marketplace", undefined, undefined)}>
+   206→                  <Sparkles className="mr-1 h-4 w-4 text-teal-600" /> Become a vendor
+   207→                </Button>
+   208→              </div>
+   209→            </div>
+   210→
+   211→            {/* Side meta card */}
+   212→            <PremiumCard className="hidden w-64 shrink-0 p-5 lg:block">
+   213→              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Vendor snapshot</p>
+   214→              <dl className="mt-3 space-y-2.5 text-sm">
+   215→                <div className="flex items-center justify-between">
+   216→                  <dt className="text-muted-foreground">Status</dt>
+   217→                  <dd>
+   218→                    <VerificationBadge verified={vendor.verified} />
+   219→                  </dd>
+   220→                </div>
+   221→                <div className="flex items-center justify-between">
+   222→                  <dt className="text-muted-foreground">Active listings</dt>
+   223→                  <dd className="font-semibold text-foreground">{listings.length}</dd>
+   224→                </div>
+   225→                <div className="flex items-center justify-between">
+   226→                  <dt className="text-muted-foreground">Categories</dt>
+   227→                  <dd className="font-semibold text-foreground">{categoriesServed.length}</dd>
+   228→                </div>
+   229→                <div className="flex items-center justify-between">
+   230→                  <dt className="text-muted-foreground">Verified listings</dt>
+   231→                  <dd className="font-semibold text-foreground">{verifiedListings.length}</dd>
+   232→                </div>
+   233→              </dl>
+   234→            </PremiumCard>
+   235→          </div>
+   236→        </div>
+   237→      </section>
+   238→
+   239→      {/* ── Sticky tab nav ───────────────────────────────────── */}
+   240→      <StickyTabNav
+   241→        tabs={TABS}
+   242→        active={activeTab}
+   243→        onChange={setActiveTab}
+   244→        rightSlot={
+   245→          <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setContactOpen(true)}>
+   246→            <Mail className="mr-1 h-3.5 w-3.5" /> Contact
+   247→          </Button>
+   248→        }
+   249→      />
+   250→
+   251→      {/* ── Tab content ──────────────────────────────────────── */}
+   252→      <SectionShell className="!py-10 sm:!py-14">
+   253→        <div className="mx-auto w-full max-w-5xl">
+   254→          {activeTab === "overview" && (
+   255→            <div className="novalyte-fade-up space-y-8">
+   256→              <div>
+   257→                <h2 className="text-xl font-semibold text-foreground">Overview</h2>
+   258→                <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">
+   259→                  {vendor.overview || `${vendor.name} is a vendor on the Novalyte AI healthcare services marketplace.`}
+   260→                </p>
+   261→                <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">
+   262→                  As a Novalyte marketplace participant, {vendor.name} maintains a structured catalog
+   263→                  and receives inquiry routing through the platform. Quotes, terms, lead times, and
+   264→                  fulfillment are coordinated directly between your organization and the vendor.
+   265→                </p>
+   266→              </div>
+   267→
+   268→              <SectionDivider label="What they offer" />
+   269→              <div className="grid gap-3 sm:grid-cols-2">
+   270→                <PremiumCard className="p-4">
+   271→                  <div className="flex items-center gap-2">
+   272→                    <Package className="h-4 w-4 text-teal-600" />
+   273→                    <h4 className="text-sm font-semibold text-foreground">Catalog scope</h4>
+   274→                  </div>
+   275→                  <p className="mt-1.5 text-sm text-muted-foreground">
+   276→                    {listings.length} active listing{listings.length === 1 ? "" : "s"} across {categoriesServed.length} categor{categoriesServed.length === 1 ? "y" : "ies"}.
+   277→                  </p>
+   278→                </PremiumCard>
+   279→                <PremiumCard className="p-4">
+   280→                  <div className="flex items-center gap-2">
+   281→                    <ShieldCheck className="h-4 w-4 text-teal-600" />
+   282→                    <h4 className="text-sm font-semibold text-foreground">Verification</h4>
+   283→                  </div>
+   284→                  <p className="mt-1.5 text-sm text-muted-foreground">
+   285→                    {vendor.verified ? "Verified vendor — business information reviewed." : "Vendor verification under review or pending."}
+   286→                  </p>
+   287→                </PremiumCard>
+   288→              </div>
+   289→
+   290→              <SectionDivider label="Categories they serve" />
+   291→              {categoriesServed.length > 0 ? (
+   292→                <div className="flex flex-wrap gap-2">
+   293→                  {categoriesServed.map((cat) => {
+   294→                    return (
+   295→                      <button
+   296→                        key={cat}
+   297→                        onClick={() => navigate("marketplace")}
+   298→                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-teal-300 hover:text-teal-700"
+   299→                      >
+   300→                        <CategoryIcon category={cat} className="h-3.5 w-3.5" /> {cat}
+   301→                      </button>
+   302→                    );
+   303→                  })}
+   304→                </div>
+   305→              ) : (
+   306→                <p className="text-sm text-muted-foreground">No active listings yet.</p>
+   307→              )}
+   308→            </div>
+   309→          )}
+   310→
+   311→          {activeTab === "catalog" && (
+   312→            <div className="novalyte-fade-up space-y-6">
+   313→              <div className="flex items-end justify-between">
+   314→                <div>
+   315→                  <h2 className="text-xl font-semibold text-foreground">Products &amp; services</h2>
+   316→                  <p className="mt-1 text-sm text-muted-foreground">
+   317→                    {listings.length} active listing{listings.length === 1 ? "" : "s"} from {vendor.name}.
+   318→                  </p>
+   319→                </div>
+   320→              </div>
+   321→
+   322→              {listings.length === 0 ? (
+   323→                <EmptyState
+   324→                  icon={Package}
+   325→                  title="No active listings"
+   326→                  description={`${vendor.name} does not currently have any active listings on the marketplace.`}
+   327→                  action={
+   328→                    <Button variant="outline" size="sm" onClick={() => navigate("marketplace")}>
+   329→                      Browse full marketplace
+   330→                    </Button>
+   331→                  }
+   332→                />
+   333→              ) : (
+   334→                <div className="novalyte-fade-up grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+   335→                  {listings.map((l) => (
+   336→                    <VendorListingCard key={l.id} listing={l} />
+   337→                  ))}
+   338→                </div>
+   339→              )}
+   340→            </div>
+   341→          )}
+   342→
+   343→          {activeTab === "verification" && (
+   344→            <div className="novalyte-fade-up space-y-6">
+   345→              <h2 className="text-xl font-semibold text-foreground">Verification</h2>
+   346→
+   347→              <PremiumCard className="p-6">
+   348→                <div className="flex items-start gap-4">
+   349→                  <span
+   350→                    className={cn(
+   351→                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+   352→                      vendor.verified ? "bg-teal-50 text-teal-600" : "bg-amber-50 text-amber-600",
+   353→                    )}
+   354→                  >
+   355→                    {vendor.verified ? <ShieldCheck className="h-6 w-6" /> : <Clock className="h-6 w-6" />}
+   356→                  </span>
+   357→                  <div>
+   358→                    <h3 className="text-base font-semibold text-foreground">
+   359→                      {vendor.verified ? "Verified vendor" : "Verification under review"}
+   360→                    </h3>
+   361→                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+   362→                      {vendor.verified
+   363→                        ? "Novalyte AI has reviewed this vendor's submitted business information. Verification is a transparency signal — not an endorsement."
+   364→                        : "This vendor's verification is currently under review or pending submission. Inquiries can still be routed; perform independent due diligence before purchase."}
+   365→                    </p>
+   366→                  </div>
+   367→                </div>
+   368→              </PremiumCard>
+   369→
+   370→              <div className="grid gap-4 md:grid-cols-2">
+   371→                <PremiumCard className="p-5">
+   372→                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+   373→                    <CheckCircle2 className="h-4 w-4 text-teal-600" /> What verification means
+   374→                  </h3>
+   375→                  <ul className="mt-3 space-y-2">
+   376→                    {WHAT_VERIFICATION_MEANS.map((item) => (
+   377→                      <li key={item} className="flex items-start gap-2 text-sm text-foreground/80">
+   378→                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600" />
+   379→                        <span>{item}</span>
+   380→                      </li>
+   381→                    ))}
+   382→                  </ul>
+   383→                </PremiumCard>
+   384→                <PremiumCard className="p-5">
+   385→                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+   386→                    <AlertCircle className="h-4 w-4 text-amber-600" /> What verification is not
+   387→                  </h3>
+   388→                  <ul className="mt-3 space-y-2">
+   389→                    {VERIFICATION_IS_NOT.map((item) => (
+   390→                      <li key={item} className="flex items-start gap-2 text-sm text-foreground/80">
+   391→                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-500" />
+   392→                        <span>{item}</span>
+   393→                      </li>
+   394→                    ))}
+   395→                  </ul>
+   396→                </PremiumCard>
+   397→              </div>
+   398→
+   399→              <SectionDivider label="Listing review status" />
+   400→              <MetaRow
+   401→                columns={3}
+   402→                items={[
+   403→                  { label: "Total listings", value: listings.length, icon: Package },
+   404→                  { label: "Verified listings", value: verifiedListings.length, icon: ShieldCheck },
+   405→                  {
+   406→                    label: "Under review",
+   407→                    value: listings.length - verifiedListings.length,
+   408→                    icon: Clock,
+   409→                  },
+   410→                ]}
+   411→              />
+   412→              <DisclaimerBanner tone="amber">
+   413→                Verification reflects a review of submitted business information. It is not an
+   414→                endorsement of clinical outcomes, product efficacy, or vendor performance.
+   415→                Independent due diligence — including regulatory, licensure, and reference checks —
+   416→                is recommended before entering purchasing agreements.
+   417→              </DisclaimerBanner>
+   418→            </div>
+   419→          )}
+   420→
+   421→          {activeTab === "contact" && (
+   422→            <div className="novalyte-fade-up space-y-6">
+   423→              <div>
+   424→                <h2 className="text-xl font-semibold text-foreground">Contact {vendor.name}</h2>
+   425→                <p className="mt-1 text-sm text-muted-foreground">
+   426→                  Send a general inquiry or request a quote on a specific listing. Novalyte routes
+   427→                  your message to the vendor; they respond directly.
+   428→                </p>
+   429→              </div>
+   430→
+   431→              <div className="grid gap-6 md:grid-cols-[1fr_280px]">
+   432→                <PremiumCard className="p-6">
+   433→                  <ContactForm vendor={vendor} defaultListingId={listings[0]?.id} />
+   434→                </PremiumCard>
+   435→
+   436→                <div className="space-y-3">
+   437→                  <PremiumCard className="p-4">
+   438→                    <Inbox className="h-4 w-4 text-teal-600" />
+   439→                    <h4 className="mt-2 text-sm font-semibold text-foreground">Inquiry routing</h4>
+   440→                    <p className="mt-1 text-xs text-muted-foreground">
+   441→                      Submissions are routed to {vendor.name} via Novalyte. Novalyte does not sell,
+   442→                      warranty, or fulfill products.
+   443→                    </p>
+   444→                  </PremiumCard>
+   445→                  <PremiumCard className="p-4">
+   446→                    <MessageSquare className="h-4 w-4 text-teal-600" />
+   447→                    <h4 className="mt-2 text-sm font-semibold text-foreground">Response time</h4>
+   448→                    <p className="mt-1 text-xs text-muted-foreground">
+   449→                      Vendors respond on their own timeline. For urgent procurement, indicate timeline
+   450→                      in your message.
+   451→                    </p>
+   452→                  </PremiumCard>
+   453→                  <PremiumCard className="p-4">
+   454→                    <ClipboardCheck className="h-4 w-4 text-teal-600" />
+   455→                    <h4 className="mt-2 text-sm font-semibold text-foreground">Independent diligence</h4>
+   456→                    <p className="mt-1 text-xs text-muted-foreground">
+   457→                      Verification is not an endorsement. Confirm compliance, references, and terms
+   458→                      directly with the vendor.
+   459→                    </p>
+   460→                  </PremiumCard>
+   461→                </div>
+   462→              </div>
+   463→            </div>
+   464→          )}
+   465→        </div>
+   466→      </SectionShell>
+   467→
+   468→      {/* ── Bottom disclaimer ────────────────────────────────── */}
+   469→      <SectionShell className="!py-10">
+   470→        <div className="mx-auto w-full max-w-5xl space-y-4">
+   471→          <DisclaimerBanner tone="amber">
+   472→            <strong className="font-semibold">Vendors are independent.</strong> {vendor.name} is an
+   473→            independently operated business. Novalyte AI facilitates discovery and inquiry routing
+   474→            and does not endorse, warrant, insure, or fulfill the vendor's products or services.
+   475→            Verification reflects a review of submitted business information and is not a guarantee
+   476→            of clinical outcomes, product efficacy, or vendor performance. Perform independent due
+   477→            diligence before entering purchasing agreements.
+   478→          </DisclaimerBanner>
+   479→          <MedicalDisclaimer />
+   480→        </div>
+   481→      </SectionShell>
+   482→
+   483→      {/* ── Contact dialog (from sticky nav) ─────────────────── */}
+   484→      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+   485→        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+   486→          <DialogHeader>
+   487→            <DialogTitle className="flex items-center gap-2">
+   488→              <Mail className="h-4 w-4 text-teal-600" /> Contact {vendor.name}
+   489→            </DialogTitle>
+   490→            <DialogDescription>
+   491→              Send a general inquiry or quote request. Routed via Novalyte.
+   492→            </DialogDescription>
+   493→          </DialogHeader>
+   494→          <ContactForm
+   495→            vendor={vendor}
+   496→            defaultListingId={listings[0]?.id}
+   497→            onSuccess={() => setTimeout(() => setContactOpen(false), 1200)}
+   498→          />
+   499→          <DisclaimerBanner tone="muted">
+   500→            Novalyte AI facilitates discovery and inquiry routing. We do not sell, ship, or warranty
+   501→            products. Vendor terms, lead times, and pricing are confirmed directly with the vendor.
+   502→          </DisclaimerBanner>
+   503→        </DialogContent>
+   504→      </Dialog>
+   505→    </div>
+   506→  );
+   507→}
+   508→
+   509→/* ───────────────────────────────────────────────────────────────
+   510→   Vendor listing card (compact, with quote + save + compare)
+   511→   ─────────────────────────────────────────────────────────────── */
+   512→function VendorListingCard({ listing }: { listing: MarketplaceListingT }) {
+   513→  const savedProducts = useSaved((s) => s.products);
+   514→  const toggleSaved = useSaved((s) => s.toggle);
+   515→  const compareProducts = useCompare((s) => s.products);
+   516→  const toggleCompare = useCompare((s) => s.toggle);
+   517→  const isSaved = savedProducts.includes(listing.id);
+   518→  const isComparing = compareProducts.includes(listing.id);
+   519→
+   520→  const c = colorClasses(listing.imageColor);
+   521→  const avail = availabilityMeta(listing.availability);
+   522→
+   523→  const [quoteOpen, setQuoteOpen] = useState(false);
+   524→
+   525→  return (
+   526→    <PremiumCard hover className="flex flex-col overflow-hidden">
+   527→      <div className={cn("relative h-24 w-full", c.bg)}>
+   528→        <div className="absolute inset-0 flex items-center justify-center">
+   529→          <CategoryIcon category={listing.category} className="h-8 w-8 text-white/90" />
+   530→        </div>
+   531→        <div className="absolute right-2 top-2">
+   532→          <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
+   533→        </div>
+   534→      </div>
+   535→
+   536→      <div className="flex flex-1 flex-col p-5">
+   537→        <button
+   538→          onClick={() => navigate("product-detail", undefined, { id: listing.id })}
+   539→          className="text-left text-base font-semibold leading-snug text-foreground transition hover:text-teal-700"
+   540→        >
+   541→          {listing.title}
+   542→        </button>
+   543→        <div className="mt-2 flex flex-wrap gap-1.5">
+   544→          <StatusPill tone="muted">{listing.category}</StatusPill>
+   545→          <StatusPill tone="teal">{listing.listingType}</StatusPill>
+   546→          <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+   547→        </div>
+   548→        <p className="mt-2.5 line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
+   549→        <div className="mt-3 flex items-end justify-between gap-2">
+   550→          <div>
+   551→            <p className="text-sm font-semibold text-foreground">{listing.priceNote || "Request quote"}</p>
+   552→            <p className="text-xs text-muted-foreground">{listing.pricingModel || "—"}</p>
+   553→          </div>
+   554→        </div>
+   555→        <div className="mt-4 flex gap-2 border-t border-border pt-4">
+   556→          <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={() => setQuoteOpen(true)}>
+   557→            <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
+   558→          </Button>
+   559→          <Button
+   560→            variant={isComparing ? "default" : "outline"}
+   561→            size="sm"
+   562→            onClick={() => toggleCompare("product", listing.id)}
+   563→            className={cn(isComparing && "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100")}
+   564→          >
+   565→            <Boxes className="h-3.5 w-3.5" />
+   566→          </Button>
+   567→          <Button variant="outline" size="sm" onClick={() => navigate("product-detail", undefined, { id: listing.id })}>
+   568→            <ChevronRight className="h-3.5 w-3.5" />
+   569→          </Button>
+   570→        </div>
+   571→      </div>
+   572→
+   573→      <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
+   574→        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+   575→          <DialogHeader>
+   576→            <DialogTitle className="flex items-center gap-2">
+   577→              <Quote className="h-4 w-4 text-teal-600" /> Request a quote
+   578→            </DialogTitle>
+   579→            <DialogDescription>
+   580→              {listing.title} · <span className="text-foreground/80">{listing.vendorName}</span>
+   581→            </DialogDescription>
+   582→          </DialogHeader>
+   583→          <QuoteInlineForm listing={listing} onClose={() => setQuoteOpen(false)} />
+   584→          <DisclaimerBanner tone="muted">
+   585→            Novalyte AI facilitates discovery and inquiry routing. We do not sell, ship, or warranty
+   586→            products. Vendor terms, lead times, and pricing are confirmed directly with the vendor.
+   587→          </DisclaimerBanner>
+   588→        </DialogContent>
+   589→      </Dialog>
+   590→    </PremiumCard>
+   591→  );
+   592→}
+   593→
+   594→/* ───────────────────────────────────────────────────────────────
+   595→   Inline quote form (used inside the vendor listing card dialog)
+   596→   ─────────────────────────────────────────────────────────────── */
+   597→function QuoteInlineForm({ listing, onClose }: { listing: MarketplaceListingT; onClose: () => void }) {
+   598→  const [form, setForm] = useState({
+   599→    requesterName: "",
+   600→    requesterEmail: "",
+   601→    requesterOrg: "",
+   602→    quantity: "",
+   603→    notes: "",
+   604→    consent: false,
+   605→  });
+   606→  const [submitting, setSubmitting] = useState(false);
+   607→  const [done, setDone] = useState(false);
+   608→
+   609→  async function submit(e: React.FormEvent) {
+   610→    e.preventDefault();
+   611→    if (!form.consent) {
+   612→      toast.error("Please acknowledge the platform terms before submitting.");
+   613→      return;
+   614→    }
+   615→    setSubmitting(true);
+   616→    try {
+   617→      const res = await fetch("/api/quote", {
+   618→        method: "POST",
+   619→        headers: { "Content-Type": "application/json" },
+   620→        body: JSON.stringify({
+   621→          listingId: listing.id,
+   622→          requesterName: form.requesterName,
+   623→          requesterEmail: form.requesterEmail,
+   624→          requesterOrg: form.requesterOrg || null,
+   625→          quantity: form.quantity || null,
+   626→          notes: form.notes || null,
+   627→        }),
+   628→      });
+   629→      if (!res.ok) throw new Error("failed");
+   630→      setDone(true);
+   631→      toast.success("Quote request submitted", {
+   632→        description: `${listing.vendorName} will follow up via email.`,
+   633→      });
+   634→    } catch {
+   635→      toast.error("Something went wrong. Please try again.");
+   636→    } finally {
+   637→      setSubmitting(false);
+   638→    }
+   639→  }
+   640→
+   641→  if (done) {
+   642→    return (
+   643→      <div className="flex flex-col items-center gap-2 py-6 text-center">
+   644→        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50">
+   645→          <CheckCircle2 className="h-6 w-6 text-teal-600" />
+   646→        </span>
+   647→        <p className="text-base font-semibold text-foreground">Quote request submitted</p>
+   648→        <p className="max-w-sm text-sm text-muted-foreground">
+   649→          We routed your inquiry to {listing.vendorName}. Expect a follow-up at the email you provided.
+   650→        </p>
+   651→        <Button variant="outline" size="sm" onClick={onClose} className="mt-2">Close</Button>
+   652→      </div>
+   653→    );
+   654→  }
+   655→
+   656→  return (
+   657→    <form onSubmit={submit} className="space-y-3">
+   658→      <div className="grid gap-3 sm:grid-cols-2">
+   659→        <div className="grid gap-1.5">
+   660→          <Label className="text-xs">Full name <span className="text-rose-500">*</span></Label>
+   661→          <Input required value={form.requesterName} onChange={(e) => setForm({ ...form, requesterName: e.target.value })} placeholder="Your name" />
+   662→        </div>
+   663→        <div className="grid gap-1.5">
+   664→          <Label className="text-xs">Work email <span className="text-rose-500">*</span></Label>
+   665→          <Input required type="email" value={form.requesterEmail} onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })} placeholder="you@clinic.com" />
+   666→        </div>
+   667→      </div>
+   668→      <div className="grid gap-1.5">
+   669→        <Label className="text-xs">Organization / clinic</Label>
+   670→        <Input value={form.requesterOrg} onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })} placeholder="Clinic or company name" />
+   671→      </div>
+   672→      <div className="grid gap-3 sm:grid-cols-2">
+   673→        <div className="grid gap-1.5">
+   674→          <Label className="text-xs">Quantity / scope</Label>
+   675→          <Input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="e.g. 10 units" />
+   676→        </div>
+   677→        <div className="grid gap-1.5">
+   678→          <Label className="text-xs">Notes</Label>
+   679→          <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Timeline, requirements" className="resize-none" />
+   680→        </div>
+   681→      </div>
+   682→      <label className="flex items-start gap-2 text-xs text-muted-foreground">
+   683→        <input type="checkbox" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} className="mt-0.5" />
+   684→        <span>
+   685→          I understand Novalyte AI is a technology platform that facilitates commerce inquiries and
+   686→          does not sell, warranty, or fulfill products directly.
+   687→        </span>
+   688→      </label>
+   689→      <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={submitting}>
+   690→        {submitting ? "Sending…" : <>Send quote request <ArrowRight className="ml-1 h-4 w-4" /></>}
+   691→      </Button>
+   692→    </form>
+   693→  );
+   694→}
+   695→
+   696→/* ───────────────────────────────────────────────────────────────
+   697→   Contact form (POSTs to /api/contact with role="vendor")
+   698→   ─────────────────────────────────────────────────────────────── */
+   699→function ContactForm({
+   700→  vendor,
+   701→  defaultListingId,
+   702→  onSuccess,
+   703→}: {
+   704→  vendor: VendorT;
+   705→  defaultListingId?: string;
+   706→  onSuccess?: () => void;
+   707→}) {
+   708→  const [form, setForm] = useState({
+   709→    name: "",
+   710→    email: "",
+   711→    organization: "",
+   712→    message: "",
+   713→    consent: false,
+   714→  });
+   715→  const [submitting, setSubmitting] = useState(false);
+   716→  const [done, setDone] = useState(false);
+   717→
+   718→  async function submit(e: React.FormEvent) {
+   719→    e.preventDefault();
+   720→    if (!form.consent) {
+   721→      toast.error("Please acknowledge the platform terms before submitting.");
+   722→      return;
+   723→    }
+   724→    setSubmitting(true);
+   725→    try {
+   726→      // Compose a vendor-context message that includes a quote/listing reference if available.
+   727→      const context = defaultListingId
+   728→        ? `[Novalyte marketplace — vendor: ${vendor.name} — listing ref: ${defaultListingId}] ${form.message}`
+   729→        : `[Novalyte marketplace — vendor: ${vendor.name}] ${form.message}`;
+   730→      const payload: { name: string; email: string; role: "vendor"; message: string } = {
+   731→        name: form.name,
+   732→        email: form.email,
+   733→        role: "vendor",
+   734→        message: form.organization ? `[Org: ${form.organization}] ${context}` : context,
+   735→      };
+   736→      const res = await fetch("/api/contact", {
+   737→        method: "POST",
+   738→        headers: { "Content-Type": "application/json" },
+   739→        body: JSON.stringify(payload),
+   740→      });
+   741→      if (!res.ok) throw new Error("failed");
+   742→      setDone(true);
+   743→      toast.success("Message sent", {
+   744→        description: `Your inquiry has been routed to ${vendor.name}.`,
+   745→      });
+   746→      onSuccess?.();
+   747→    } catch {
+   748→      toast.error("Something went wrong. Please try again.");
+   749→    } finally {
+   750→      setSubmitting(false);
+   751→    }
+   752→  }
+   753→
+   754→  if (done) {
+   755→    return (
+   756→      <div className="flex flex-col items-center gap-2 py-8 text-center">
+   757→        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50">
+   758→          <CheckCircle2 className="h-6 w-6 text-teal-600" />
+   759→        </span>
+   760→        <p className="text-base font-semibold text-foreground">Message sent</p>
+   761→        <p className="max-w-sm text-sm text-muted-foreground">
+   762→          Your inquiry has been routed to {vendor.name}. Expect a follow-up at the email you provided.
+   763→        </p>
+   764→      </div>
+   765→    );
+   766→  }
+   767→
+   768→  return (
+   769→    <form onSubmit={submit} className="space-y-3">
+   770→      <div className="grid gap-3 sm:grid-cols-2">
+   771→        <div className="grid gap-1.5">
+   772→          <Label className="text-xs">Full name <span className="text-rose-500">*</span></Label>
+   773→          <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" />
+   774→        </div>
+   775→        <div className="grid gap-1.5">
+   776→          <Label className="text-xs">Work email <span className="text-rose-500">*</span></Label>
+   777→          <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@clinic.com" />
+   778→        </div>
+   779→      </div>
+   780→      <div className="grid gap-1.5">
+   781→        <Label className="text-xs">Organization / clinic</Label>
+   782→        <Input value={form.organization} onChange={(e) => setForm({ ...form, organization: e.target.value })} placeholder="Clinic or company name" />
+   783→      </div>
+   784→      <div className="grid gap-1.5">
+   785→        <Label className="text-xs">Message <span className="text-rose-500">*</span></Label>
+   786→        <Textarea
+   787→          required
+   788→          rows={5}
+   789→          value={form.message}
+   790→          onChange={(e) => setForm({ ...form, message: e.target.value })}
+   791→          placeholder={`Tell ${vendor.name} what you're sourcing, quantities, timeline, and any financing or bulk-pricing interest.`}
+   792→        />
+   793→      </div>
+   794→      <label className="flex items-start gap-2 text-xs text-muted-foreground">
+   795→        <input type="checkbox" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} className="mt-0.5" />
+   796→        <span>
+   797→          I understand Novalyte AI is a technology platform that facilitates commerce inquiries and
+   798→          does not sell, warranty, or fulfill products directly. Verification is not an endorsement.
+   799→        </span>
+   800→      </label>
+   801→      <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={submitting}>
+   802→        {submitting ? "Sending…" : <>Send message <ArrowRight className="ml-1 h-4 w-4" /></>}
+   803→      </Button>
+   804→    </form>
+   805→  );
+   806→}
+   807→

@@ -2,12 +2,14 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { SectionShell } from "@/components/shared/section";
+import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import {
   PremiumCard, MetaRow, StatCard, CardSkeleton, EmptyState,
   FilterChip, ViewToggle, SaveButton, Breadcrumbs,
 } from "@/components/shared/enterprise";
+import { getClinicImage } from "@/lib/images";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -418,8 +420,19 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
     return (
       <PremiumCard hover className="overflow-hidden" >
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <button onClick={open} className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white shadow-sm", c.bg)} aria-label={clinic.name}>
-            {initials(clinic.name)}
+          <button onClick={open} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl" aria-label={clinic.name}>
+            <SmartImage
+              src={getClinicImage(clinic.slug)}
+              alt={`${clinic.name} clinic`}
+              fill
+              sizes="112px"
+              imgClassName="object-cover"
+              fallback={
+                <div className={cn("flex h-full w-full items-center justify-center", c.soft)}>
+                  <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white", c.bg)}>{initials(clinic.name)}</span>
+                </div>
+              }
+            />
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -453,11 +466,30 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
 
   return (
     <PremiumCard hover className="group overflow-hidden">
-      {/* Banner */}
-      <div className={cn("relative h-24 overflow-hidden", c.soft)}>
-        <div className="novalyte-dots absolute inset-0 opacity-40" aria-hidden />
-        <div className="absolute left-4 top-4 flex items-center gap-2">
-          <span className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold text-white shadow-sm", c.bg)}>{initials(clinic.name)}</span>
+      {/* Clinic image with fallback */}
+      <div className="relative h-40 overflow-hidden">
+        <SmartImage
+          src={getClinicImage(clinic.slug)}
+          alt={`${clinic.name} clinic in ${clinic.city}, ${clinic.state}`}
+          fill
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="transition duration-500 group-hover:scale-105"
+          imgClassName="object-cover"
+          fallback={
+            <div className={cn("flex h-full w-full items-center justify-center", c.soft)}>
+              <span className={cn("flex h-12 w-12 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm", c.bg)}>{initials(clinic.name)}</span>
+            </div>
+          }
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" aria-hidden />
+        {/* Logo/initials badge */}
+        <div className="absolute left-3 bottom-3">
+          <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold text-white shadow-premium-sm", c.bg)}>{initials(clinic.name)}</span>
+        </div>
+        {/* Verification badge */}
+        <div className="absolute left-16 bottom-3">
+          <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
         </div>
         <div className="absolute right-3 top-3 flex gap-1.5">
           <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} size="sm" />
@@ -468,9 +500,6 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
           >
             <GitCompare className="h-3.5 w-3.5" />
           </button>
-        </div>
-        <div className="absolute bottom-3 left-4">
-          <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
         </div>
       </div>
 

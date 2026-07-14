@@ -329,3 +329,95 @@ Stage Summary:
 - All interactive states functional: hover, loading (skeletons), empty, error (toast), success, disabled
 - Fully responsive: mobile sheet filters, collapsing header, stacking grids
 - No fake metrics; no nested button hydration errors; no console errors
+
+---
+Task ID: 9
+Agent: Main (Z.ai Code)
+Task: Visual upgrade — image infrastructure, download 55+ healthcare images, build SmartImage + lightbox, create image asset registry
+
+Work Log:
+- Used z-ai image-search CLI to find 55+ healthcare images across categories: consultations, clinic interiors, professional headshots, marketplace products, treatment verticals, telehealth, weight loss, recovery, hair restoration, lab equipment, injection supplies
+- Downloaded all images locally to /public/images/{hero,clinics,professionals,marketplace,articles,treatments}/ — no hotlinked URLs in the app
+- Created centralized image asset registry at src/lib/images.ts with:
+  - IMAGES constant mapping all image paths by category
+  - Helper functions: getClinicImage(slug), getClinicGallery(slug), getProfessionalImage(name), getMarketplaceImage(category), getArticleImage(slug)
+  - Deterministic image assignment by slug/name hash so demo content is consistent
+  - ALT_TEXT templates for accessibility
+  - Clear documentation that dev images are from Unsplash/Pexels and should be replaced with licensed photography
+- Built src/components/shared/smart-image.tsx with:
+  - SmartImage: wraps next/image with blur shimmer placeholder, graceful error fallback, responsive sizing, lazy loading (priority opt-in), opacity transition on load
+  - ImageLightbox: full-screen gallery with keyboard nav, prev/next buttons, captions, image counter, click-outside to close
+- Next: dispatch Journal rebuild subagent + apply imagery to homepage/directory/clinic-profile/workforce/marketplace in parallel
+
+---
+Task ID: 10
+Agent: Subagent (Z.ai Code) — Journal rebuild into SEO-focused publishing system
+
+Task: Replace the modal-based Journal reader with dedicated article view pages, add category landing pages, write substantial long-form article content (6 articles), implement SEO structured data + sitemap + robots.
+
+Work Log:
+- Updated `/home/z/my-project/src/lib/nav.ts` — added `"journal-article"` and `"journal-category"` to the `ViewKey` union type. Both views use the existing `params.slug` field (article slug for journal-article, category name for journal-category). Existing `navigate()` signature supports this without changes.
+- Updated `/home/z/my-project/src/components/site/app-shell.tsx` — imported `ARTICLES` and `getArticleBySlug` from `@/lib/article-content`, plus `ArticleView` and `JournalCategoryView`. Routed `journal-article` → `<ArticleView article={getArticleBySlug(params?.slug) ?? ARTICLES[0]} allArticles={ARTICLES} />` and `journal-category` → `<JournalCategoryView category={params?.slug ?? ARTICLES[0].category} articles={ARTICLES} />`. Changed the `journal` view to pass `ARTICLES` (long-form content) instead of `data.articles` (DB row summary content).
+- Created `/home/z/my-project/src/lib/article-content.ts` — comprehensive content registry with `ArticleContent` and `ArticleBlock` types. Wrote 6 substantial long-form articles with 1,200–1,800 words of body content each, structured as `ArticleBlock[]` (headings with IDs, paragraphs, ordered/unordered lists, callouts info/warning/tip, tables). Articles: (1) `understanding-trt-overview` — Testosterone / TRT complete guide, 9-min read; (2) `glp-1-medical-weight-loss` — Weight Management / GLP-1 medications, 9-min read; (3) `state-of-mens-health-clinic-operations` — Clinic Operations / fragmentation + connected infrastructure, 8-min read; (4) `recruiting-specialized-talent-mens-health` — Workforce / hiring challenges + matching factors, 8-min read; (5) `longevity-medicine-science-vs-hype` — Longevity / evidence vs hype comparison table, 10-min read; (6) `compliant-telehealth-mens-health` — Healthcare Technology / licensure + medical direction + prescribing rules, 8-min read. Each article has: direct-answer callout near the top; H2 headings with anchor IDs for TOC; at least one comparison table; at least one info/warning/tip callout; 3–5 FAQs; 3–4 references to real well-known sources (FDA, NIH/NIDDK, CDC, Endocrine Society, AUA, AGA, NIA, BLS, FSMB, AANP, DEA) labeled "for general reference"; explicit educational disclaimer; related treatment link where clinically relevant. `tableOfContents` is auto-derived from level-2 headings. `medicalReviewer` is set for clinically-relevant articles (TRT, GLP-1, longevity) and null for operational articles (clinic ops, recruiting, telehealth compliance). Authors are clearly labeled as Novalyte editorial/strategy/workforce teams.
+- Created `/home/z/my-project/src/lib/seo.ts` — JSON-LD helper functions: `articleJsonLd(article)` returns Article schema (headline, author, datePublished/Modified, image, publisher, description, articleSection, keywords, reviewer); `breadcrumbJsonLd(items)` returns BreadcrumbList schema; `faqJsonLd(faqs)` returns FAQPage schema (or null when no FAQs); `organizationJsonLd()` returns Organization schema for Novalyte AI with sameAs social profiles; `websiteJsonLd()` returns WebSite schema; `medicalClinicJsonLd(clinic)` returns MedicalClinic schema for future clinic pages. URLs are expressed as hash-routed (`/#journal/{slug}`, `/#journal/category/{name}`) to honestly reflect the Zustand view-router's single-`/`-route architecture while remaining valid schema.org markup.
+- Created `/home/z/my-project/src/components/views/article-view.tsx` — dedicated article page (NOT a modal). Renders, in order: (1) JSON-LD `<script type="application/ld+json">` tags for Article + BreadcrumbList + FAQPage (only when FAQs exist); (2) `Breadcrumbs` (Home > Journal > Category > Article title); (3) category badge + reading time; (4) SEO-focused `<h1>` headline (the article title); (5) subtitle/summary (excerpt); (6) author info inline (initials avatar + name + role); (7) medical reviewer badge if present; (8) published/updated/"last medically reviewed" dates row; (9) share controls (copy link with `navigator.clipboard`, native `navigator.share` fallback, X/LinkedIn/Facebook via `window.open`); (10) hero image (SmartImage with `priority` loading, 1200×630 aspect ratio via `aspect-[1200/630]`, descriptive alt text, caption below noting dev imagery); (11) two-column layout on desktop (`lg:grid-cols-[260px_minmax(0,1fr)]`) with sticky TOC sidebar (left, `lg:sticky lg:top-24`) + article body (right); (12) TOC with `IntersectionObserver`-based scroll-spy active-highlighting, sticky on desktop, collapsible `<details>`-style on mobile; (13) article body via `BlockRenderer` rendering each `ArticleBlock` type: H2 (`scroll-mt-28` for sticky-nav offset), H3, paragraphs, ordered/unordered lists, callouts (info=teal/Info icon, warning=amber/AlertTriangle, tip=emerald/Lightbulb), tables (shadcn Table with muted header); (14) educational disclaimer immediately after body; (15) FAQ section using `@/components/ui/accordion`; (16) numbered references list with source labels; (17) `MedicalDisclaimer` from `@/components/shared/disclaimer`; (18) author `AuthorCard` + reviewer `ReviewerCard` at the bottom; (19) newsletter CTA (compact, posts to `/api/newsletter` with consent checkbox + toast); (20) platform CTA linking to directory; (21) "Back to Journal" button; (22) related articles grid (3 cards, scored by category match +3 + shared tag +1, filled with non-matching if fewer) on a `SectionShell tone="muted"`. Single-column on mobile.
+- Created `/home/z/my-project/src/components/views/journal-category-view.tsx` — category landing page with breadcrumbs (Home > Journal > Category), hero with category title + article count + educational-content note, horizontally-scrollable category nav pills (with "All categories" + other categories), article grid (PremiumCard with hero image, category badge, title, excerpt, date, reading time, "Read article" CTA), `DisclaimerBanner` (teal), and "Back to Journal" button. EmptyState if no articles in category.
+- Rewrote `/home/z/my-project/src/components/views/journal-view.tsx` — Journal landing page. Sections: (1) Breadcrumbs; (2) Hero with `SectionHeading` (eyebrow "Novalyte Journal") + featured article as large 2-column `PremiumCard` with hero image (priority load), Featured + category badges, date/reading time, title, excerpt, author inline (initials + name + role), medical reviewer pill, "Read article" CTA → `navigate("journal-article", undefined, { slug: article.slug })`; (3) Category navigation pills (All + each category from `JOURNAL_CATEGORIES`) linking to `navigate("journal-category", undefined, { slug: categoryName })`, horizontally scrollable; (4) "Editor's picks" 3-card grid (articles 2–4); (5) "More from the Journal" grid (articles 5+); (6) Newsletter CTA (compact, posts to `/api/newsletter`); (7) Editorial policy section with 4 cards (Editorial policy / Medical review policy / Content correction policy / Review cadence) explaining the editorial integrity model; (8) `DisclaimerBanner` (teal) reiterating educational-not-clinical-advice. Every article card links to the article view (NOT a modal).
+- Created `/home/z/my-project/src/app/sitemap.ts` — Next.js MetadataRoute.Sitemap generating URLs for: 8 main app routes (/, #journal, #directory, #marketplace, #workforce, #patients, #clinics, #about), all journal article URLs (`/#journal/{slug}` with `lastModified` from `updatedAt`), all journal category URLs (`/#journal/category/{name}`), and 5 legal/info routes. URLs are hash-routed to honestly reflect the view-router architecture.
+- Created `/home/z/my-project/src/app/robots.ts` — Next.js MetadataRoute.Robots allowing all crawlers (`userAgent: "*"`, `allow: "/"`), pointing to sitemap at `https://novalyte.ai/sitemap.xml` with `host: https://novalyte.ai`.
+- Removed `/home/z/my-project/public/robots.txt` (static file) so the new `app/robots.ts` route handler becomes the source of truth and includes the sitemap reference.
+
+Critical engineering notes:
+- All articles open in dedicated views via `navigate("journal-article", undefined, { slug })` — never modals. The previous `ArticleReaderDialog` modal has been completely removed from `journal-view.tsx`.
+- Article view is two-column on desktop (260px sticky TOC sidebar + min-w-0 article body) and single-column on mobile (TOC becomes a collapsible disclosure at the top).
+- TOC scroll-spy uses `IntersectionObserver` with `rootMargin: "-120px 0px -65% 0px"` so the active heading is the topmost one currently in the upper viewport. Active state highlighted with teal-600 left border + bold. Clicking a TOC item calls `scrollIntoView({ behavior: "smooth" })`.
+- Article body uses `scroll-mt-28` on every heading so smooth-scroll lands below the sticky header.
+- Callouts have distinct visual treatment: info=teal (Info icon), warning=amber (AlertTriangle icon), tip=emerald (Lightbulb icon). All use rounded-xl borders + tinted background + tinted text.
+- Tables use the existing `@/components/ui/table` shadcn primitives with a muted header row and `align-top` cells.
+- Newsletter CTAs in both article-view and journal-view post to the existing `/api/newsletter` endpoint, include explicit consent checkbox (required), use `toast` from sonner for feedback, and show a success state replacing the form.
+- Share controls build the canonical URL using `window.location.origin + /#journal/{slug}` (matches the sitemap URL structure) so shared links match what crawlers see.
+- JSON-LD is rendered via a small `JsonLd` component that wraps `<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(data)}} />`. Three schemas per article: Article, BreadcrumbList, FAQPage (conditional on `article.faqs.length > 0`).
+- References are real, well-known sources (FDA, NIH/NIDDK, CDC, Endocrine Society, AUA, AGA, NIA, BLS, FSMB, AANP, DEA, ACPM) and explicitly labeled "for general reference" with a note that guidelines are updated periodically. No fabricated citations or statistics.
+- All medical content has explicit disclaimers: educational-not-clinical-advice callout after body, `MedicalDisclaimer` after references, plus per-article body content that itself restates Novalyte AI does not diagnose/prescribe.
+- Theme: teal/emerald primary throughout; amber for warning callouts; sky for the existing directory/telehealth pills; no indigo/blue primaries.
+- TypeScript strict, no `any` — `ArticleContent`, `ArticleBlock` (discriminated union), `JsonLd` data uses `unknown` (rendered through `JSON.stringify`). `IntersectionObserver` callback safely handles empty entries.
+- Lint pattern compliance: `setActiveId` lives inside an `IntersectionObserver` callback (event-style), not in the effect body — avoids `react-hooks/set-state-in-effect`. `setMobileOpen` lives inside button click handlers. `setCopied` uses `setTimeout` after `setCopied(true)` for reset, which is the standard pattern.
+- Cleaned up unused imports (`Quote`, `ListChecks`, `User` from article-view.tsx) for code hygiene even though `no-unused-vars` is disabled in the ESLint config.
+
+Verification:
+- `bun run lint` — exit 0, zero errors, zero warnings across all new/modified files (`src/lib/article-content.ts`, `src/lib/seo.ts`, `src/lib/nav.ts`, `src/components/views/article-view.tsx`, `src/components/views/journal-view.tsx`, `src/components/views/journal-category-view.tsx`, `src/components/site/app-shell.tsx`, `src/app/sitemap.ts`, `src/app/robots.ts`).
+- Dev server: `GET / 200` consistently, `GET /robots.txt 200`, `GET /sitemap.xml 200` (verified both new endpoints serve correct XML/text content). Compile clean (`✓ Compiled in 147ms`).
+- robots.txt now correctly returns `User-Agent: * / Allow: / / Host: https://novalyte.ai / Sitemap: https://novalyte.ai/sitemap.xml`.
+- sitemap.xml includes all 8 main routes + 6 article URLs (with lastmod from each article's `updatedAt`) + 6 category URLs + 5 legal routes = 25 URLs total.
+- Work record also written to `/home/z/my-project/agent-ctx/10-journal-rebuild.md` (to be created by this agent if it doesn't exist).
+
+Stage Summary:
+- Journal completely rebuilt from a modal reader into a dedicated article-page publishing system with category landing pages.
+- 6 substantial long-form articles (1,200–1,800 words each) covering TRT, GLP-1 weight loss, clinic operations, specialized recruiting, longevity medicine, and telehealth compliance — each with direct answers, TOC, comparison tables, callouts, FAQs, and credible references.
+- Full SEO stack: Article + BreadcrumbList + FAQPage JSON-LD per article, sitemap.ts (25 URLs), robots.ts (with sitemap reference).
+- File paths created/modified:
+  - `/home/z/my-project/src/lib/nav.ts` (modified — added 2 ViewKey entries)
+  - `/home/z/my-project/src/lib/article-content.ts` (new — 6 articles + types + helpers)
+  - `/home/z/my-project/src/lib/seo.ts` (new — 6 JSON-LD helpers)
+  - `/home/z/my-project/src/components/views/article-view.tsx` (new — dedicated article page)
+  - `/home/z/my-project/src/components/views/journal-category-view.tsx` (new — category landing)
+  - `/home/z/my-project/src/components/views/journal-view.tsx` (rewritten — landing page)
+  - `/home/z/my-project/src/components/site/app-shell.tsx` (modified — added routing for new views)
+  - `/home/z/my-project/src/app/sitemap.ts` (new)
+  - `/home/z/my-project/src/app/robots.ts` (new)
+  - `/home/z/my-project/public/robots.txt` (removed — replaced by route handler)
+
+---
+Task ID: 12
+Agent: Main (Z.ai Code)
+Task: Reverted hero to original ecosystem illustration per user preference
+
+Work Log:
+- User preferred the original animated ecosystem illustration (Novalyte AI Core hub + 4 floating nodes with dashed connecting lines) over the photo-based hero
+- Reverted src/components/sections/hero.tsx to the original ecosystem visual: SVG connecting lines, pulsing center hub, 4 floating nodes (Patients/Clinics/Professionals/Suppliers), floating data chips (intake routed / clinic matched / talent sourced)
+- Verified with Agent Browser + VLM that the ecosystem illustration renders correctly
+- Lint clean, server returning 200
+
+Stage Summary:
+- Homepage hero restored to the preferred ecosystem illustration
+- Other imagery additions (clinic directory cards, clinic profile cover/gallery, pillar images, Journal rebuild) remain in place

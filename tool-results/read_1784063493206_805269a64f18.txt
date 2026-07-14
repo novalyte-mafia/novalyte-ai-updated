@@ -1,0 +1,806 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import { SectionShell, SectionHeading } from "@/components/shared/section";
+     5→import { VerificationBadge, StatusPill } from "@/components/shared/badges";
+     6→import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
+     7→import {
+     8→  PremiumCard,
+     9→  MetaRow,
+    10→  SaveButton,
+    11→  Breadcrumbs,
+    12→  SectionDivider,
+    13→} from "@/components/shared/enterprise";
+    14→import { StickyTabNav } from "@/components/shared/sticky-tab-nav";
+    15→import { Input } from "@/components/ui/input";
+    16→import { Label } from "@/components/ui/label";
+    17→import { Button } from "@/components/ui/button";
+    18→import { Textarea } from "@/components/ui/textarea";
+    19→import {
+    20→  Dialog,
+    21→  DialogContent,
+    22→  DialogHeader,
+    23→  DialogTitle,
+    24→  DialogDescription,
+    25→} from "@/components/ui/dialog";
+    26→import {
+    27→  Accordion,
+    28→  AccordionItem,
+    29→  AccordionTrigger,
+    30→  AccordionContent,
+    31→} from "@/components/ui/accordion";
+    32→import { toast } from "sonner";
+    33→import { colorClasses } from "@/lib/constants";
+    34→import type { MarketplaceListingT, VendorT } from "@/lib/types";
+    35→import { navigate, useSaved, useCompare } from "@/lib/nav";
+    36→import { cn } from "@/lib/utils";
+    37→import {
+    38→  ArrowRight,
+    39→  ArrowLeft,
+    40→  CheckCircle2,
+    41→  ShieldCheck,
+    42→  Clock,
+    43→  Quote,
+    44→  Banknote,
+    45→  Truck,
+    46→  Package,
+    47→  Boxes,
+    48→  Building2,
+    49→  Tag,
+    50→  CheckCheck,
+    51→  ChevronRight,
+    52→  LayoutList,
+    53→  ClipboardCheck,
+    54→  FileBarChart,
+    55→  FlaskConical,
+    56→  Activity,
+    57→  Syringe,
+    58→  Droplet,
+    59→  Armchair,
+    60→  Stethoscope,
+    61→  HeartPulse,
+    62→  Video,
+    63→  Monitor,
+    64→  CreditCard,
+    65→  BadgeCheck,
+    66→  Megaphone,
+    67→  Users,
+    68→  MessageSquare,
+    69→} from "lucide-react";
+    70→
+    71→/* ───────────────────────────────────────────────────────────────
+    72→   Category icon — stable wrapper (switch with literal JSX so the React
+    73→   Compiler treats it as a static element)
+    74→   ─────────────────────────────────────────────────────────────── */
+    75→function CategoryIcon({ category, className }: { category: string; className?: string }) {
+    76→  switch (category) {
+    77→    case "Laboratory Services": return <FlaskConical className={className} />;
+    78→    case "Diagnostic Equipment": return <Activity className={className} />;
+    79→    case "Injection Supplies": return <Syringe className={className} />;
+    80→    case "Phlebotomy Supplies": return <Droplet className={className} />;
+    81→    case "Medical Furniture": return <Armchair className={className} />;
+    82→    case "Body-Composition Systems": return <Stethoscope className={className} />;
+    83→    case "Recovery Technology": return <HeartPulse className={className} />;
+    84→    case "Telehealth Tools": return <Video className={className} />;
+    85→    case "Clinic Software": return <Monitor className={className} />;
+    86→    case "Billing Services": return <CreditCard className={className} />;
+    87→    case "Credentialing Services": return <BadgeCheck className={className} />;
+    88→    case "Compliance Support": return <ShieldCheck className={className} />;
+    89→    case "Marketing Services": return <Megaphone className={className} />;
+    90→    case "Staffing Services": return <Users className={className} />;
+    91→    case "Patient Engagement Tools": return <MessageSquare className={className} />;
+    92→    case "Clinic Expansion Services": return <Building2 className={className} />;
+    93→    default: return <Package className={className} />;
+    94→  }
+    95→}
+    96→
+    97→function availabilityMeta(av: string): { tone: "teal" | "amber" | "sky" | "violet"; label: string } {
+    98→  const a = av.toLowerCase();
+    99→  if (a.includes("order")) return { tone: "amber", label: "Made to order" };
+   100→  if (a.includes("limit")) return { tone: "violet", label: "Limited" };
+   101→  if (a.includes("pre") || a.includes("back")) return { tone: "sky", label: "Pre-order" };
+   102→  return { tone: "teal", label: "In stock" };
+   103→}
+   104→
+   105→const EQUIPMENT_CATEGORIES = new Set([
+   106→  "Diagnostic Equipment",
+   107→  "Body-Composition Systems",
+   108→  "Recovery Technology",
+   109→  "Medical Furniture",
+   110→  "Telehealth Tools",
+   111→]);
+   112→function showsFinancingTag(l: MarketplaceListingT): boolean {
+   113→  return l.listingType === "product" && EQUIPMENT_CATEGORIES.has(l.category);
+   114→}
+   115→
+   116→const TABS = [
+   117→  { id: "overview", label: "Overview", icon: LayoutList },
+   118→  { id: "specifications", label: "Specifications", icon: ClipboardCheck },
+   119→  { id: "pricing", label: "Pricing & Financing", icon: Banknote },
+   120→  { id: "shipping", label: "Shipping & Fulfillment", icon: Truck },
+   121→  { id: "vendor", label: "Vendor", icon: Building2 },
+   122→  { id: "faqs", label: "FAQs", icon: FileBarChart },
+   123→];
+   124→
+   125→const FAQS = [
+   126→  {
+   127→    q: "How does the quote process work?",
+   128→    a: "Submit a quote request with your contact details, organization, and quantity. Novalyte AI routes the inquiry directly to the vendor, who responds with pricing, lead times, and fulfillment options. Novalyte does not sell or fulfill products directly.",
+   129→  },
+   130→  {
+   131→    q: "Can I request bulk pricing?",
+   132→    a: "Yes. Use the quantity field to indicate volume (e.g. 100 units or 200 panels/month) and add a note. Bulk-order terms — including tiered pricing, contracts, and lead times — are confirmed by the vendor during the quote response.",
+   133→  },
+   134→  {
+   135→    q: "Is financing or leasing available for equipment?",
+   136→    a: "For equipment categories (diagnostic, recovery, body-composition, medical furniture, telehealth hardware), the Novalyte platform supports financing and leasing inquiries as part of your quote request. Terms are arranged directly between your organization and the vendor or a financing partner.",
+   137→  },
+   138→  {
+   139→    q: "What does the vendor verification badge mean?",
+   140→    a: "Verification indicates that Novalyte AI has reviewed the vendor's submitted business information. It is not an endorsement of clinical outcomes, product efficacy, or vendor performance. Independent due diligence is recommended before purchase.",
+   141→  },
+   142→  {
+   143→    q: "Are clinical or outcome claims moderated?",
+   144→    a: "Yes. Listings that make clinical, safety, or outcome claims are subject to moderation before publication. Listings may be paused or removed if claims cannot be substantiated or if they conflict with our healthcare-content policy.",
+   145→  },
+   146→];
+   147→
+   148→/* ───────────────────────────────────────────────────────────────
+   149→   Main view
+   150→   ─────────────────────────────────────────────────────────────── */
+   151→export function ProductDetailView({
+   152→  listing,
+   153→  allListings,
+   154→  vendors,
+   155→}: {
+   156→  listing: MarketplaceListingT;
+   157→  allListings: MarketplaceListingT[];
+   158→  vendors: VendorT[];
+   159→}) {
+   160→  const [activeTab, setActiveTab] = useState("overview");
+   161→  const [quoteOpen, setQuoteOpen] = useState(false);
+   162→
+   163→  const savedProducts = useSaved((s) => s.products);
+   164→  const toggleSaved = useSaved((s) => s.toggle);
+   165→  const compareProducts = useCompare((s) => s.products);
+   166→  const toggleCompare = useCompare((s) => s.toggle);
+   167→  const isSaved = savedProducts.includes(listing.id);
+   168→  const isComparing = compareProducts.includes(listing.id);
+   169→
+   170→  const c = colorClasses(listing.imageColor);
+   171→  const avail = availabilityMeta(listing.availability);
+   172→  const financingEligible = showsFinancingTag(listing);
+   173→
+   174→  const vendor = useMemo(
+   175→    () => vendors.find((v) => v.name === listing.vendorName) ?? null,
+   176→    [vendors, listing.vendorName],
+   177→  );
+   178→  const vendorListings = useMemo(
+   179→    () => allListings.filter((l) => l.vendorName === listing.vendorName && l.id !== listing.id),
+   180→    [allListings, listing],
+   181→  );
+   182→  const related = useMemo(() => {
+   183→    const sameCategory = allListings.filter((l) => l.id !== listing.id && l.category === listing.category);
+   184→    const sameVendor = allListings.filter(
+   185→      (l) => l.id !== listing.id && l.vendorName === listing.vendorName && !sameCategory.includes(l),
+   186→    );
+   187→    return [...sameCategory, ...sameVendor].slice(0, 3);
+   188→  }, [allListings, listing]);
+   189→
+   190→  // Reset active tab whenever the listing changes — uses "adjusting state during
+   191→  // render" pattern (endorsed by React docs) to avoid setState-in-effect.
+   192→  const [lastListingId, setLastListingId] = useState(listing.id);
+   193→  if (lastListingId !== listing.id) {
+   194→    setLastListingId(listing.id);
+   195→    setActiveTab("overview");
+   196→  }
+   197→
+   198→  // Scroll to top on listing change (genuine side effect — OK in useEffect).
+   199→  useEffect(() => {
+   200→    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
+   201→  }, [listing.id]);
+   202→
+   203→  return (
+   204→    <div className="bg-background">
+   205→      {/* ── Breadcrumbs ───────────────────────────────────────── */}
+   206→      <div className="border-b border-border bg-background">
+   207→        <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+   208→          <Breadcrumbs
+   209→            items={[
+   210→              { label: "Marketplace", onClick: () => navigate("marketplace") },
+   211→              { label: listing.category, onClick: () => navigate("marketplace") },
+   212→              { label: listing.title },
+   213→            ]}
+   214→          />
+   215→        </div>
+   216→      </div>
+   217→
+   218→      {/* ── Hero header (two-column) ─────────────────────────── */}
+   219→      <section className="border-b border-border bg-gradient-to-b from-teal-50/40 to-background py-10 sm:py-14">
+   220→        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.4fr_1fr] lg:px-8">
+   221→          {/* Left: banner + identity */}
+   222→          <div>
+   223→            <div className={cn("flex h-48 w-full items-center justify-center rounded-2xl shadow-premium-sm", c.bg)}>
+   224→              <CategoryIcon category={listing.category} className="h-14 w-14 text-white/90" />
+   225→            </div>
+   226→
+   227→            <div className="mt-5 flex flex-wrap items-center gap-2">
+   228→              <StatusPill tone="muted">{listing.category}</StatusPill>
+   229→              <StatusPill tone="teal">{listing.listingType}</StatusPill>
+   230→              <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+   231→              {financingEligible && (
+   232→                <StatusPill tone="violet"><Banknote className="h-3 w-3" /> Financing available</StatusPill>
+   233→              )}
+   234→            </div>
+   235→
+   236→            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+   237→              {listing.title}
+   238→            </h1>
+   239→
+   240→            <div className="mt-3 flex flex-wrap items-center gap-3">
+   241→              <button
+   242→                onClick={() => vendor && navigate("vendor-profile", undefined, { id: vendor.id })}
+   243→                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-teal-700"
+   244→              >
+   245→                <Building2 className="h-4 w-4 text-muted-foreground" /> {listing.vendorName}
+   246→                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+   247→              </button>
+   248→              <VerificationBadge verified={listing.verified} status={listing.reviewStatus} />
+   249→            </div>
+   250→
+   251→            <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
+   252→              {listing.description}
+   253→            </p>
+   254→
+   255→            <div className="mt-6 flex flex-wrap items-center gap-2">
+   256→              <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setQuoteOpen(true)}>
+   257→                <Quote className="mr-1 h-4 w-4" /> Request Quote
+   258→              </Button>
+   259→              <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} label={isSaved ? "Saved" : "Save"} />
+   260→              <Button
+   261→                variant="outline"
+   262→                onClick={() => toggleCompare("product", listing.id)}
+   263→                className={cn(isComparing && "border-teal-200 bg-teal-50 text-teal-700")}
+   264→              >
+   265→                <Boxes className="mr-1 h-4 w-4" />
+   266→                {isComparing ? "In compare" : "Compare"}
+   267→              </Button>
+   268→            </div>
+   269→          </div>
+   270→
+   271→          {/* Right: pricing & quote card */}
+   272→          <div id="quote-card">
+   273→            <PremiumCard className="overflow-hidden">
+   274→              <div className="border-b border-border bg-muted/30 p-5">
+   275→                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Pricing</p>
+   276→                <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+   277→                  {listing.priceNote || "Quote-based"}
+   278→                </p>
+   279→                <p className="mt-1 text-sm text-muted-foreground">
+   280→                  {listing.pricingModel ? `Model: ${listing.pricingModel}` : "Pricing confirmed with vendor"}
+   281→                </p>
+   282→                <div className="mt-3 flex flex-wrap gap-1.5">
+   283→                  <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+   284→                  {financingEligible && (
+   285→                    <StatusPill tone="violet"><Banknote className="h-3 w-3" /> Financing eligible</StatusPill>
+   286→                  )}
+   287→                </div>
+   288→              </div>
+   289→
+   290→              <div className="p-5">
+   291→                <h3 className="text-sm font-semibold text-foreground">Request a quote</h3>
+   292→                <p className="mt-1 text-xs text-muted-foreground">
+   293→                  Sent directly to {listing.vendorName}. Novalyte facilitates the inquiry — terms come from the vendor.
+   294→                </p>
+   295→                <CompactQuoteForm
+   296→                  listing={listing}
+   297→                  onSuccess={() => toast.success("Quote request submitted", {
+   298→                    description: `${listing.vendorName} will follow up via email.`,
+   299→                  })}
+   300→                />
+   301→              </div>
+   302→            </PremiumCard>
+   303→
+   304→            <DisclaimerBanner tone="muted" className="mt-3">
+   305→              Novalyte AI does not sell, warranty, or fulfill this product. Pricing, lead times, and
+   306→              terms are confirmed by the vendor during the quote process.
+   307→            </DisclaimerBanner>
+   308→          </div>
+   309→        </div>
+   310→      </section>
+   311→
+   312→      {/* ── Sticky tab nav ───────────────────────────────────── */}
+   313→      <StickyTabNav
+   314→        tabs={TABS}
+   315→        active={activeTab}
+   316→        onChange={setActiveTab}
+   317→        rightSlot={
+   318→          <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setQuoteOpen(true)}>
+   319→            <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
+   320→          </Button>
+   321→        }
+   322→      />
+   323→
+   324→      {/* ── Tab content ──────────────────────────────────────── */}
+   325→      <SectionShell className="!py-10 sm:!py-14">
+   326→        <div className="mx-auto w-full max-w-5xl">
+   327→          {activeTab === "overview" && (
+   328→            <div className="novalyte-fade-up space-y-8">
+   329→              <div>
+   330→                <h2 className="text-xl font-semibold text-foreground">Overview</h2>
+   331→                <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">{listing.description}</p>
+   332→                <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">
+   333→                  This listing is published in the Novalyte marketplace by {listing.vendorName} and
+   334→                  categorized under <span className="font-medium text-foreground">{listing.category}</span>.
+   335→                  Vendors are responsible for the accuracy of their listing details; Novalyte
+   336→                  facilitates discovery and inquiry routing.
+   337→                </p>
+   338→              </div>
+   339→
+   340→              <SectionDivider label="What's included" />
+   341→              <div className="grid gap-3 sm:grid-cols-2">
+   342→                {[
+   343→                  "Direct inquiry routing to the vendor",
+   344→                  "Bulk-order and quantity coordination",
+   345→                  financingEligible ? "Financing & leasing inquiry support" : "Structured pricing & terms response",
+   346→                  "Vendor-confirmed lead times",
+   347→                  "Saved-list and compare-tray tooling",
+   348→                  "Verification status transparency",
+   349→                ].map((item) => (
+   350→                  <div key={item} className="flex items-start gap-2 rounded-xl border border-border bg-card p-3.5 text-sm">
+   351→                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
+   352→                    <span className="text-foreground/80">{item}</span>
+   353→                  </div>
+   354→                ))}
+   355→              </div>
+   356→
+   357→              <SectionDivider label="Use cases for men's health clinics" />
+   358→              <div className="grid gap-3 sm:grid-cols-3">
+   359→                {[
+   360→                  { icon: Building2, label: "Clinic operations", desc: "Adopt across intake, lab, or back-office workflows." },
+   361→                  { icon: CheckCheck, label: "Standardization", desc: "Equip multiple locations with consistent sourcing." },
+   362→                  { icon: Boxes, label: "Scale procurement", desc: "Coordinate bulk purchasing for growing networks." },
+   363→                ].map((u) => {
+   364→                  const U = u.icon;
+   365→                  return (
+   366→                    <PremiumCard key={u.label} className="p-4">
+   367→                      <U className="h-5 w-5 text-teal-600" />
+   368→                      <h4 className="mt-2 text-sm font-semibold text-foreground">{u.label}</h4>
+   369→                      <p className="mt-1 text-xs text-muted-foreground">{u.desc}</p>
+   370→                    </PremiumCard>
+   371→                  );
+   372→                })}
+   373→              </div>
+   374→            </div>
+   375→          )}
+   376→
+   377→          {activeTab === "specifications" && (
+   378→            <div className="novalyte-fade-up space-y-6">
+   379→              <h2 className="text-xl font-semibold text-foreground">Specifications</h2>
+   380→              <MetaRow
+   381→                columns={3}
+   382→                items={[
+   383→                  { label: "Category", value: listing.category, icon: Tag },
+   384→                  { label: "Listing type", value: listing.listingType, icon: Package },
+   385→                  { label: "Pricing model", value: listing.pricingModel || "—", icon: Banknote },
+   386→                  { label: "Price", value: listing.priceNote || "Quote-based", icon: Banknote },
+   387→                  { label: "Availability", value: avail.label, icon: CheckCircle2 },
+   388→                  { label: "Vendor", value: listing.vendorName, icon: Building2 },
+   389→                ]}
+   390→              />
+   391→              <DisclaimerBanner tone="teal">
+   392→                Detailed product specifications — including dimensions, materials, regulatory status,
+   393→                compatibility, and certifications — are confirmed by the vendor during the quote
+   394→                process. Request a quote to receive a structured specification sheet.
+   395→              </DisclaimerBanner>
+   396→            </div>
+   397→          )}
+   398→
+   399→          {activeTab === "pricing" && (
+   400→            <div className="novalyte-fade-up space-y-6">
+   401→              <h2 className="text-xl font-semibold text-foreground">Pricing &amp; financing</h2>
+   402→              <PremiumCard className="p-6">
+   403→                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Listed price</p>
+   404→                <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
+   405→                  {listing.priceNote || "Quote-based"}
+   406→                </p>
+   407→                <p className="mt-1 text-sm text-muted-foreground">
+   408→                  Pricing model: <span className="font-medium text-foreground">{listing.pricingModel || "Not specified"}</span>
+   409→                </p>
+   410→              </PremiumCard>
+   411→
+   412→              <div className="grid gap-4 md:grid-cols-2">
+   413→                <PremiumCard className="p-5">
+   414→                  <Banknote className="h-5 w-5 text-teal-600" />
+   415→                  <h3 className="mt-2 text-sm font-semibold text-foreground">Pricing model</h3>
+   416→                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+   417→                    {pricingModelExplanation(listing.pricingModel)}
+   418→                  </p>
+   419→                </PremiumCard>
+   420→                <PremiumCard className="p-5">
+   421→                  <Boxes className="h-5 w-5 text-teal-600" />
+   422→                  <h3 className="mt-2 text-sm font-semibold text-foreground">Bulk orders</h3>
+   423→                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+   424→                    Volume pricing, contract terms, and recurring delivery schedules can be
+   425→                    requested through the quote form. Indicate quantity and deployment timeline in
+   426→                    your inquiry for the most accurate response.
+   427→                  </p>
+   428→                </PremiumCard>
+   429→              </div>
+   430→
+   431→              {financingEligible && (
+   432→                <PremiumCard className="p-5">
+   433→                  <div className="flex items-start gap-3">
+   434→                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
+   435→                      <Banknote className="h-5 w-5" />
+   436→                    </span>
+   437→                    <div>
+   438→                      <h3 className="text-sm font-semibold text-foreground">Financing &amp; leasing inquiry support</h3>
+   439→                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+   440→                        This listing is in an equipment category. The Novalyte platform supports
+   441→                        financing and leasing inquiries as part of your quote request. Financing
+   442→                        terms — including down payment, duration, and end-of-term options — are
+   443→                        arranged directly between your organization and the vendor or a financing
+   444→                        partner. This is a platform capability, not a per-listing financing offer.
+   445→                      </p>
+   446→                    </div>
+   447→                  </div>
+   448→                </PremiumCard>
+   449→              )}
+   450→
+   451→              <DisclaimerBanner tone="muted">
+   452→                All pricing is provided by the vendor and subject to change. Novalyte AI does not
+   453→                set, guarantee, or process payments for listings.
+   454→              </DisclaimerBanner>
+   455→            </div>
+   456→          )}
+   457→
+   458→          {activeTab === "shipping" && (
+   459→            <div className="novalyte-fade-up space-y-6">
+   460→              <h2 className="text-xl font-semibold text-foreground">Shipping &amp; fulfillment</h2>
+   461→              <PremiumCard className="p-5">
+   462→                <Truck className="h-5 w-5 text-teal-600" />
+   463→                <h3 className="mt-2 text-sm font-semibold text-foreground">Coordinated directly with the vendor</h3>
+   464→                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+   465→                  Shipping, freight, white-glove delivery, installation, and onboarding are
+   466→                  coordinated directly between your organization and {listing.vendorName}. Novalyte
+   467→                  AI facilitates the initial inquiry — we do not warehouse, ship, or fulfill
+   468→                  products ourselves.
+   469→                </p>
+   470→              </PremiumCard>
+   471→              <div className="grid gap-4 sm:grid-cols-3">
+   472→                <PremiumCard className="p-4">
+   473→                  <Clock className="h-4 w-4 text-teal-600" />
+   474→                  <h4 className="mt-2 text-sm font-semibold text-foreground">Lead times</h4>
+   475→                  <p className="mt-1 text-xs text-muted-foreground">Confirmed during quote based on availability and quantity.</p>
+   476→                </PremiumCard>
+   477→                <PremiumCard className="p-4">
+   478→                  <Package className="h-4 w-4 text-teal-600" />
+   479→                  <h4 className="mt-2 text-sm font-semibold text-foreground">Freight &amp; handling</h4>
+   480→                  <p className="mt-1 text-xs text-muted-foreground">Equipment freight, hazmat, and cold-chain handled by vendor.</p>
+   481→                </PremiumCard>
+   482→                <PremiumCard className="p-4">
+   483→                  <CheckCheck className="h-4 w-4 text-teal-600" />
+   484→                  <h4 className="mt-2 text-sm font-semibold text-foreground">Onboarding</h4>
+   485→                  <p className="mt-1 text-xs text-muted-foreground">Software &amp; service onboarding scheduled directly with vendor.</p>
+   486→                </PremiumCard>
+   487→              </div>
+   488→            </div>
+   489→          )}
+   490→
+   491→          {activeTab === "vendor" && (
+   492→            <div className="novalyte-fade-up space-y-6">
+   493→              <h2 className="text-xl font-semibold text-foreground">Vendor</h2>
+   494→              {vendor ? (
+   495→                <PremiumCard className="p-6">
+   496→                  <div className="flex items-start gap-4">
+   497→                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-lg font-bold text-white">
+   498→                      {vendor.name.slice(0, 1)}
+   499→                    </span>
+   500→                    <div className="min-w-0 flex-1">
+   501→                      <div className="flex flex-wrap items-center gap-2">
+   502→                        <h3 className="text-lg font-semibold text-foreground">{vendor.name}</h3>
+   503→                        <VerificationBadge verified={vendor.verified} />
+   504→                      </div>
+   505→                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+   506→                        {vendor.overview || "Vendor overview available on the full vendor profile."}
+   507→                      </p>
+   508→                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+   509→                        <span><span className="font-semibold text-foreground">{vendorListings.length + 1}</span> active listing{vendorListings.length === 0 ? "" : "s"} on Novalyte</span>
+   510→                        {vendor.website && (
+   511→                          <a
+   512→                            href={vendor.website}
+   513→                            target="_blank"
+   514→                            rel="noopener noreferrer"
+   515→                            className="inline-flex items-center gap-1 text-teal-700 transition hover:text-teal-800"
+   516→                          >
+   517→                            Visit website <ArrowRight className="h-3 w-3" />
+   518→                          </a>
+   519→                        )}
+   520→                      </div>
+   521→                      <Button
+   522→                        variant="outline"
+   523→                        size="sm"
+   524→                        className="mt-4"
+   525→                        onClick={() => navigate("vendor-profile", undefined, { id: vendor.id })}
+   526→                      >
+   527→                        View full vendor profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
+   528→                      </Button>
+   529→                    </div>
+   530→                  </div>
+   531→                </PremiumCard>
+   532→              ) : (
+   533→                <DisclaimerBanner tone="muted">
+   534→                  Vendor information for {listing.vendorName} is not available.
+   535→                </DisclaimerBanner>
+   536→              )}
+   537→            </div>
+   538→          )}
+   539→
+   540→          {activeTab === "faqs" && (
+   541→            <div className="novalyte-fade-up space-y-4">
+   542→              <h2 className="text-xl font-semibold text-foreground">Frequently asked questions</h2>
+   543→              <PremiumCard className="p-2">
+   544→                <Accordion type="single" collapsible className="px-3">
+   545→                  {FAQS.map((f, i) => (
+   546→                    <AccordionItem key={i} value={`item-${i}`}>
+   547→                      <AccordionTrigger className="text-left text-sm font-medium text-foreground">
+   548→                        {f.q}
+   549→                      </AccordionTrigger>
+   550→                      <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+   551→                        {f.a}
+   552→                      </AccordionContent>
+   553→                    </AccordionItem>
+   554→                  ))}
+   555→                </Accordion>
+   556→              </PremiumCard>
+   557→            </div>
+   558→          )}
+   559→        </div>
+   560→      </SectionShell>
+   561→
+   562→      {/* ── Related products ─────────────────────────────────── */}
+   563→      {related.length > 0 && (
+   564→        <SectionShell tone="muted" className="!pt-10 !pb-16">
+   565→          <div className="flex items-end justify-between">
+   566→            <SectionHeading
+   567→              eyebrow="Related"
+   568→              title="Related products & services"
+   569→              description="More from this category or this vendor."
+   570→            />
+   571→            <Button variant="outline" size="sm" onClick={() => navigate("marketplace")} className="hidden sm:inline-flex">
+   572→              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to marketplace
+   573→            </Button>
+   574→          </div>
+   575→          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+   576→            {related.map((r) => {
+   577→              const rc = colorClasses(r.imageColor);
+   578→              return (
+   579→                <button
+   580→                  key={r.id}
+   581→                  onClick={() => navigate("product-detail", undefined, { id: r.id })}
+   582→                  className="group overflow-hidden rounded-2xl border border-border bg-card text-left shadow-premium-sm transition card-premium-hover"
+   583→                >
+   584→                  <div className={cn("flex h-20 w-full items-center justify-center", rc.bg)}>
+   585→                    <CategoryIcon category={r.category} className="h-7 w-7 text-white/90" />
+   586→                  </div>
+   587→                  <div className="p-4 text-left">
+   588→                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   589→                      {r.vendorName}
+   590→                    </p>
+   591→                    <h4 className="mt-1 text-sm font-semibold leading-snug text-foreground group-hover:text-teal-700">{r.title}</h4>
+   592→                    <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>
+   593→                    <div className="mt-2 flex items-center justify-between">
+   594→                      <span className="text-sm font-semibold text-foreground">{r.priceNote || "Quote"}</span>
+   595→                      <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-teal-600" />
+   596→                    </div>
+   597→                  </div>
+   598→                </button>
+   599→              );
+   600→            })}
+   601→          </div>
+   602→        </SectionShell>
+   603→      )}
+   604→
+   605→      {/* ── Bottom disclaimer ────────────────────────────────── */}
+   606→      <SectionShell className="!py-10">
+   607→        <div className="mx-auto w-full max-w-5xl space-y-4">
+   608→          <DisclaimerBanner tone="amber">
+   609→            <strong className="font-semibold">Not a sale by Novalyte.</strong> Novalyte AI is a
+   610→            technology platform that facilitates commerce inquiries between clinics and vendors.
+   611→            We do not sell, warranty, insure, or fulfill products. Quotes, terms, lead times, and
+   612→            warranties are provided by the vendor. Verification reflects a review of submitted
+   613→            business information and is not an endorsement of clinical outcomes or product
+   614→            efficacy. Perform independent due diligence before purchase.
+   615→          </DisclaimerBanner>
+   616→          <MedicalDisclaimer />
+   617→        </div>
+   618→      </SectionShell>
+   619→
+   620→      {/* ── Quote dialog (from sticky nav button) ────────────── */}
+   621→      <QuoteDialog listing={listing} open={quoteOpen} onOpenChange={setQuoteOpen} />
+   622→    </div>
+   623→  );
+   624→}
+   625→
+   626→/* ───────────────────────────────────────────────────────────────
+   627→   Pricing model explanation
+   628→   ─────────────────────────────────────────────────────────────── */
+   629→function pricingModelExplanation(model: string | null): string {
+   630→  switch ((model ?? "").toLowerCase()) {
+   631→    case "one-time":
+   632→      return "A single upfront price for the product or service. No recurring charges unless add-ons are negotiated separately with the vendor.";
+   633→    case "subscription":
+   634→      return "Recurring billing (monthly or annual) for continued access to the product, software, or service. Pricing tiers may scale with usage, seats, or locations.";
+   635→    case "quote":
+   636→      return "Pricing is configured per inquiry based on quantity, scope, contract length, and customization. Submit a quote request to receive a tailored proposal.";
+   637→    case "range":
+   638→      return "Pricing falls within a published range. Final pricing depends on configuration, quantity, and contract terms confirmed during the quote process.";
+   639→    case "per-test":
+   640→      return "Priced per unit of service (e.g. per lab panel or per draw). Useful for variable-volume clinic workflows; volume tiers may apply.";
+   641→    case "percentage":
+   642→      return "Priced as a percentage of collections, revenue, or transaction volume. Common for billing, RCM, and revenue-share service arrangements.";
+   643→    default:
+   644→      return "Pricing details are confirmed with the vendor during the quote process.";
+   645→  }
+   646→}
+   647→
+   648→/* ───────────────────────────────────────────────────────────────
+   649→   Compact quote form (used inline on the pricing card)
+   650→   ─────────────────────────────────────────────────────────────── */
+   651→function CompactQuoteForm({
+   652→  listing,
+   653→  onSuccess,
+   654→}: {
+   655→  listing: MarketplaceListingT;
+   656→  onSuccess: () => void;
+   657→}) {
+   658→  const [form, setForm] = useState({
+   659→    requesterName: "",
+   660→    requesterEmail: "",
+   661→    requesterOrg: "",
+   662→    quantity: "",
+   663→    notes: "",
+   664→    consent: false,
+   665→  });
+   666→  const [submitting, setSubmitting] = useState(false);
+   667→  const [done, setDone] = useState(false);
+   668→
+   669→  async function submit(e: React.FormEvent) {
+   670→    e.preventDefault();
+   671→    if (!form.consent) {
+   672→      toast.error("Please acknowledge the platform terms before submitting.");
+   673→      return;
+   674→    }
+   675→    setSubmitting(true);
+   676→    try {
+   677→      const res = await fetch("/api/quote", {
+   678→        method: "POST",
+   679→        headers: { "Content-Type": "application/json" },
+   680→        body: JSON.stringify({
+   681→          listingId: listing.id,
+   682→          requesterName: form.requesterName,
+   683→          requesterEmail: form.requesterEmail,
+   684→          requesterOrg: form.requesterOrg || null,
+   685→          quantity: form.quantity || null,
+   686→          notes: form.notes || null,
+   687→        }),
+   688→      });
+   689→      if (!res.ok) throw new Error("failed");
+   690→      setDone(true);
+   691→      onSuccess();
+   692→    } catch {
+   693→      toast.error("Something went wrong. Please try again.");
+   694→    } finally {
+   695→      setSubmitting(false);
+   696→    }
+   697→  }
+   698→
+   699→  if (done) {
+   700→    return (
+   701→      <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-teal-200 bg-teal-50/50 p-5 text-center">
+   702→        <CheckCircle2 className="h-7 w-7 text-teal-600" />
+   703→        <p className="text-sm font-semibold text-foreground">Quote request submitted</p>
+   704→        <p className="max-w-xs text-xs text-muted-foreground">
+   705→          We routed your inquiry to {listing.vendorName}. Expect a follow-up at the email you provided.
+   706→        </p>
+   707→      </div>
+   708→    );
+   709→  }
+   710→
+   711→  return (
+   712→    <form onSubmit={submit} className="mt-3 space-y-3">
+   713→      <div className="grid gap-2 sm:grid-cols-2">
+   714→        <Input
+   715→          required
+   716→          placeholder="Full name *"
+   717→          value={form.requesterName}
+   718→          onChange={(e) => setForm({ ...form, requesterName: e.target.value })}
+   719→        />
+   720→        <Input
+   721→          required
+   722→          type="email"
+   723→          placeholder="Work email *"
+   724→          value={form.requesterEmail}
+   725→          onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })}
+   726→        />
+   727→      </div>
+   728→      <Input
+   729→        placeholder="Organization / clinic"
+   730→        value={form.requesterOrg}
+   731→        onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })}
+   732→      />
+   733→      <div className="grid gap-2 sm:grid-cols-2">
+   734→        <Input
+   735→          placeholder="Quantity / scope"
+   736→          value={form.quantity}
+   737→          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+   738→        />
+   739→        <Textarea
+   740→          rows={2}
+   741→          placeholder="Notes (timeline, requirements)"
+   742→          value={form.notes}
+   743→          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+   744→          className="resize-none"
+   745→        />
+   746→      </div>
+   747→      <label className="flex items-start gap-2 text-xs text-muted-foreground">
+   748→        <input
+   749→          type="checkbox"
+   750→          checked={form.consent}
+   751→          onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+   752→          className="mt-0.5"
+   753→        />
+   754→        <span>
+   755→          I understand Novalyte AI is a technology platform that facilitates inquiries and does not
+   756→          sell, warranty, or fulfill products directly.
+   757→        </span>
+   758→      </label>
+   759→      <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={submitting}>
+   760→        {submitting ? "Sending…" : <>Send quote request <ArrowRight className="ml-1 h-4 w-4" /></>}
+   761→      </Button>
+   762→    </form>
+   763→  );
+   764→}
+   765→
+   766→/* ───────────────────────────────────────────────────────────────
+   767→   Quote dialog (used from sticky nav Request Quote button)
+   768→   ─────────────────────────────────────────────────────────────── */
+   769→function QuoteDialog({
+   770→  listing,
+   771→  open,
+   772→  onOpenChange,
+   773→}: {
+   774→  listing: MarketplaceListingT;
+   775→  open: boolean;
+   776→  onOpenChange: (v: boolean) => void;
+   777→}) {
+   778→  return (
+   779→    <Dialog open={open} onOpenChange={onOpenChange}>
+   780→      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+   781→        <DialogHeader>
+   782→          <DialogTitle className="flex items-center gap-2">
+   783→            <Quote className="h-4 w-4 text-teal-600" /> Request a quote
+   784→          </DialogTitle>
+   785→          <DialogDescription>
+   786→            {listing.title} · <span className="text-foreground/80">{listing.vendorName}</span>
+   787→          </DialogDescription>
+   788→        </DialogHeader>
+   789→        <CompactQuoteForm
+   790→          listing={listing}
+   791→          onSuccess={() => {
+   792→            toast.success("Quote request submitted", {
+   793→              description: `${listing.vendorName} will follow up via email.`,
+   794→            });
+   795→            setTimeout(() => onOpenChange(false), 1200);
+   796→          }}
+   797→        />
+   798→        <DisclaimerBanner tone="muted">
+   799→          Novalyte AI facilitates discovery and inquiry routing. We do not sell, ship, or warranty
+   800→          products. Vendor terms, lead times, and pricing are confirmed directly with the vendor.
+   801→        </DisclaimerBanner>
+   802→      </DialogContent>
+   803→    </Dialog>
+   804→  );
+   805→}
+   806→

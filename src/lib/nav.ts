@@ -12,6 +12,8 @@ export type ViewKey =
   | "product-detail"
   | "vendor-profile"
   | "journal"
+  | "journal-article"
+  | "journal-category"
   | "about"
   | "privacy"
   | "terms"

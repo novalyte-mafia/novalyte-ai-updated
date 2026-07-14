@@ -1,7 +1,9 @@
 "use client";
 
 import { SectionShell, SectionHeading } from "@/components/shared/section";
+import { SmartImage } from "@/components/shared/smart-image";
 import { PILLARS } from "@/lib/constants";
+import { IMAGES } from "@/lib/images";
 import { navigate } from "@/lib/nav";
 import { Megaphone, Building2, Users, Package, ArrowRight, Link2, Link2Off } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -87,6 +89,18 @@ export function ProblemSection() {
 }
 
 export function PillarsSection() {
+  const pillarImages: Record<string, string> = {
+    acquisition: IMAGES.patients.consultation,
+    directory: IMAGES.clinics.exterior[0],
+    workforce: IMAGES.professionals[4],
+    marketplace: IMAGES.marketplace.general[0],
+  };
+  const pillarAlts: Record<string, string> = {
+    acquisition: "Male patient in a consultation with a healthcare provider",
+    directory: "Modern men's health clinic exterior",
+    workforce: "Healthcare professional in clinical setting",
+    marketplace: "Medical equipment and clinic supplies",
+  };
   return (
     <SectionShell id="pillars">
       <SectionHeading
@@ -100,18 +114,29 @@ export function PillarsSection() {
           return (
             <div
               key={p.key}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-7 shadow-premium-sm transition hover:border-teal-300 hover:shadow-premium-lg"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-premium-sm transition hover:border-teal-300 hover:shadow-premium-lg"
             >
-              <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-teal-50/60 opacity-0 transition group-hover:opacity-100" aria-hidden />
-              <div className="relative">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-600 text-white shadow-sm">
-                  <Icon className="h-6 w-6" />
+              {/* Pillar image */}
+              <div className="relative h-44 overflow-hidden">
+                <SmartImage
+                  src={pillarImages[p.key] ?? IMAGES.hero.clinicScene}
+                  alt={pillarAlts[p.key] ?? "Men's health platform"}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="transition duration-500 group-hover:scale-105"
+                  imgClassName="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" aria-hidden />
+                <div className="absolute bottom-3 left-5 flex h-11 w-11 items-center justify-center rounded-xl bg-teal-600 text-white shadow-premium-md">
+                  <Icon className="h-5 w-5" />
                 </div>
-                <h3 className="mt-5 text-xl font-semibold text-foreground">{p.label}</h3>
-                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-foreground">{p.label}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
                 <button
                   onClick={() => navigate(p.view)}
-                  className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 transition hover:gap-2.5"
+                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 transition hover:gap-2.5"
                 >
                   {p.cta} <ArrowRight className="h-4 w-4" />
                 </button>

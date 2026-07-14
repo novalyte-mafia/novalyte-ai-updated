@@ -5,8 +5,10 @@ import {
   PremiumCard, MetaRow, StatCard, Breadcrumbs, SaveButton, SectionDivider,
 } from "@/components/shared/enterprise";
 import { StickyTabNav } from "@/components/shared/sticky-tab-nav";
+import { SmartImage, ImageLightbox } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
+import { getClinicImage, getClinicGallery } from "@/lib/images";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,15 +88,28 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
         </div>
       </div>
 
+      {/* Cover image */}
+      <div className="relative h-48 overflow-hidden border-b border-border sm:h-64 lg:h-80">
+        <SmartImage
+          src={getClinicImage(clinic.slug)}
+          alt={`${clinic.name} — men's health clinic in ${clinic.city}, ${clinic.state}`}
+          fill
+          priority
+          sizes="100vw"
+          imgClassName="object-cover"
+          fallback={<div className={cn("h-full w-full", c.soft)} />}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" aria-hidden />
+      </div>
+
       {/* Hero */}
-      <section className={cn("relative overflow-hidden border-b border-border", c.soft)}>
-        <div className="novalyte-dots absolute inset-0 opacity-30" aria-hidden />
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <section className="relative border-b border-border bg-background">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
           <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
             {/* Left: identity */}
             <div>
               <div className="flex items-start gap-4">
-                <span className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-premium-sm", c.bg)}>
+                <span className={cn("flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-premium-md ring-4 ring-background", c.bg)}>
                   {initials(clinic.name)}
                 </span>
                 <div className="min-w-0">
@@ -468,24 +483,50 @@ function EligibilityTab({ clinic }: { clinic: ClinicT }) {
 
 function GalleryTab({ clinic }: { clinic: ClinicT }) {
   const c = colorClasses(clinic.logoColor);
-  const placeholders = ["Reception area", "Consultation room", "Treatment suite", "Lab & phlebotomy", "Recovery zone", "Exterior"];
+  const gallery = getClinicGallery(clinic.slug);
+  const captions = ["Reception and waiting area", "Consultation room", "Treatment suite", "Lab & phlebotomy area", "Clinic exterior"];
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  function openLightbox(i: number) {
+    setLightboxIndex(i);
+    setLightboxOpen(true);
+  }
+
   return (
     <div className="space-y-6 novalyte-fade-up">
       <SectionTitle icon={ImageIcon} title="Facility gallery" desc="A visual preview of the clinic environment." />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {placeholders.map((label, i) => (
-          <div key={i} className={cn("relative aspect-[4/3] overflow-hidden rounded-xl border border-border", c.soft)}>
-            <div className="novalyte-dots absolute inset-0 opacity-30" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-              <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-sm", c.bg)}>
-                <ImageIcon className="h-5 w-5" />
-              </span>
-              <span className="text-xs font-medium text-foreground/70">{label}</span>
-            </div>
-          </div>
+        {gallery.map((img, i) => (
+          <button
+            key={i}
+            onClick={() => openLightbox(i)}
+            className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-border"
+          >
+            <SmartImage
+              src={img}
+              alt={captions[i] ?? `${clinic.name} facility photo ${i + 1}`}
+              fill
+              sizes="(max-width: 640px) 50vw, 33vw"
+              className="transition duration-500 group-hover:scale-105"
+              imgClassName="object-cover"
+              fallback={<div className={cn("h-full w-full", c.soft)} />}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition group-hover:opacity-100" />
+            <span className="absolute bottom-2 left-2 right-2 text-left text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+              {captions[i] ?? `View ${i + 1}`}
+            </span>
+          </button>
         ))}
       </div>
-      <DisclaimerBanner tone="muted">Gallery images are representative placeholders. Actual facility photos are submitted and moderated by Novalyte AI before publication.</DisclaimerBanner>
+      <DisclaimerBanner tone="muted">Gallery images are representative development fixtures. In production, clinics submit facility photos that are moderated by Novalyte AI before publication.</DisclaimerBanner>
+      <ImageLightbox
+        images={gallery}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        captions={captions}
+      />
     </div>
   );
 }

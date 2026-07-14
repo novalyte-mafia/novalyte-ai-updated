@@ -1,0 +1,351 @@
+     1→# Novalyte AI — Build Worklog
+     2→
+     3→This is the shared worklog for the Novalyte AI build. Each agent must append a section (starting with `---`) after completing their task.
+     4→
+     5→---
+     6→Task ID: 1
+     7→Agent: Main (Z.ai Code)
+     8→Task: Foundation — design system, Prisma schema, seed data, layout shell, core components, API routes, HomeView, DirectoryView
+     9→
+    10→Work Log:
+    11→- Created custom premium light-first theme in `src/app/globals.css` (warm off-white bg, deep navy text, teal/emerald accents, soft shadows, custom scrollbar, grid texture, float/pulse animations)
+    12→- Wrote comprehensive Prisma schema (`prisma/schema.prisma`) with entities: Clinic, Professional, JobPosting, JobApplication, Vendor, MarketplaceListing, QuoteRequest, Article, AssessmentSubmission, ConsultationRequest, ContactSubmission, NewsletterSignup, ClinicOnboarding, ProfessionalOnboarding, VendorOnboarding, AuditLog — with timestamps, status fields, indexes, soft-delete on Clinic
+    13→- Created clearly-marked development seed script (`prisma/seed.ts`) with 6 clinics, 8 professionals, 5 jobs, 5 vendors, 10 marketplace listings, 6 articles. Ran `bun run db:push` + seed successfully
+    14→- Built architecture: Zustand nav store (`src/lib/nav.ts`) for client-side view switching on the single `/` route; shared constants/types/helpers (`src/lib/constants.ts`, `src/lib/types.ts`)
+    15→- Built site shell: `Header` (dropdown nav + mobile sheet + view switching), `Footer` (newsletter signup, treatment verticals, legal links, disclaimers), `GetStartedDialog` (role-based onboarding modal routing to correct API), `Logo`
+    16→- Built shared components: `SectionShell`/`SectionHeading`, `VerificationBadge`/`StatusPill`/`CheckItem`, `CTASection`, `DisclaimerBanner`/`MedicalDisclaimer`
+    17→- Built homepage sections: `Hero` (ecosystem visual with animated hub + 4 nodes + connecting lines), `TrustStrip`, `ProblemSection`, `PillarsSection`, `EcosystemJourney`, `TreatmentVerticals`, `AudiencePathways`
+    18→- Built all API routes with Zod validation + Prisma persistence: contact, consultation, assessment, quote, newsletter, clinic-onboarding, professional-onboarding, vendor-onboarding, job-application
+    19→- Built `AppShell` (client) that switches between all views via nav store; renders Header/Footer/GetStartedDialog
+    20→- Built `HomeView` assembling all homepage sections + final dark CTA
+    21→- Built `DirectoryView`: search (text/state/treatment), telehealth & verified toggles, clinic cards with verification badges, clinic profile dialog with full details + working consultation request form (POST /api/consultation), empty state, disclaimers
+    22→
+    23→Stage Summary:
+    24→- Design system + data layer + core layout fully functional
+    25→- Homepage complete with all required sections and ecosystem visual
+    26→- Clinic directory fully interactive with DB-backed consultation requests
+    27→- API layer complete for all form flows
+    28→- Remaining views to build: PatientsView (assessment), ClinicsView (dashboard preview), WorkforceView, MarketplaceView, JournalView, AboutView, LegalView
+    29→- All views are client components switching on the `/` route via the `useNav` Zustand store (`navigate(view)` helper)
+    30→- Shared components live in `src/components/shared/` and `src/components/site/`; views in `src/components/views/`
+    31→- Data shapes: see `src/lib/types.ts` (ClinicT, ProfessionalT, JobPostingT, MarketplaceListingT, ArticleT)
+    32→- Color helper: `colorClasses(color)` from `src/lib/constants.ts`; `splitCsv()` to parse CSV fields
+    33→
+    34→---
+    35→Task ID: 2-b
+    36→Agent: Subagent (MarketplaceView builder)
+    37→Task: Build the Healthcare Services Marketplace view
+    38→
+    39→Work Log:
+    40→- Created `/home/z/my-project/src/components/views/marketplace-view.tsx` (`"use client"`) exporting `MarketplaceView({ listings, onGetStarted })`
+    41→- Imported `MarketplaceListingT` from `@/lib/types`; used helpers `colorClasses`, `MARKETPLACE_CATEGORIES` from `@/lib/constants`; reused shared `SectionShell`, `SectionHeading`, `VerificationBadge`, `StatusPill`, `DisclaimerBanner`, `CTASection`, and existing shadcn/ui primitives (Input, Label, Button, Badge, Select, Switch, Dialog, Textarea, Checkbox)
+    42→- 1. Hero: teal gradient section with "Become a Vendor" (onGetStarted) + "Browse Listings" (smooth-scroll to #listings)
+    43→- 2. Categories overview: grid of clickable pills for every `MARKETPLACE_CATEGORIES` entry with a lucide icon mapped by keyword (FlaskConical, Syringe, Droplet, Armchair, Activity, HeartPulse, Video, Monitor, CreditCard, BadgeCheck, ShieldCheck, Megaphone, Users, MessageSquare, TrendingUp, Package fallback). Clicking sets the category filter and scrolls to listings.
+    44→- 3. Listings section (`SectionShell` id="listings"): filter card (text search across title/vendor/description, category select, listing type select, verified-only Switch) + "Showing X of Y listings" count + Reset. Responsive grid md:2 lg:3 of listing cards. Each card: h-24 colored banner (`colorClasses(listing.imageColor).bg`) with centered white category icon + VerificationBadge top-right, vendor name (uppercase), title, category/listing type StatusPills, line-clamp-2 description, price note (font-semibold) + pricing model, availability StatusPill, and three buttons (Request Quote -> dialog, Contact Vendor -> onGetStarted, View Details -> detail dialog). Empty state with reset.
+    45→- 4. Quote request dialog: form fields (requester name, email, organization, quantity, notes Textarea, consent Checkbox). Submits POST `/api/quote` with `{ listingId, requesterName, requesterEmail, requesterOrg, quantity, notes }`. Uses `sonner` toast; success state shows CheckCircle2. Form is keyed by `listing.id` so it resets per listing (effectively per open).
+    46→- 5. Listing detail dialog: full description, vendor, category/type/availability pills, pricing model + price note, verification status, and an embedded quote request form (reused `QuoteForm` component). "Request Quote" button in header also opens the quote dialog.
+    47→- 6. Vendor portal preview (`SectionShell` tone="muted"): grid of 8 feature cards (Create company profile, Submit products/services, Upload media, Manage listings, Receive inquiries, Respond to quote requests, Track performance, Subscription & commission) with icons (Store, Package, ImageIcon, LayoutDashboard, Inbox, MessageSquare, FileBarChart, Wallet). CTA "Become a Vendor" -> onGetStarted.
+    48→- 7. Marketplace safety section: `DisclaimerBanner` tone="teal" explaining no medical claims without review, with the six review types (Vendor verification, Product review, Service review, Claim review, Category approval, Listing approval) rendered as small pill items.
+    49→- 8. Final CTA: `CTASection` title "Reach men's health clinics seeking your solutions", primary "Become a Vendor" (onGetStarted), secondary "Explore Workforce" (secondaryView="workforce"), tone="dark".
+    50→- Used only teal/emerald (with sky/amber/violet for status pills where the design system already defines them) — no indigo/blue primary. Strict TypeScript, no `any`. Fully responsive (mobile-first, sm:/lg: breakpoints, touch-friendly buttons). Dialogs controlled directly by parent state (no setState-in-effect lint violations).
+    51→- Verified `bun run lint` passes with no errors in this file. Dev server compiles cleanly.
+    52→
+    53→Stage Summary:
+    54→- Marketplace view is complete and production-ready, mirroring the patterns established by `DirectoryView`.
+    55→- All required sections (hero, categories, listings with filters, quote dialog, detail dialog with embedded quote form, vendor portal preview, marketplace safety, final CTA) are implemented.
+    56→- Quote requests POST to existing `/api/quote` route and persist via Prisma.
+    57→- File path: `/home/z/my-project/src/components/views/marketplace-view.tsx`
+    58→- Note for main agent: `MarketplaceView` is ready to be wired into `AppShell` (it takes `listings: MarketplaceListingT[]` and `onGetStarted: () => void`). The listings can be loaded from the existing `/api/marketplace` route or directly from the seeded `MarketplaceListing` Prisma table.
+    59→
+    60→---
+    61→Task ID: 2-c
+    62→Agent: Sub-agent (Z.ai Code) — Journal, About & Legal Views
+    63→
+    64→Work Log:
+    65→- Built `src/components/views/journal-view.tsx`: hero with "Novalyte Journal — Educational content for the men's health economy" headline; client-side category pill filter derived from articles (All + unique categories); responsive article cards grid (md:2, lg:3) with category badge, title, line-clamp-3 excerpt, author, optional medical reviewer ("Medical review by"), reading time, formatted published date, "Read article" button opening a reader Dialog (max-w-2xl, max-h-92vh, overflow-y-auto) rendering full content split by "\n\n", meta grid (category/author/reviewer/published/updated), references (splitCsv), related treatment, "Education, not clinical advice" DisclaimerBanner (teal) + MedicalDisclaimer, link to directory. Empty state for empty category. Teal DisclaimerBanner at the bottom of the section.
+    66→- Built `src/components/views/about-view.tsx`: hero "Building the infrastructure layer for men's health"; prominent amber DisclaimerBanner restating legal positioning (tech facilitator; not medical provider/clinic/pharmacy/diagnostic; no diagnosing/prescribing/medical advice; licensed clinics/professionals solely responsible for medical decisions, care, prescribing, treatment, credentialing, regulatory compliance); Mission cards (Connect demand, Verify clinics, Source talent, Unify services); Approach 4-step pipeline (Patients → Clinics → Workforce → Marketplace); qualitative Positioning pillars (no fake metrics); Contact form (name, email, role select, message, consent checkbox) → POST /api/contact with sonner toasts and success state; CTASection primary "Join the Novalyte Network" (onGetStarted) + secondary "Browse Clinic Directory" (secondaryView="directory").
+    67→- Built `src/components/views/legal-view.tsx`: hero mapping view → title (Privacy Policy / Terms of Service / Medical Disclaimer / Accessibility Statement / Cookie Policy) with "Last updated" date and "Return home" button (navigate("home")); top-of-page amber DisclaimerBanner on every page ("placeholder draft, requires review by qualified legal counsel"); max-w-3xl prose container with shared H2/H3/P/UL/OL/LI primitives; substantive multi-section content for all 5 pages (Privacy: 10 sections incl. PHI/HIPAA positioning; Terms: 13 sections incl. nature-of-service, acceptable use, relationships, liability; Medical Disclaimer: 10 sections explicitly reinforcing not-a-medical-provider, assessments-not-a-diagnosis, consult-licensed-professional, independent clinics, no endorsement, independently-confirm-credentials; Accessibility: 7 sections WCAG 2.1 AA reference; Cookies: 7 sections covering types, third-party, management). Back-to-top + Return-home buttons + cross-links to other legal pages.
+    68→- All three files: `"use client"`, only existing shadcn/ui components, shared SectionShell/SectionHeading/DisclaimerBanner/MedicalDisclaimer/CTASection, `cn` from @/lib/utils, icons from lucide-react, toast from sonner, navigate from @/lib/nav. Teal/emerald theme only. Fully responsive. TypeScript strict, no `any`. Dates via toLocaleDateString.
+    69→
+    70→Verification:
+    71→- `bun run lint` clean — no errors or warnings.
+    72→- Dev server compiled the three views without errors.
+    73→
+    74→Stage Summary:
+    75→- Journal, About, and Legal views complete and integrated into the existing AppShell (already wired by Task 1).
+    76→- All three views are pure client components; data flows via AppShell props.
+    77→- API integration: contact form posts to existing `/api/contact` route (role enum: patient/clinic/professional/vendor/investor/other) — matches the existing Zod schema.
+    78→- No new shadcn/ui components were created; no new API routes were needed.
+    79→- Remaining work for other agents: PatientsView, ClinicsView, WorkforceView, MarketplaceView (referenced in AppShell but not yet built).
+    80→
+    81→---
+    82→Task ID: 2-a
+    83→Agent: Z.ai Code (subagent)
+    84→Task: Build the Workforce Hub view (`src/components/views/workforce-view.tsx`)
+    85→
+    86→Work Log:
+    87→- Created `src/components/views/workforce-view.tsx` ("use client") with the exact required signature `WorkforceView({ professionals, jobs, onGetStarted })`.
+    88→- Hero section: gradient `from-teal-50/50 to-background`, eyebrow "Workforce Hub", headline "Specialized Talent for the Future of Men's Health", supporting copy listing all required roles (Physicians, NPs, PAs, RNs, MAs, Phlebotomists, Medical Directors, Patient Coordinators, Revenue Cycle Specialists), two CTAs ("Join as a Professional" + "Post a Role") both calling `onGetStarted`.
+    89→- Tabs (`@/components/ui/tabs`) with "Browse Professionals" and "Browse Jobs".
+    90→- Professionals panel: filter card (State select from `US_STATES`, Title select derived from professionals, Remote switch, Verified switch), `useMemo` client-side filter, "Showing X of Y" count + Reset. Responsive grid `md:grid-cols-2 lg:grid-cols-3` of cards with avatar (initials in colored circle cycling teal/emerald/sky/violet/amber — `sky` mapped to `colorClasses("blue")` because the helper exposes sky tones under the `blue` key), name+title, location w/ MapPin, sky "Remote" pill, `VerificationBadge`, licensed states as small badges, specialties as outline badges (max 3), experience/availability/employment-pref row, bio line-clamp-2, empty state with Users icon + "Clear filters".
+    91→- Jobs panel: filter card (State, Employment type derived, Remote switch), `useMemo` filter, count + Reset. Job cards grid with clinic name (uppercase) + title, location/employment/remote, required licenses badges, treatment specialties outline badges, compensation formatted via local `formatComp()` helper ("$Xk – $Yk" / "From $Xk" / hourly when value < 1000 / null-safe), schedule, description line-clamp-3, two buttons ("View & Apply" primary + "Details" outline) both opening the application dialog. Empty state.
+    92→- Job application dialog (`@/components/ui/dialog`): shows full job summary (comp, schedule, experience, remote, licenses, specialties, description) + form with Full name (required), Email (required type=email), Phone (optional), Cover note (Textarea optional), consent checkbox (Novalyte is a tech platform; clinics responsible for background checks, credential verification, licensing, employment compliance, clinical supervision, hiring decisions). Submits `POST /api/job-application` with `{ jobPostingId, applicantName, applicantEmail, applicantPhone, coverNote }`. `toast` from sonner for success/error. Success state shows `CheckCircle2`. Form state reset on close (after 200ms to allow close animation).
+    93→- Matching logic section: `SectionShell` tone="muted" + `SectionHeading` eyebrow "How Matching Works". Ten factors (Role, Location, Licensure, Licensed states, Specialty, Remote availability, Experience, Employment preference, Schedule, Credential status) as a responsive grid of small cards (icon + check icon + label), `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`.
+    94→- Disclaimer: `DisclaimerBanner` tone="amber" with exact required text about Novalyte facilitating discovery/communication and clinics remaining responsible for background checks, credential verification, licensing confirmation, employment compliance, clinical supervision, and hiring decisions.
+    95→- CTA: `CTASection` with title "Hiring for your men's health clinic?", `onPrimary={onGetStarted}`, `primaryLabel="Post a Role"`, `secondaryLabel="Browse Marketplace"`, `secondaryView="marketplace"`.
+    96→
+    97→Conventions:
+    98→- Used ONLY existing shadcn/ui components (button, input, label, select, switch, badge, card, tabs, dialog, textarea) + shared components (`SectionShell`, `SectionHeading`, `VerificationBadge`, `StatusPill`, `DisclaimerBanner`, `CTASection`). Imported shared components from explicit file paths (`@/components/shared/cta`, `@/components/shared/disclaimer`, etc.) because `src/components/shared/` has no barrel `index.ts`.
+    99→- Used native `<input type="checkbox">` for consent (matches the `directory-view.tsx` pattern; `@/components/ui/checkbox` was not in the task's allowed-component list).
+   100→- Used `splitCsv`, `colorClasses`, `initials`, `US_STATES` from `@/lib/constants`; `cn` from `@/lib/utils`; `toast` from `sonner`; icons from `lucide-react`.
+   101→- No `any` types — `ApplicationForm` typed explicitly. No mock/fake metrics — all counts derived from props.
+   102→- Theme: teal/emerald primary, sky used sparingly (Remote pills, avatar slot 3). No indigo/blue primaries.
+   103→- Fully responsive (mobile-first, sm:/lg: breakpoints).
+   104→
+   105→Validation:
+   106→- `bun run lint` — clean (no errors, no warnings).
+   107→- Dev server compiles successfully (verified via `dev.log`).
+   108→- Work record also written to `/home/z/my-project/agent-ctx/2-a-workforce-view.md`.
+   109→
+   110→Stage Summary:
+   111→- WorkforceView is complete and ready to be rendered by `AppShell` (the existing shell already calls `<WorkforceView professionals={data.professionals} jobs={data.jobs} onGetStarted={...} />`).
+   112→- The view consumes `ProfessionalT[]` and `JobPostingT[]` from `@/lib/types` and posts applications to the existing `/api/job-application` route (Zod-validated, Prisma-persisted).
+   113→- All eight required sections are present and ordered as specified.
+   114→
+   115→---
+   116→Task ID: 3
+   117→Agent: Main (Z.ai Code)
+   118→Task: Built PatientsView (multi-step assessment), ClinicsView (dashboard preview + onboarding), wired page.tsx + layout, fixed Get Started field-mapping bug, created README + .env.example, end-to-end browser verification
+   119→
+   120→Work Log:
+   121→- Created `src/lib/treatments.ts` with full educational content for all 12 treatment verticals (explanation, reasons, provider type, questions to ask)
+   122→- Built `src/components/views/patient-assessment.tsx`: 7-step informational assessment (age, location, concerns, symptoms, treatment interest, care format, contact+consent) with progress bar, per-step validation, consent, results view showing matched clinics, and POST to /api/assessment. Explicitly states "does not provide a medical diagnosis"
+   123→- Built `src/components/views/patients-view.tsx`: hero, 6-step patient journey, treatment discovery grid with detail modal (explanations + questions to ask + medical disclaimer), embedded assessment, clinic matching results, disclaimers
+   124→- Built `src/components/views/clinics-view.tsx`: hero, 9 clinic problems, 12 platform capabilities, dark dashboard preview (clearly marked "Development fixtures only" — no fake metrics, just labeled chart skeletons + fixture cards), full clinic onboarding form (POST /api/clinic-onboarding)
+   125→- Wired `src/app/page.tsx` as server component fetching all data via Prisma + rendering AppShell; updated `layout.tsx` with Novalyte metadata, OG/Twitter tags, Sonner toaster
+   126→- Fixed bug in GetStartedDialog: field names didn't match onboarding API schemas (sent `name` instead of `contactName` for clinic/vendor). Remapped payload per role. Verified clinic-onboarding now returns 200 and saves to DB
+   127→- Added `allowedDevOrigins` to next.config.ts to suppress cross-origin dev warning
+   128→- Created comprehensive README.md (architecture, stack, pillars, dev setup, DB, structure, API routes, design system, compliance language, integrations needing credentials, deployment, production hardening checklist)
+   129→- Created .env.example documenting local SQLite + all production integrations (Supabase, NextAuth, Stripe, Resend) clearly marked as requiring credentials
+   130→
+   131→End-to-end verification with Agent Browser (all passed):
+   132→- Homepage renders all sections (hero ecosystem visual, trust strip, problem, 4 pillars, journey, treatments, audiences, CTA) — no console/runtime errors
+   133→- Clinic Directory: search + state/treatment filters + telehealth/verified toggles all work; clinic profile dialog opens; consultation request form submits → POST /api/consultation 200 → saved to DB
+   134→- Patient Assessment: completed full 7-step flow → results with matched clinics → POST /api/assessment 200 → saved to DB with matchedClinicIds; medical disclaimer present
+   135→- Get Started dialog: role selection → clinic form → submit → POST /api/clinic-onboarding 200 → saved to DB → success state (after bug fix)
+   136→- Workforce: tabs switch between 8 professionals + 5 jobs; filters present
+   137→- Marketplace: categories + listings render; quote request form submits → POST /api/quote 200 → saved to DB
+   138→- Journal: category filters + article cards; article reader opens with content + medical disclaimer
+   139→- About: legal positioning disclaimer + contact form present
+   140→- Legal pages: render with "requires legal counsel review" placeholder notice
+   141→- Mobile responsive: header collapses to hamburger sheet menu with all nav items; footer present
+   142→- Sticky footer: structure min-h-screen flex flex-col + mt-auto confirmed
+   143→- Dev log: all routes 200, no errors
+   144→
+   145→Stage Summary:
+   146→- ALL views built and verified working end-to-end with real DB-backed flows
+   147→- Full platform complete: Home, For Patients, For Clinics, Clinic Directory, Workforce, Marketplace, Journal, About, 5 Legal pages
+   148→- All 9 API routes functional with Zod validation + Prisma persistence
+   149→- No mock/fake data in production flows; dashboard preview clearly marked as dev fixtures
+   150→- Lint clean, dev server healthy (GET / 200 in ~94ms)
+   151→- Deliverables complete: README, .env.example, seed script, schema, working app
+   152→
+   153→---
+   154→Task ID: 4
+   155→Agent: Main (Z.ai Code)
+   156→Task: Enterprise redesign foundation — design system upgrade, nav store with params + saved/compare stores, new shared enterprise components, AppShell wiring for detail views
+   157→
+   158→Work Log:
+   159→- Upgraded `src/app/globals.css` to enterprise-grade token system: refined warm off-white foundation, restrained credible teal primary, depth surface tokens (--surface-1/2/3), 5-tier enterprise shadow scale (xs/sm/md/lg/xl), premium card utilities (card-premium, card-premium-hover, ring-gradient hairline borders), shimmer/fade-up/scale-in animations, sticky-nav-shadow, refined focus rings, antialiased text rendering
+   160→- Upgraded `src/lib/nav.ts`: ViewKey now includes clinic-profile, job-detail, product-detail, vendor-profile. NavState supports `params` ({id, slug, clinicId}) for detail views. Added `useSaved` store (localStorage-backed) for clinics/jobs/products bookmarking. Added `useCompare` store for clinic/product comparison tray (max 3, with isOpen state)
+   161→- Built `src/components/shared/enterprise.tsx`: PremiumCard, MetaRow (label/value grid), StatCard, CardSkeleton, ListSkeleton, EmptyState, FilterChip (removable), ViewToggle (list/grid/map), SaveButton (bookmark), Breadcrumbs, SectionDivider
+   162→- Built `src/components/shared/sticky-tab-nav.tsx`: StickyTabNav with scroll-sentinel detection that adds shadow when stuck, horizontal scroll on overflow, active indicator
+   163→- Built `src/components/shared/compare-tray.tsx`: CompareTray bottom-docked tray + expanded comparison overlay
+   164→- Built `src/components/views/compare-trays.tsx`: ClinicCompareTray + ProductCompareTray with full comparison tables
+   165→- Updated `src/lib/types.ts`: added vendorId to MarketplaceListingT, added VendorT type
+   166→- Updated `src/app/page.tsx`: now fetches vendors too
+   167→- Rewrote `src/components/site/app-shell.tsx`: routes all new views (clinic-profile, job-detail, product-detail, vendor-profile), renders compare trays contextually
+   168→
+   169→Stage Summary:
+   170→- Foundation complete for enterprise redesign
+   171→- New stores: useSaved (localStorage), useCompare (tray state)
+   172→- New shared components ready for subagents to use: PremiumCard, MetaRow, StatCard, skeletons, EmptyState, FilterChip, ViewToggle, SaveButton, Breadcrumbs, StickyTabNav, CompareTray
+   173→- Next: dispatch subagents for Workforce redesign, Marketplace redesign, and detail views (job-detail, product-detail, vendor-profile) in parallel while main agent builds Directory + Clinic Profile (flagship)
+   174→
+   175→---
+   176→Task ID: 5
+   177→Agent: Subagent (Workforce + Job Detail redesign)
+   178→Task: Completely redesign the Workforce Hub + Job Board and create a new Job Detail view (enterprise polish pass)
+   179→
+   180→Work Log:
+   181→- Overwrote `/home/z/my-project/src/components/views/workforce-view.tsx` ("use client") with the required signature `WorkforceView({ professionals, jobs, onGetStarted })`. Imports types from `@/lib/types`.
+   182→- Created `/home/z/my-project/src/components/views/job-detail-view.tsx` (new "use client" file) with the required signature `JobDetailView({ job, allJobs })`.
+   183→- Used the new enterprise shared components from Task 4 throughout: `PremiumCard`, `MetaRow`, `StatCard`, `CardSkeleton`, `EmptyState`, `FilterChip`, `ViewToggle`, `SaveButton`, `Breadcrumbs` from `@/components/shared/enterprise`; `StickyTabNav` from `@/components/shared/sticky-tab-nav`; `SectionShell`/`SectionHeading` from `@/components/shared/section`; `VerificationBadge`/`StatusPill`/`CheckItem` from `@/components/shared/badges`; `DisclaimerBanner` from `@/components/shared/disclaimer`; `CTASection` from `@/components/shared/cta`.
+   184→- Stores from `@/lib/nav.ts`: `navigate` (for `job-detail` view switching with `{ id }` params), `useSaved` (bookmark jobs via `kind="job"`).
+   185→- Helpers from `@/lib/constants.ts`: `splitCsv`, `colorClasses`, `initials`, `US_STATES`.
+   186→- shadcn/ui primitives (existing only): `button`, `input`, `label`, `select`, `switch`, `badge`, `tabs`, `dialog`, `textarea`, `sheet`, `pagination`, `separator`.
+   187→
+   188→WorkforceView sections (in order):
+   189→1. Hero — `from-teal-50/50 to-background` gradient, eyebrow "Workforce Hub", headline "Specialized Talent for the Future of Men's Health", supporting copy naming ALL required roles (Physicians, NPs, PAs, RNs, MAs, Phlebotomists, Medical Directors, Patient Coordinators, Telehealth professionals, Compliance specialists, Clinic administrators, Revenue Cycle specialists). Two CTAs: "Join as a Professional" (onGetStarted) + "Post a Role" (onGetStarted). 4-column qualitative trust-indicator grid (no fake numbers): "Verified credential flow", "Multi-state licensure matching", "Direct clinic applications", "Men's-health specialties".
+   190→2. Tabs — "Browse Jobs" (default) + "Browse Professionals".
+   191→3. Browse Jobs (flagship job board): sticky 280px filter sidebar on `lg+` (keyword search w/ Search icon, State select, Employment-type select, Compensation-range select with 5 ranges, Required-license select, Treatment-specialty select, Remote-only Switch) — collapses to left-side `Sheet` on mobile via a "Filters" button with chip-count badge; Sort `Select` (Most relevant / Newest / Compensation: high→low / Compensation: low→high); `ViewToggle` (grid/list w/ LayoutGrid + List icons); applied `FilterChip` row with chip-count and "Clear all"; "Showing X of Y opportunities" results header; premium `PremiumCard` job cards with clinic name (uppercase) + Featured/Verified-employer badges + `SaveButton` + clickable title (`navigate("job-detail", undefined, { id })`) + location/employment/remote pills + prominent emerald compensation (`$120k–$145k` / `From $Xk` / `$X/hr` / `Competitive`) + teal outline specialty badges + muted license badges + line-clamp-2 description + schedule + footer w/ experience + application-requirements count + "Apply now" primary + "View details" outline; `EmptyState` (Briefcase) with "Clear filters"; `Pagination` (10/page) with prev/next/numbered/ellipsis; 300 ms `CardSkeleton` loading shimmer.
+   192→4. Browse Professionals — same premium treatment: filter sidebar (Keyword, State, Title derived, Specialty derived, Remote Switch, Verified Switch), sort select (Most relevant / Years experience: high→low / Verified first), applied chips, 300 ms loading shimmer, 3-up `PremiumCard` grid with avatar (initials in colored circle cycling teal/emerald/sky/violet/amber), name+title, location+MapPin, sky Remote pill, `VerificationBadge`, licensed states, max-3 specialty badges, experience/availability/employment row, line-clamp-2 bio, "View profile" button → opens full `Dialog` with bio, MetaRow, licensed states, specialties, certifications + muted disclaimer. Empty state + pagination.
+   193→5. Matching logic — `SectionShell` tone="muted" + `SectionHeading` "How Matching Works" + 10-factor grid (Role, Location, Licensure, Licensed states, Specialty, Remote availability, Experience, Employment preference, Schedule, Credential status).
+   194→6. Disclaimer — `DisclaimerBanner` tone="amber" with the exact required copy.
+   195→7. CTA — `CTASection` "Hiring for your men's health clinic?", primary "Post a Role" (onGetStarted), secondary "Browse Marketplace" (secondaryView="marketplace").
+   196→
+   197→JobDetailView sections:
+   198→- `Breadcrumbs` (Workforce > clinic name > job title) — first two click back to workforce.
+   199→- Hero header — gradient; clinic name (uppercase muted, clickable), large job title, location/employment/remote pills, prominent emerald compensation card with "Transparent" pill, SaveButton + "Apply now" (scrolls to form) + "Back to jobs". Right side: employer snapshot `PremiumCard` with Type/Comp/Experience/Remote dl + Verified employer / Hiring pills.
+   200→- `StickyTabNav` with tabs: Overview, Requirements, Compensation & Benefits, Schedule, How to Apply. Right slot: small Apply button.
+   201→- Overview — paragraphs from description, 6-cell MetaRow, treatment specialties, required licenses.
+   202→- Requirements — required experience card, required licenses grid, application requirements (CheckItem list from splitCsv), credential & compliance expectations card with 5 CheckItems.
+   203→- Compensation & Benefits — 3-up StatCard (Range/Min/Max, emerald tone on Range), teal DisclaimerBanner about Novalyte not setting comp, benefits PremiumCard, schedule PremiumCard with status pills.
+   204→- Schedule — schedule card, MetaRow of Employment type / Work model / City / State, remote-vs-on-site PremiumCard explaining telehealth licensure.
+   205→- How to Apply — `#apply-form` anchor with `scroll-mt-32`. Application form (Full name, Email, Phone, Cover note Textarea, consent checkbox) → `POST /api/job-application` with `{ jobPostingId, applicantName, applicantEmail, applicantPhone, coverNote }`. `toast` from sonner. Success state with `CheckCircle2`. Muted DisclaimerBanner about Novalyte facilitating + clinics handling hiring.
+   206→- Related jobs — `SectionShell` tone="muted" with 3-card grid of related jobs (scored by shared specialty +3, same state +2, same employment type +1, shared license +1, same clinic +1; filled to 3 with non-matching jobs if fewer). Compact `RelatedJobCard` navigates via `navigate("job-detail", undefined, { id })`.
+   207→- Disclaimer — `DisclaimerBanner` tone="amber" reiterating Novalyte facilitates discovery/communication; clinics responsible for hiring/credentialing; applications do not constitute an offer.
+   208→
+   209→Conventions:
+   210→- Theme: teal/emerald primary, sky (Remote pills, avatar slot 3), amber (Featured + disclaimer), violet (avatar slot 4). No indigo/blue primaries.
+   211→- `novalyte-fade-up` animation class on result grids.
+   212→- `card-premium-hover` on hoverable cards via `PremiumCard` `hover` prop.
+   213→- All interactive elements have hover/active/focus states; touch-friendly sizes.
+   214→- Strict TypeScript, no `any` — `JobFilters`, `JobSort`, `ProFilters`, `ProSort`, `ApplicationForm`, `TabId` all typed explicitly.
+   215→- No fake metrics — all counts derived strictly from props.
+   216→- Lint pattern: avoided `react-hooks/set-state-in-effect` by firing `setPage(1)` + `setLoading(true)` synchronously in change handlers (`applyFilter` / `applySort` / `applyView` / `clearAll`); the `setLoading(false)` is wrapped in `setTimeout` inside `useEffect` (not synchronous to the effect body). Removed an earlier `useRef`-based timer approach that tripped `react-hooks/refs`.
+   217→- Initial bug fixed: the `relatedJobs` `useMemo` recursively passed `relatedJobs` to `relatedJobsFill` instead of the local `scored` array — corrected to `relatedJobsFill(allJobs, job, scored)`.
+   218→- Used `MetaRow`, `StatCard`, `Breadcrumbs`, `SaveButton`, `PremiumCard` from enterprise.tsx; `StickyTabNav` from sticky-tab-nav.tsx.
+   219→
+   220→Validation:
+   221→- `bun run lint` — clean for both files (zero errors, zero warnings in workforce-view.tsx and job-detail-view.tsx). The remaining 7 errors in `product-detail-view.tsx` and `vendor-profile-view.tsx` belong to other agents' parallel work and are out of scope for Task 5.
+   222→- Dev server compiles the two views successfully (verified via `dev.log`).
+   223→- Work record also written to `/home/z/my-project/agent-ctx/5-workforce-job-detail.md`.
+   224→
+   225→Stage Summary:
+   226→- Workforce Hub + Job Board + Job Detail view are complete and ready to be rendered by `AppShell` (the existing shell already calls `<WorkforceView professionals={data.professionals} jobs={data.jobs} onGetStarted={...} />` and `<JobDetailView job={...} allJobs={data.jobs} />`).
+   227→- The two views wire together via `navigate("job-detail", undefined, { id: job.id })` — clicking a job card or "View details" on the Workforce Hub opens the new Job Detail view; the breadcrumb + "Back to jobs" return via `navigate("workforce")`.
+   228→- All eight required Workforce sections (hero, tabs, browse jobs, browse professionals, matching logic, disclaimer, CTA — plus the implicit header trust strip) are present and ordered per spec. All eight Job Detail sections (breadcrumbs, hero, sticky tabs, overview, requirements, compensation & benefits, schedule, how to apply, related jobs, disclaimer) are present.
+   229→
+   230→---
+   231→Task ID: 6
+   232→Agent: Subagent (Z.ai Code) — Marketplace redesign + Product Detail + Vendor Profile
+   233→
+   234→Work Log:
+   235→- Overwrote `/home/z/my-project/src/components/views/marketplace-view.tsx` (`"use client"`) with a comprehensive enterprise B2B commerce redesign. Signature: `MarketplaceView({ listings, vendors, onGetStarted })`. Sections: (1) Hero — teal gradient with eyebrow "Healthcare Services Marketplace", headline "The B2B Commerce Platform for Men's Health Operations", two CTAs (Become a Vendor → onGetStarted + Browse Catalog → scroll to #listings), 4 qualitative trust indicators (Verified supplier badges, Quote & bulk-order workflows, Equipment financing indicators, Clinical-claim moderation). (2) Sticky horizontal scrollable category nav bar with lucide icons per category (FlaskConical/Syringe/Droplet/etc.) — active pill highlighted teal; clicking sets category filter + scrolls to listings. (3) Listings section (`SectionShell id="listings"`) with two-column layout: left filter sidebar (sticky on desktop, Sheet on mobile via `@/components/ui/sheet`) — keyword search, category select, listing-type select, vendor select, verified-only switch, pricing-model select (one-time/subscription/quote/range/per-test/percentage), availability select (in-stock/made-to-order/limited/preorder); right main column — results header with "Showing X of Y" + applied `FilterChip`s + sort Select (Most relevant/A–Z/Verified first/Category) + `ViewToggle` (grid/list). PremiumCard listing cards with h-28 colored banner (`colorClasses(imageColor).bg`) + white CategoryIcon + `SaveButton` (useSaved kind="product") + custom CompareToggle (useCompare kind="product") + verified/under-review badge; vendor name (uppercase, clickable → vendor-profile via id lookup); title (clickable → product-detail); category/type StatusPills; line-clamp-2 description; priceNote + pricing model; availability pill (in-stock=teal, made-to-order=amber, limited=violet, preorder=sky); financing-available tag for equipment categories (Diagnostic/Body-Composition/Recovery/Medical-Furniture/Telehealth — clearly a platform capability, not a per-listing claim); footer with Request Quote (primary, opens dialog) + Details (outline, → product-detail). Empty state with `Package` icon + Clear filters. Pagination (9 per page) via `@/components/ui/pagination`. 300ms simulated loading shimmer via `CardSkeleton`. (4) Vendor directory preview (`SectionShell tone="muted"`) — cards for verified vendors with logo color block, name, VerificationBadge, listing count, "View vendor profile" button → vendor-profile. (5) Vendor portal preview — 8 feature cards (Create profile, Submit products/services, Upload media, Manage listings, Receive inquiries, Respond to quotes, Track performance, Manage billing) with icons; CTA "Become a Vendor" → onGetStarted. (6) Marketplace safety section — `DisclaimerBanner` tone="teal" with the 6 review types (vendor verification, product review, service review, claim review, category approval, listing approval) as labeled items. (7) CTA — `CTASection` "Reach men's health clinics seeking your solutions", primary onGetStarted, secondary "Explore Workforce" secondaryView="workforce", tone="dark". Quote dialog: form fields (requesterName, requesterEmail, requesterOrg, quantity, notes, consent), POSTs `/api/quote` with `{ listingId, requesterName, requesterEmail, requesterOrg, quantity, notes }`; `toast` from sonner; success state shows CheckCircle2.
+   236→
+   237→- Created `/home/z/my-project/src/components/views/product-detail-view.tsx` (`"use client"`) — signature `ProductDetailView({ listing, allListings, vendors })`. Breadcrumbs (Marketplace > {category} > {title}); hero header two-column on desktop — left: large h-48 colored banner with CategoryIcon, title (heading), vendor name (clickable → vendor-profile), VerificationBadge, category/type/availability pills, financing pill if eligible, description, SaveButton + Request Quote + Compare buttons; right: pricing & quote card with prominent priceNote, pricing model, availability pill, financing pill, and compact quote form posting to `/api/quote`. `StickyTabNav` with tabs Overview/Specifications/Pricing & Financing/Shipping & Fulfillment/Vendor/FAQs; right slot: Request Quote button (opens dialog). Overview tab — full description paragraphs, "what's included" grid, use cases for men's health clinics. Specifications tab — `MetaRow` grid (category, type, pricing model, price, availability, vendor) + note that detailed specs confirmed with vendor during quote. Pricing & Financing tab — price note card, pricing model explanation (switch over model), bulk-order note, financing/leasing inquiry support card for equipment (platform capability). Shipping & Fulfillment tab — coordinated directly with vendor; lead times confirmed during quote. Vendor tab — vendor snapshot with logo color block, name, VerificationBadge, overview, listing count, website link, "View full vendor profile" button. FAQs tab — 5 Q&A items using `@/components/ui/accordion`. Related products — 3 compact clickable cards (same category or same vendor) linking to product-detail. DisclaimerBanner (amber) about Novalyte not selling/warranting + `MedicalDisclaimer`.
+   238→
+   239→- Created `/home/z/my-project/src/components/views/vendor-profile-view.tsx` (`"use client"`) — signature `VendorProfileView({ vendor, listings })`. Breadcrumbs (Marketplace > Vendors > {vendor name}); hero header — large h-24 vendor logo color block, vendor name (heading), VerificationBadge, website link (if present), overview text, "Contact vendor" (opens dialog) + "Browse marketplace" + "Become a vendor" buttons; side snapshot card with status/active-listings/categories/verified-listings counts. `StickyTabNav` with tabs Overview/Products & Services/Verification/Contact; right slot: Contact button. Overview tab — full overview, "what they offer" cards, categories they serve (derived from their listings) as clickable pills. Products & Services tab — grid of compact `VendorListingCard`s (banner, title → product-detail, category/type/availability pills, description, pricing, SaveButton, CompareToggle, Request Quote per-card dialog, Details chevron) + EmptyState when no listings. Verification tab — status card (verified or under-review), "What verification means" + "What verification is not" cards, `MetaRow` for total/verified/under-review counts, amber DisclaimerBanner. Contact tab — contact form posting to `/api/contact` with role="vendor" (message composed to include vendor name + listing ref if available) + side info cards (inquiry routing, response time, independent diligence). Bottom DisclaimerBanner about vendor independence + `MedicalDisclaimer`.
+   240→
+   241→Critical engineering notes:
+   242→- All three files use a stable `CategoryIcon` sub-component (switch statement with literal JSX returns) to satisfy the React Compiler's `react-hooks/static-components` rule — the previous pattern of `const Icon = iconForCategory(...)` then `<Icon />` was flagged because the Compiler can't statically verify a stable component type when assigned from a function call.
+   243→- Used React's "adjusting state during render" pattern (endorsed by React docs) for: filter-change page-reset + loading-flag in marketplace-view; activeTab reset on listing.id change in product-detail-view; activeTab reset on vendor.id change in vendor-profile-view. This avoids the `react-hooks/set-state-in-effect` warning.
+   244→- Loading shimmer effect is setTimeout-only — no synchronous setState in the effect body. The `setLoading(true)` is moved into the render-phase adjusting-state block.
+   245→- Subscribed directly to `useSaved`/`useCompare` store arrays (`useSaved((s) => s.products)`) so save/compare toggle buttons re-render reactively when items are added/removed.
+   246→- Vendor lookup by name: `vendors.find((v) => v.name === listing.vendorName)?.id` — passes the id to `navigate("vendor-profile", undefined, { id })`.
+   247→- Theme: teal/emerald primary; violet for financing tags; amber for under-review badges; sky for preorder. No indigo/blue primaries.
+   248→- Premium polish: PremiumCard with `card-premium-hover`, `shadow-premium-sm/lg`, `novalyte-fade-up` on grids, `shadow-premium-xs` on filter cards.
+   249→- Fully responsive: filter sidebar collapses to `Sheet` on mobile; sticky tab nav has horizontal scroll; touch-friendly button sizes.
+   250→- TypeScript strict, no `any`. No fake metrics — all counts derived from props.
+   251→
+   252→Verification:
+   253→- `bun run lint` — clean (exit 0, no errors, no warnings) across all three files.
+   254→- Dev server currently returns HTTP 500 because AppShell imports `clinic-profile-view` and `job-detail-view` which are being built by OTHER agents in parallel — those are out of scope for Task ID 6. Once those files exist, the marketplace → product-detail → vendor-profile flows will render end-to-end.
+   255→- Work record also written to `/home/z/my-project/agent-ctx/6-marketplace-product-vendor.md`.
+   256→
+   257→Stage Summary:
+   258→- Marketplace redesign complete with all 7 required sections (hero, sticky category nav, listings two-column with filters/sort/view-toggle/pagination/loading shimmer, vendor directory preview, vendor portal preview, marketplace safety, CTA).
+   259→- Product detail view complete with breadcrumbs, two-column hero (banner + pricing & quote card), StickyTabNav (6 tabs), related products, disclaimers.
+   260→- Vendor profile view complete with breadcrumbs, hero with snapshot card, StickyTabNav (4 tabs), per-listing quote capability, contact form, disclaimers.
+   261→- All three files consume the existing AppShell contract and post to existing API routes (`/api/quote`, `/api/contact`).
+   262→- File paths:
+   263→  - `/home/z/my-project/src/components/views/marketplace-view.tsx` (overwrite)
+   264→  - `/home/z/my-project/src/components/views/product-detail-view.tsx` (new)
+   265→  - `/home/z/my-project/src/components/views/vendor-profile-view.tsx` (new)
+   266→
+   267→---
+   268→Task ID: 7
+   269→Agent: Main (Z.ai Code)
+   270→Task: Built flagship Clinic Directory + Clinic Profile views, fixed lint errors, polished homepage with premium depth
+   271→
+   272→Work Log:
+   273→- Built completely redesigned `src/components/views/directory-view.tsx` as a flagship search & discovery experience:
+   274→  - Premium hero with breadcrumbs, big search bar, quick stats strip (StatCard grid: clinics/verified/telehealth/states)
+   275→  - Two-column layout: sticky 280px filter sidebar (state, city, treatment, telehealth/in-person/verified toggles) that collapses to a left Sheet on mobile with filter-count badge
+   276→  - Sort control (relevance/verified first/telehealth first/A-Z) + ViewToggle (grid/list/map)
+   277→  - Applied filter chips row (FilterChip with remove buttons) + "Clear all"
+   278→  - Premium clinic cards with colored banner strip, initials avatar, verification badge, SaveButton (useSaved), Compare toggle (useCompare), trust signals row, grid + list variants
+   279→  - Stylized Map view with positioned pins, selected clinic panel, pulse animation
+   280→  - Loading skeleton (CardSkeleton grid via useTransition), EmptyState, pagination (6/page)
+   281→  - Used useTransition for perceived-performance loading (replaced useEffect setState pattern that violated lint rules)
+   282→- Built comprehensive `src/components/views/clinic-profile-view.tsx` — the most detailed page in the platform:
+   283→  - Breadcrumbs (Home > Directory > Clinic)
+   284→  - Premium hero with clinic identity (avatar, name, verification badge, tagline, location/telehealth/hours), specialty chips, trust signals, primary CTAs (Request consultation, View treatments, Save)
+   285→  - Snapshot sidebar card (type, location, service area, telehealth, providers, hours, contact links)
+   286→  - StickyTabNav with 12 tabs: Overview, Treatments, Providers, Locations & Hours, Insurance & Pricing, Telehealth, Eligibility, Gallery, Reviews, FAQ, Contact & Booking, Safety & Compliance
+   287→  - Each tab is a full section with PremiumCards, MetaRows, StatCards, disclaimers
+   288→  - Contact tab has working consultation request form (POST /api/consultation) with success state
+   289→  - Related clinics sidebar (scored by shared specialty + same state)
+   290→  - Safety tab with verification/privacy/transparency/independent-operation cards
+   291→- Fixed lint errors: replaced useEffect+setState with useTransition for filter loading; wrapped scrollToTab in useCallback; moved specs derivation inside useMemo to use primitive deps
+   292→- Polished homepage: upgraded hero shadows to shadow-premium-xl/lg, pillar cards to shadow-premium-sm/lg
+   293→
+   294→Stage Summary:
+   295→- All flagship experiences redesigned and verified compiling cleanly (lint passes, server 200)
+   296→- Directory: enterprise search with map/list/grid views, save+compare, advanced filters, skeletons
+   297→- Clinic Profile: 12-tab comprehensive page with sticky nav, all required sections, working forms
+   298→- Workforce + Job Detail: built by subagent (Task 5) — premium job board with filter sidebar, salary transparency, saved jobs, application tracking
+   299→- Marketplace + Product Detail + Vendor Profile: built by subagent (Task 6) — B2B commerce with category nav, vendor profiles, quote workflows, comparisons
+   300→- Next: full Agent Browser verification of all redesigned flows
+   301→
+   302→---
+   303→Task ID: 8
+   304→Agent: Main (Z.ai Code)
+   305→Task: Agent Browser verification of all redesigned flagship experiences + fix nested button hydration error
+   306→
+   307→Work Log:
+   308→- Verified homepage renders cleanly with premium depth shadows (shadow-premium-xl/lg on hero ecosystem visual + pillar cards)
+   309→- Verified redesigned Clinic Directory: premium hero with breadcrumbs + big search + stats strip; sticky filter sidebar with state/city/treatment/telehealth/verified/in-person filters; sort control; Grid/List/Map view toggle; premium clinic cards with Save + Compare buttons; applied filter chips; pagination; loading skeleton via useTransition; empty state
+   310→- Verified Map view: positioned clinic pins with pulse animation, selected clinic detail panel
+   311→- Verified telehealth filter correctly excludes non-telehealth clinics
+   312→- Verified Clinic Profile view: 12-tab sticky navigation (Overview, Treatments, Providers, Locations & Hours, Insurance & Pricing, Telehealth, Eligibility, Gallery, Reviews, FAQ, Contact & Booking, Safety & Compliance); hero with identity/verification/trust signals; snapshot sidebar; related clinics; working consultation form on Contact tab
+   313→- Verified Workforce redesign (subagent): Browse Jobs + Browse Professionals tabs, filter sidebar, premium job cards with Featured/Verified employer badges, salary transparency ($42k–$52k), remote/on-site labels, Save + Apply buttons
+   314→- Verified Job Detail view: sticky tabs (Overview, Requirements, Compensation & Benefits, Schedule, How to Apply), Apply button, related jobs
+   315→- Verified Marketplace redesign (subagent): B2B commerce hero, category nav bar, filter sidebar, listing cards with Compare + Request Quote + Save, verified supplier toggle
+   316→- Verified Product Detail view: sticky tabs (Overview, Specifications, Pricing & Financing, Shipping & Fulfillment, Vendor, FAQs), Request Quote form, Save/Compare buttons, related products
+   317→- Verified Compare tray: docked bottom tray with item chips, Compare button (disabled until 2+), expanded comparison overlay with table
+   318→- Verified mobile responsiveness: header collapses to hamburger, filter sidebar collapses to left Sheet with filter-count badge, directory cards stack
+   319→- Fixed hydration error: nested <button> inside <Button> in product-detail-view.tsx (SaveButton was wrapped in a Button — removed the wrapping Button, used SaveButton directly)
+   320→- Final state: lint clean (0 errors), server returning 200, no console/hydration errors
+   321→
+   322→Stage Summary:
+   323→- ALL flagship experiences redesigned and browser-verified:
+   324→  - Clinic Directory: enterprise search with map/list/grid, save+compare, advanced filters, skeletons, pagination
+   325→  - Clinic Profile: 12-tab comprehensive page with sticky nav, all required sections, working forms
+   326→  - Workforce + Job Detail: premium job board with salary transparency, saved jobs, application tracking
+   327→  - Marketplace + Product Detail + Vendor Profile: B2B commerce with category nav, vendor profiles, quote workflows, comparisons
+   328→- Enterprise design system applied throughout: premium depth shadows, refined cards, sticky tab navigation, breadcrumbs, filter chips, view toggles, save/bookmark, compare tray
+   329→- All interactive states functional: hover, loading (skeletons), empty, error (toast), success, disabled
+   330→- Fully responsive: mobile sheet filters, collapsing header, stacking grids
+   331→- No fake metrics; no nested button hydration errors; no console errors
+   332→
+   333→---
+   334→Task ID: 9
+   335→Agent: Main (Z.ai Code)
+   336→Task: Visual upgrade — image infrastructure, download 55+ healthcare images, build SmartImage + lightbox, create image asset registry
+   337→
+   338→Work Log:
+   339→- Used z-ai image-search CLI to find 55+ healthcare images across categories: consultations, clinic interiors, professional headshots, marketplace products, treatment verticals, telehealth, weight loss, recovery, hair restoration, lab equipment, injection supplies
+   340→- Downloaded all images locally to /public/images/{hero,clinics,professionals,marketplace,articles,treatments}/ — no hotlinked URLs in the app
+   341→- Created centralized image asset registry at src/lib/images.ts with:
+   342→  - IMAGES constant mapping all image paths by category
+   343→  - Helper functions: getClinicImage(slug), getClinicGallery(slug), getProfessionalImage(name), getMarketplaceImage(category), getArticleImage(slug)
+   344→  - Deterministic image assignment by slug/name hash so demo content is consistent
+   345→  - ALT_TEXT templates for accessibility
+   346→  - Clear documentation that dev images are from Unsplash/Pexels and should be replaced with licensed photography
+   347→- Built src/components/shared/smart-image.tsx with:
+   348→  - SmartImage: wraps next/image with blur shimmer placeholder, graceful error fallback, responsive sizing, lazy loading (priority opt-in), opacity transition on load
+   349→  - ImageLightbox: full-screen gallery with keyboard nav, prev/next buttons, captions, image counter, click-outside to close
+   350→- Next: dispatch Journal rebuild subagent + apply imagery to homepage/directory/clinic-profile/workforce/marketplace in parallel
+   351→

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { navigate } from "@/lib/nav";
-import { ArrowRight, Sparkles, Users, Building2, Store, Stethoscope } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Building2, Store, Stethoscope, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ECOSYSTEM_NODES = [
@@ -52,7 +52,8 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
                 Join the Novalyte Network
               </Button>
             </div>
-            <p className="mt-5 text-xs text-muted-foreground">
+            <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
               Designed for secure healthcare workflows · Built with privacy-conscious infrastructure · Supports compliant operational processes
             </p>
           </div>

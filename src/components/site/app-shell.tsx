@@ -15,9 +15,12 @@ import { MarketplaceView } from "@/components/views/marketplace-view";
 import { ProductDetailView } from "@/components/views/product-detail-view";
 import { VendorProfileView } from "@/components/views/vendor-profile-view";
 import { JournalView } from "@/components/views/journal-view";
+import { ArticleView } from "@/components/views/article-view";
+import { JournalCategoryView } from "@/components/views/journal-category-view";
 import { AboutView } from "@/components/views/about-view";
 import { LegalView } from "@/components/views/legal-view";
 import { useNav, useCompare } from "@/lib/nav";
+import { ARTICLES, getArticleBySlug } from "@/lib/article-content";
 import { ClinicCompareTray, ProductCompareTray } from "@/components/views/compare-trays";
 import type {
   ClinicT,
@@ -91,7 +94,19 @@ export function AppShell({ data }: { data: PlatformData }) {
             listings={data.listings.filter((l) => l.vendorName === (data.vendors.find((v) => v.id === params?.id) ?? data.vendors[0])?.name)}
           />
         )}
-        {view === "journal" && <JournalView articles={data.articles} />}
+        {view === "journal" && <JournalView articles={ARTICLES} />}
+        {view === "journal-article" && (
+          <ArticleView
+            article={getArticleBySlug(params?.slug) ?? ARTICLES[0]}
+            allArticles={ARTICLES}
+          />
+        )}
+        {view === "journal-category" && (
+          <JournalCategoryView
+            category={params?.slug ?? ARTICLES[0]!.category}
+            articles={ARTICLES}
+          />
+        )}
         {view === "about" && <AboutView onGetStarted={() => setGetStartedOpen(true)} />}
         {(view === "privacy" || view === "terms" || view === "medical-disclaimer" || view === "accessibility" || view === "cookies") && (
           <LegalView view={view} />
