@@ -421,3 +421,38 @@ Work Log:
 Stage Summary:
 - Homepage hero restored to the preferred ecosystem illustration
 - Other imagery additions (clinic directory cards, clinic profile cover/gallery, pillar images, Journal rebuild) remain in place
+
+---
+Task ID: 13
+Agent: Main (Z.ai Code)
+Task: Navigation restructure, new star-light logo, Patients page redesign with configuration-driven assessment engine
+
+Work Log:
+- Rebuilt main navigation (src/components/site/header.tsx): removed "Platform" dropdown entirely; center nav now shows Patients/Clinics/Directory/Workforce/Journal; right side has Sign In + prominent teal "Marketplace" button (replaced Get Started); active state with teal underline; mobile Sheet menu matches desktop structure
+- Created new Novalyte AI logo (src/components/site/logo.tsx): star-like pulsing light mark concept (Nova=new star, Lyte=light). SVG with 8 radiating light paths + 4-point luminous core star with radial gradient. Three variants: default (navy+teal on light), dark (glowing teal on dark field with blur glow), mono. LogoMark for symbol-only. Wordmark "Novalyte AI" stays on one line (whitespace-nowrap). Added novalyte-logo-glow CSS animation (3.5s breathing pulse, respects prefers-reduced-motion). Created favicon.svg. Updated layout.tsx with icon metadata.
+- Built configuration-driven assessment engine (src/lib/assessment-config.ts + src/components/views/assessment-engine.tsx):
+  - 8 treatment-specific assessments (TRT, ED, Medical Weight Loss, GLP-1, Peptide Therapy, Hair Restoration, Hormone Optimization, Longevity) each with 8-12 tailored questions
+  - Question types: single, multi, text, contact, consent
+  - Shared question blocks (age, timeline, care format, self-pay, budget, contact, consent) reused across assessments
+  - Contact capture: first/last name, email, phone, ZIP, state, preferred contact method, best time
+  - Separate consent: contact consent (required) + SMS consent (optional, not pre-checked)
+  - Readiness scoring: consultation-ready / high-intent / researching / insurance-dependent / incomplete
+  - Personalized result page with matched clinics, summary, next-step CTAs, disclaimers
+  - Progress bar, one question per step, back/continue nav
+- Updated Prisma schema: AssessmentSubmission now stores treatmentType, timeline, selfPayOpenness, budgetRange, firstName/lastName, email, phone, preferredContact, bestTime, consentContact, consentSms, internalStatus, sourcePage. Ran db:push.
+- Updated assessment API route with Zod validation for all new fields + legacy compat
+- Redesigned Patients page (src/components/views/patients-view.tsx):
+  - Hero with premium consultation image, headline "Find the Right Path for Your Men's Health Goals", Start Your Assessment + Explore Treatments + Find a Clinic CTAs, visible disclaimer
+  - Dual pathway: "I know what I'm looking for" (Path A) + "Not sure where to start?" (Path B)
+  - Treatment cards with images, "Take Assessment" (opens treatment-specific assessment) + "Learn More"
+  - AI-guided care discovery: goal selector (12 categories), recommendation engine showing relevant treatments with disclaimers
+  - How It Works (6 steps), Trust & Transparency section (6 trust points), final CTA, medical disclaimer
+- Verified with Agent Browser: nav structure correct, logo renders, patients page hero/disclaimer/dual-path/treatment-cards/AI-discovery all work, TRT assessment opens with 12 steps, mobile nav matches desktop
+
+Stage Summary:
+- Navigation: Platform removed, Marketplace is primary CTA, mobile matches desktop
+- Logo: star-light concept with pulse animation, all variants, favicon
+- Patients page: dual pathway, treatment-specific assessments, AI-guided discovery, trust section
+- Assessment engine: configuration-driven, 8 treatment-specific assessments, contact+consent capture, readiness scoring, personalized results
+- Data model: backend-ready with all required fields
+- All disclaimers present: no diagnosis, no guarantee, educational only

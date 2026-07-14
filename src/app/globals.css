@@ -255,3 +255,27 @@
 .sticky-nav-shadow {
   box-shadow: 0 1px 0 0 var(--border), 0 4px 12px -4px oklch(0.22 0.02 255 / 0.06);
 }
+
+/* ── Novalyte AI logo pulse animation ───────────────────────── */
+@keyframes novalyte-logo-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+.novalyte-logo-glow {
+  animation: novalyte-logo-pulse 3.5s ease-in-out infinite;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .novalyte-logo-glow,
+  .novalyte-pulse-ring,
+  .novalyte-float,
+  .novalyte-shimmer,
+  .novalyte-fade-up,
+  .novalyte-scale-in {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

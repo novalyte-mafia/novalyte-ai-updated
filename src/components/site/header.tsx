@@ -3,51 +3,20 @@
 import { useState } from "react";
 import { Logo } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useNav, navigate, type ViewKey } from "@/lib/nav";
-import { PILLARS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import {
-  Megaphone,
-  Building2,
-  Users,
-  Package,
-  Menu,
-  ArrowRight,
-  Stethoscope,
-  Briefcase,
-  Store,
-  BookOpen,
-  Info,
-} from "lucide-react";
+import { Menu, Store, Stethoscope, Briefcase, Building2, Users, BookOpen } from "lucide-react";
 
-const PILLAR_ICONS: Record<string, React.ElementType> = {
-  Megaphone,
-  Building2,
-  Users,
-  Package,
-};
-
-const NAV_ITEMS: { label: string; view: ViewKey; desc: string; icon: React.ElementType }[] = [
-  { label: "For Patients", view: "patients", desc: "Assessments, treatments, and provider discovery", icon: Stethoscope },
-  { label: "For Clinics", view: "clinics", desc: "Demand, intake, talent, and sourcing", icon: Briefcase },
-  { label: "Clinic Directory", view: "directory", desc: "Verified men's health clinics", icon: Building2 },
-  { label: "Workforce", view: "workforce", desc: "Specialized healthcare talent", icon: Users },
-  { label: "Marketplace", view: "marketplace", desc: "Equipment, services, and vendors", icon: Store },
-  { label: "Journal", view: "journal", desc: "Educational content and research", icon: BookOpen },
-  { label: "About", view: "about", desc: "Mission and company", icon: Info },
+const PRIMARY_NAV: { label: string; view: ViewKey; icon: React.ElementType }[] = [
+  { label: "Patients", view: "patients", icon: Stethoscope },
+  { label: "Clinics", view: "clinics", icon: Briefcase },
+  { label: "Directory", view: "directory", icon: Building2 },
+  { label: "Workforce", view: "workforce", icon: Users },
+  { label: "Journal", view: "journal", icon: BookOpen },
 ];
 
-export function Header({ onGetStarted }: { onGetStarted: () => void }) {
+export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => void }) {
   const { view } = useNav();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -58,75 +27,41 @@ export function Header({ onGetStarted }: { onGetStarted: () => void }) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+        {/* LEFT: logo */}
         <button onClick={() => go("home")} className="flex items-center" aria-label="Novalyte AI home">
           <Logo />
         </button>
 
-        {/* Desktop nav */}
-        <div className="hidden items-center lg:flex">
-          <NavigationMenu viewport={false}>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent">Platform</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid w-[640px] gap-2 p-4 md:grid-cols-2">
-                    {PILLARS.map((p) => {
-                      const Icon = PILLAR_ICONS[p.icon] ?? Building2;
-                      return (
-                        <button
-                          key={p.key}
-                          onClick={() => go(p.view)}
-                          className="group flex w-full items-start gap-3 rounded-xl border border-transparent p-3 text-left transition hover:border-border hover:bg-muted/50"
-                        >
-                          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 ring-1 ring-teal-100">
-                            <Icon className="h-4.5 w-4.5" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
-                              {p.label}
-                              <ArrowRight className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
-                            </span>
-                            <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{p.description}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              {NAV_ITEMS.slice(3, 5).map((item) => (
-                <NavigationMenuItem key={item.view}>
+        {/* CENTER: primary nav */}
+        <nav className="mx-auto hidden lg:flex" aria-label="Primary">
+          <ul className="flex items-center gap-1">
+            {PRIMARY_NAV.map((item) => {
+              const isActive = view === item.view || (item.view === "directory" && view === "clinic-profile");
+              return (
+                <li key={item.view}>
                   <button
                     onClick={() => go(item.view)}
-                    className={navigationMenuTriggerStyle({ className: "bg-transparent" })}
+                    className={cn(
+                      "relative rounded-lg px-3.5 py-2 text-sm font-medium transition",
+                      isActive
+                        ? "text-teal-700"
+                        : "text-foreground/70 hover:text-foreground",
+                    )}
                   >
                     {item.label}
+                    {isActive && (
+                      <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-teal-600" aria-hidden />
+                    )}
                   </button>
-                </NavigationMenuItem>
-              ))}
-              <NavigationMenuItem>
-                <button
-                  onClick={() => go("journal")}
-                  className={navigationMenuTriggerStyle({ className: "bg-transparent" })}
-                >
-                  Journal
-                </button>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <button
-                  onClick={() => go("about")}
-                  className={navigationMenuTriggerStyle({ className: "bg-transparent" })}
-                >
-                  About
-                </button>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-        </div>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
-        <div className="flex items-center gap-2">
+        {/* RIGHT: Sign In + Marketplace */}
+        <div className="ml-auto flex items-center gap-2 lg:ml-0">
           <Button
             variant="ghost"
             size="sm"
@@ -135,11 +70,15 @@ export function Header({ onGetStarted }: { onGetStarted: () => void }) {
           >
             Sign In
           </Button>
-          <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
-            Get Started
+          <Button
+            size="sm"
+            className="bg-teal-600 text-white hover:bg-teal-700 shadow-sm"
+            onClick={() => go("marketplace")}
+          >
+            <Store className="mr-1.5 h-4 w-4" /> Marketplace
           </Button>
 
-          {/* Mobile menu */}
+          {/* Mobile menu trigger */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open menu">
@@ -154,29 +93,32 @@ export function Header({ onGetStarted }: { onGetStarted: () => void }) {
                   </div>
                 </SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 p-3">
-                {NAV_ITEMS.map((item) => {
+              <nav className="flex flex-col gap-1 p-3" aria-label="Mobile">
+                {PRIMARY_NAV.map((item) => {
                   const Icon = item.icon;
+                  const isActive = view === item.view;
                   return (
                     <button
                       key={item.view}
                       onClick={() => go(item.view)}
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-muted",
-                        view === item.view && "bg-teal-50 text-teal-700",
+                        isActive && "bg-teal-50 text-teal-700",
                       )}
                     >
                       <Icon className="h-4 w-4 text-teal-600" />
                       <span className="flex-1">{item.label}</span>
-                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                   );
                 })}
                 <div className="mt-3 flex flex-col gap-2 border-t pt-3">
-                  <Button variant="outline" onClick={() => go("about")}>Sign In</Button>
-                  <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => { setMobileOpen(false); onGetStarted(); }}>
-                    Get Started
+                  <Button
+                    className="bg-teal-600 text-white hover:bg-teal-700"
+                    onClick={() => go("marketplace")}
+                  >
+                    <Store className="mr-1.5 h-4 w-4" /> Marketplace
                   </Button>
+                  <Button variant="outline" onClick={() => go("about")}>Sign In</Button>
                 </div>
               </nav>
             </SheetContent>

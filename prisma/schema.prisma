@@ -208,7 +208,8 @@ model Article {
 // ───────────────────────────────────────────────────────────────
 model AssessmentSubmission {
   id               String   @id @default(cuid())
-  ageRange         String
+  treatmentType    String?
+  ageRange         String?
   locationState    String?
   zip              String?
   concerns         String?  // CSV
@@ -216,13 +217,29 @@ model AssessmentSubmission {
   treatmentInterest String?
   careFormat       String?  // in-person | telehealth | either
   telehealthPref   Boolean  @default(false)
+  timeline         String?
+  selfPayOpenness  String?
+  budgetRange      String?
+  firstName        String?
+  lastName         String?
+  email            String?
+  phone            String?
+  preferredContact String?
+  bestTime         String?
+  consentContact   Boolean  @default(false)
+  consentSms       Boolean  @default(false)
+  // Legacy compat fields
   contactName      String?
   contactEmail     String?
   consent          Boolean  @default(false)
+  internalStatus   String?  // consultation-ready | high-intent | researching | needs-follow-up | insurance-dependent | incomplete
   matchedClinicIds String?  // CSV of clinic ids suggested
+  sourcePage       String?
   createdAt        DateTime @default(now())
 
   @@index([createdAt])
+  @@index([treatmentType])
+  @@index([email])
 }
 
 model ConsultationRequest {
