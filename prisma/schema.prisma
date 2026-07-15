@@ -8,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -357,12 +356,60 @@ model ConsultationRequest {
 // Generic inbound / onboarding forms
 // ───────────────────────────────────────────────────────────────
 model ContactSubmission {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  role      String   // patient | clinic | professional | vendor | investor | other
-  message   String
-  createdAt DateTime @default(now())
+  id                     String   @id @default(cuid())
+  referenceNumber        String   @unique @map("reference_number")
+  senderType             String   @map("sender_type")
+  inquiryCategory        String   @map("inquiry_category")
+  firstName              String   @map("first_name")
+  lastName               String   @map("last_name")
+  email                  String
+  phone                  String?
+  organizationName       String?  @map("organization_name")
+  organizationWebsite    String?  @map("organization_website")
+  jobTitle               String?  @map("job_title")
+  city                   String?
+  state                  String?
+  preferredContactMethod String?  @map("preferred_contact_method")
+  hasExistingAccount     Boolean? @map("has_existing_account")
+  relevantUrl            String?  @map("relevant_url")
+  subject                String
+  message                String
+  routingTeam            String   @map("routing_team")
+  priority               String   @default("normal")
+  status                 String   @default("new")
+  sourcePage             String?  @map("source_page")
+  utmSource              String?  @map("utm_source")
+  utmMedium              String?  @map("utm_medium")
+  utmCampaign            String?  @map("utm_campaign")
+  userAgentSummary       String?  @map("user_agent_summary")
+  ipHash                 String?  @map("ip_hash")
+  consentVersion         String   @map("consent_version")
+  consentedAt            DateTime @map("consented_at")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  notifications          ContactNotificationDelivery[]
+
+  @@map("contact_submissions")
+}
+
+model ContactNotificationDelivery {
+  id                  String            @id @default(cuid())
+  contactSubmissionId String            @map("contact_submission_id")
+  contactSubmission   ContactSubmission @relation(fields: [contactSubmissionId], references: [id], onDelete: Cascade)
+  channel             String            // slack | internal_email | sender_confirmation_email
+  destination         String?
+  provider            String?
+  providerMessageId   String?           @map("provider_message_id")
+  status              String            // pending | processing | sent | failed | retry_scheduled | permanently_failed
+  attemptCount        Int               @default(0) @map("attempt_count")
+  lastError           String?           @map("last_error")
+  sentAt              DateTime?         @map("sent_at")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  @@map("contact_notification_deliveries")
+  @@index([contactSubmissionId])
 }
 
 model NewsletterSignup {

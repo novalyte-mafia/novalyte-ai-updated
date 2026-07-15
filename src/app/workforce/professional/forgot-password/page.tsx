@@ -22,7 +22,7 @@ export default function ProfessionalForgotPassword() {
 
     try {
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/workforce/professional/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       });
 
       if (error) {

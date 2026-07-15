@@ -27,6 +27,7 @@ export type ViewKey =
   | "journal-article"
   | "journal-category"
   | "about"
+  | "contact"
   | "privacy"
   | "terms"
   | "medical-disclaimer"
@@ -55,6 +56,12 @@ export function navigate(
   anchor?: string,
   params?: { id?: string; slug?: string; clinicId?: string },
 ) {
+  if (view === "contact") {
+    if (typeof window !== "undefined") {
+      window.location.href = "/contact";
+    }
+    return;
+  }
   if (view === "cookies") {
     view = "privacy";
     anchor = "cookies";

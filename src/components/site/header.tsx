@@ -16,7 +16,7 @@ const PRIMARY_NAV: { label: string; view: ViewKey; anchor?: string; icon: React.
   { label: "Workforce", view: "workforce", icon: Users },
   { label: "Journal", view: "journal", icon: BookOpen },
   { label: "About", view: "about", icon: Info },
-  { label: "Contact", view: "about", anchor: "contact", icon: MessageSquare },
+  { label: "Contact", view: "contact", icon: MessageSquare },
 ];
 
 export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => void }) {
@@ -44,9 +44,12 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
         <nav className="mx-auto hidden lg:flex" aria-label="Primary">
           <ul className="flex items-center gap-5 lg:gap-7">
             {PRIMARY_NAV.map((item) => {
-              const isActive = item.anchor
-                ? (view === item.view && anchor === item.anchor)
-                : (view === item.view && (!anchor || anchor !== "contact")) || (item.view === "directory" && view === "clinic-profile");
+              const isContactRoute = typeof window !== "undefined" && window.location.pathname === "/contact";
+              const isActive = item.view === "contact"
+                ? isContactRoute
+                : !isContactRoute && (item.anchor
+                  ? (view === item.view && anchor === item.anchor)
+                  : (view === item.view && (!anchor || anchor !== "contact")) || (item.view === "directory" && view === "clinic-profile"));
               return (
                 <li key={item.label}>
                   <button
@@ -119,9 +122,12 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
               <nav className="flex flex-col gap-1 p-3" aria-label="Mobile">
                 {PRIMARY_NAV.map((item) => {
                   const Icon = item.icon;
-                  const isActive = item.anchor
-                    ? (view === item.view && anchor === item.anchor)
-                    : (view === item.view && (!anchor || anchor !== "contact")) || (item.view === "directory" && view === "clinic-profile");
+                  const isContactRoute = typeof window !== "undefined" && window.location.pathname === "/contact";
+                  const isActive = item.view === "contact"
+                    ? isContactRoute
+                    : !isContactRoute && (item.anchor
+                      ? (view === item.view && anchor === item.anchor)
+                      : (view === item.view && (!anchor || anchor !== "contact")) || (item.view === "directory" && view === "clinic-profile"));
                   return (
                     <button
                       key={item.label}
