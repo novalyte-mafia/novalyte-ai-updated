@@ -12,7 +12,11 @@ import { PatientsView } from "@/components/views/patients-view";
 import { ClinicsView } from "@/components/views/clinics-view";
 import { DirectoryView } from "@/components/views/directory-view";
 import { ClinicProfileView } from "@/components/views/clinic-profile-view";
+import { ClinicDashboardView } from "@/components/views/clinic-dashboard-view";
+import { ProviderProfileView } from "@/components/views/provider-profile-view";
 import { WorkforceView } from "@/components/views/workforce-view";
+import { WorkforceDashboardView } from "@/components/views/workforce-dashboard-view";
+import { TalentProfileView } from "@/components/views/talent-profile-view";
 import { JobDetailView } from "@/components/views/job-detail-view";
 import { MarketplaceView } from "@/components/views/marketplace-view";
 import { ProductDetailView } from "@/components/views/product-detail-view";
@@ -79,7 +83,40 @@ export function AppShell({ data }: { data: PlatformData }) {
             allClinics={data.clinics}
           />
         )}
+        {view === "clinic-dashboard" && (
+          <ClinicDashboardView
+            clinic={data.clinics.find((c) => c.id === params?.id) ?? data.clinics[0]}
+            allClinics={data.clinics}
+          />
+        )}
+        {view === "provider-profile" && (() => {
+          let foundProvider = null;
+          let foundClinic = null;
+          for (const c of data.clinics) {
+            const p = c.providers?.find((prov) => prov.id === params?.id);
+            if (p) {
+              foundProvider = p;
+              foundClinic = c;
+              break;
+            }
+          }
+          return (
+            <ProviderProfileView
+              provider={foundProvider}
+              clinic={foundClinic}
+            />
+          );
+        })()}
         {view === "workforce" && <WorkforceView professionals={data.professionals} jobs={data.jobs} onGetStarted={() => setGetStartedOpen(true)} />}
+        {view === "workforce-dashboard" && (
+          <WorkforceDashboardView profileId={params?.id || ""} />
+        )}
+        {view === "workforce-talent" && (
+          <TalentProfileView
+            profileId={params?.id || ""}
+            onBack={() => navigate("workforce-dashboard", undefined, { id: params?.id })}
+          />
+        )}
         {view === "job-detail" && (
           <JobDetailView
             job={data.jobs.find((j) => j.id === params?.id) ?? data.jobs[0]}

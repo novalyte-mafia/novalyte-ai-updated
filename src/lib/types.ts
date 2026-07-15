@@ -1,5 +1,59 @@
 // Shared types for Novalyte AI views (serializable shapes from Prisma)
 
+export type ClinicLocationT = {
+  id: string;
+  clinicId: string;
+  name: string;
+  address: string;
+  phone: string | null;
+  hours: string | null;
+  parking: string | null;
+  transit: string | null;
+  accessibility: string | null;
+  onSiteLab: boolean;
+  phlebotomy: boolean;
+  earliestAppt: string | null;
+};
+
+export type ClinicProviderT = {
+  id: string;
+  clinicId: string;
+  name: string;
+  credentials: string;
+  role: string;
+  specialties: string | null;
+  yearsExperience: number;
+  bio: string | null;
+  languages: string | null;
+  telehealth: boolean;
+  avatarUrl: string | null;
+};
+
+export type ClinicTreatmentT = {
+  id: string;
+  clinicId: string;
+  name: string;
+  category: string;
+  description: string | null;
+  concerns: string | null;
+  priceRange: string | null;
+  labRequired: boolean;
+  consultRequired: boolean;
+  careFormat: string | null;
+};
+
+export type ClinicReviewT = {
+  id: string;
+  clinicId: string;
+  rating: number;
+  author: string;
+  content: string;
+  category: string | null;
+  verifiedPatient: boolean;
+  response: string | null;
+  createdAt: string;
+};
+
 export type ClinicT = {
   id: string;
   name: string;
@@ -21,6 +75,27 @@ export type ClinicT = {
   hours: string | null;
   verified: boolean;
   verificationStatus: string;
+
+  // New discovery & ownership fields
+  acceptingNewPatients: boolean;
+  claimStatus: string;
+  profileCompleteness: number;
+  initialConsultPrice: number | null;
+  membershipPrice: number | null;
+  insuranceAccepted: boolean;
+  hsaFsaAccepted: boolean;
+  earliestAvailability: string | null;
+  statesServed: string | null;
+  languages: string;
+  accessibility: string;
+  pricingStatus: string;
+  whatToExpect: string | null;
+
+  // Relational data arrays
+  locations: ClinicLocationT[];
+  providers: ClinicProviderT[];
+  treatments: ClinicTreatmentT[];
+  reviews: ClinicReviewT[];
 };
 
 export type ProfessionalT = {

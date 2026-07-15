@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { SmartImage } from "@/components/shared/smart-image";
@@ -93,13 +94,13 @@ export function PillarsSection() {
     acquisition: IMAGES.patients.consultation,
     directory: IMAGES.clinics.exterior[0],
     workforce: IMAGES.professionals[4],
-    marketplace: IMAGES.marketplace.general[0],
+    marketplace: IMAGES.marketplace.lab[0],
   };
   const pillarAlts: Record<string, string> = {
-    acquisition: "Male patient in a consultation with a healthcare provider",
-    directory: "Modern men's health clinic exterior",
-    workforce: "Healthcare professional in clinical setting",
-    marketplace: "Medical equipment and clinic supplies",
+    acquisition: "Adult male patient in healthcare consultation completing digital intake",
+    directory: "Modern men's health clinic reception and consultation environment",
+    workforce: "Healthcare professionals collaborating in a clinical setting",
+    marketplace: "Modern laboratory technology and clinical equipment",
   };
   return (
     <SectionShell id="pillars">
@@ -111,35 +112,60 @@ export function PillarsSection() {
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         {PILLARS.map((p) => {
           const Icon = PILLAR_ICONS[p.icon] ?? Building2;
+          const NUMBER_LABEL: Record<string, string> = {
+            acquisition: "01 — Patient Growth",
+            directory: "02 — Discovery",
+            workforce: "03 — Talent",
+            marketplace: "04 — Infrastructure",
+          };
           return (
             <div
               key={p.key}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-premium-sm transition hover:border-teal-300 hover:shadow-premium-lg"
+              onClick={() => navigate(p.view)}
+              className="group relative overflow-hidden rounded-2xl border border-neutral-800 bg-black min-h-[380px] flex flex-col justify-end cursor-pointer shadow-premium-sm transition duration-300 hover:border-teal-500/50 hover:shadow-premium-lg"
             >
-              {/* Pillar image */}
-              <div className="relative h-44 overflow-hidden">
+              {/* Pillar background image — explicit positioned wrapper so fill has a valid height */}
+              <div className="absolute inset-0 overflow-hidden">
                 <SmartImage
                   src={pillarImages[p.key] ?? IMAGES.hero.clinicScene}
-                  alt={pillarAlts[p.key] ?? "Men's health platform"}
+                  alt=""
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="transition duration-500 group-hover:scale-105"
-                  imgClassName="object-cover"
+                  className="transition duration-700 group-hover:scale-[1.04]"
+                  imgClassName="object-cover opacity-85"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" aria-hidden />
-                <div className="absolute bottom-3 left-5 flex h-11 w-11 items-center justify-center rounded-xl bg-teal-600 text-white shadow-premium-md">
-                  <Icon className="h-5 w-5" />
-                </div>
+                {/* Dark teal gradient overlay */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-[rgba(4,31,28,0.97)] via-[rgba(4,31,28,0.72)] to-[rgba(4,31,28,0.18)]"
+                  aria-hidden
+                />
               </div>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-foreground">{p.label}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.description}</p>
-                <button
-                  onClick={() => navigate(p.view)}
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-700 transition hover:gap-2.5"
-                >
-                  {p.cta} <ArrowRight className="h-4 w-4" />
-                </button>
+
+              {/* Text content sits above overlay */}
+              <div className="relative z-10 space-y-3 p-6">
+                {/* Category pill */}
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/25 text-teal-300">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="text-[11px] font-bold text-teal-300 tracking-widest uppercase">
+                    {NUMBER_LABEL[p.key]}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-white tracking-tight leading-snug">
+                  {p.label}
+                </h3>
+
+                <p className="text-sm leading-relaxed text-neutral-300 font-medium">
+                  {p.description}
+                </p>
+
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-300 transition-all group-hover:text-teal-200 group-hover:gap-2.5">
+                    {p.cta} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
               </div>
             </div>
           );

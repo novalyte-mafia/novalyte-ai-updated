@@ -767,10 +767,12 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
       if (!inCompRange(j.compMin, j.compMax, filters.compRange)) return false;
       // Category filter — match against treatmentSpecialties keywords
       if (filters.category !== "all") {
-        const cat = HEALTHCARE_CATEGORIES.find((c) => c.label === filters.category);
+        const cat = HEALTHCARE_CATEGORIES.find((c) => c.keyword === filters.category);
         if (cat) {
           const specs = (j.treatmentSpecialties ?? "").toLowerCase();
-          const hasMatch = cat.keywords.some((kw) => specs.includes(kw.toLowerCase()) || j.title.toLowerCase().includes(kw.toLowerCase()));
+          const hasMatch = specs.includes(cat.keyword.toLowerCase()) || 
+            j.title.toLowerCase().includes(cat.keyword.toLowerCase()) ||
+            cat.examples.some(ex => specs.includes(ex.toLowerCase()) || j.title.toLowerCase().includes(ex.toLowerCase()));
           if (!hasMatch) return false;
         }
       }
@@ -1143,8 +1145,8 @@ function JobFiltersContent({
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
             {HEALTHCARE_CATEGORIES.map((c) => (
-              <SelectItem key={c.label} value={c.label}>
-                {c.label}
+              <SelectItem key={c.keyword} value={c.keyword}>
+                {c.name}
               </SelectItem>
             ))}
           </SelectContent>

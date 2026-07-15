@@ -5,13 +5,6 @@ import { TREATMENT_VERTICALS } from "@/lib/constants";
 import { navigate } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import {
-  Search,
-  Brain,
-  MapPin,
-  ClipboardList,
-  Users,
-  Package,
-  TrendingUp,
   ArrowRight,
   Stethoscope,
   Briefcase,
@@ -19,16 +12,6 @@ import {
   Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const JOURNEY = [
-  { step: "01", title: "Patient discovers content or assessment", desc: "Educational content and an informational assessment capture intent.", icon: Search },
-  { step: "02", title: "Novalyte identifies a care pathway", desc: "Responses map to relevant treatment categories — not a diagnosis.", icon: Brain },
-  { step: "03", title: "Patient discovers an appropriate clinic", desc: "The directory surfaces verified clinics matching preferences.", icon: MapPin },
-  { step: "04", title: "Clinic receives structured intake", desc: "Intake information arrives organized, not as a raw lead.", icon: ClipboardList },
-  { step: "05", title: "Clinic hires talent through Workforce", desc: "Growth triggers demand for NPs, directors, and coordinators.", icon: Users },
-  { step: "06", title: "Clinic sources via Marketplace", desc: "Labs, supplies, software, and services in one place.", icon: Package },
-  { step: "07", title: "Clinic expands and serves more patients", desc: "Capacity grows — and the cycle repeats.", icon: TrendingUp },
-];
 
 const AUDIENCES = [
   { label: "I'm a Patient", desc: "Explore treatments, complete an assessment, and find a trusted clinic.", icon: Stethoscope, view: "patients" as const, color: "teal" },
@@ -43,43 +26,6 @@ const audienceColors: Record<string, { bg: string; ring: string; text: string; h
   sky: { bg: "bg-sky-50", ring: "ring-sky-100", text: "text-sky-700", hover: "group-hover:border-sky-300" },
   violet: { bg: "bg-violet-50", ring: "ring-violet-100", text: "text-violet-700", hover: "group-hover:border-violet-300" },
 };
-
-export function EcosystemJourney() {
-  return (
-    <SectionShell id="ecosystem" tone="tint">
-      <SectionHeading
-        eyebrow="The Connected Cycle"
-        title="Patient demand creates clinic growth. Clinic growth creates operational demand."
-        description="Novalyte AI connects the entire cycle — so growth compounds instead of stalling."
-      />
-      <div className="mt-12 grid gap-3 lg:grid-cols-7">
-        {JOURNEY.map((j, i) => {
-          const Icon = j.icon;
-          return (
-            <div key={j.step} className="relative">
-              <div className="h-full rounded-2xl border border-border bg-card p-5">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white">
-                    <Icon className="h-4.5 w-4.5" />
-                  </span>
-                  <span className="text-xs font-bold text-teal-600/70">{j.step}</span>
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-foreground">{j.title}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{j.desc}</p>
-              </div>
-              {i < JOURNEY.length - 1 && (
-                <ArrowRight className="absolute -right-2.5 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-teal-400 lg:block" />
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <p className="mt-8 rounded-xl border border-teal-200 bg-teal-50/50 p-5 text-center text-sm font-medium text-teal-800">
-        Patient demand creates clinic growth. Clinic growth creates workforce and operational demand. Novalyte AI connects the entire cycle.
-      </p>
-    </SectionShell>
-  );
-}
 
 export function TreatmentVerticals() {
   return (

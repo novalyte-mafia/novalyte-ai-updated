@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
 import { navigate } from "@/lib/nav";
 import { ArrowRight, Sparkles, Users, Building2, Store, Stethoscope, ShieldCheck } from "lucide-react";
@@ -25,7 +26,7 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
       {/* Grid texture */}
       <div className="novalyte-grid novalyte-radial-fade pointer-events-none absolute inset-0 opacity-60" aria-hidden />
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr]">
           {/* Copy */}
           <div>
@@ -80,13 +81,47 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
             </svg>
 
             {/* center hub */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-premium-xl">
-                <div className="novalyte-pulse-ring absolute inset-0 rounded-3xl bg-teal-400/40" />
-                <div className="relative text-center">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Novalyte</div>
-                  <div className="text-base font-bold">AI Core</div>
-                </div>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+              <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes hub-scale-pulse {
+                  0%, 100% { transform: scale(0.97); box-shadow: 0 0 10px rgba(20,184,166,0.18), 0 2px 16px rgba(20,184,166,0.10); }
+                  50%       { transform: scale(1.03); box-shadow: 0 0 28px rgba(20,184,166,0.45), 0 4px 24px rgba(20,184,166,0.22); }
+                }
+                @keyframes ring-out {
+                  0%   { transform: scale(1);   opacity: 0.55; }
+                  100% { transform: scale(1.65); opacity: 0; }
+                }
+                .hub-logo-card {
+                  animation: hub-scale-pulse 4s ease-in-out infinite;
+                  transform-origin: center;
+                }
+                .hub-ring-1 {
+                  animation: ring-out 4s cubic-bezier(0.16,1,0.3,1) infinite;
+                  transform-origin: center;
+                }
+                .hub-ring-2 {
+                  animation: ring-out 4s cubic-bezier(0.16,1,0.3,1) infinite;
+                  animation-delay: 2s;
+                  transform-origin: center;
+                }
+                @media (prefers-reduced-motion: reduce) {
+                  .hub-logo-card { animation: none; }
+                  .hub-ring-1, .hub-ring-2 { display: none; }
+                }
+              `}} />
+
+              {/* Outer expanding rings — centred via negative margin trick */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
+                <div className="hub-ring-1 h-24 w-52 rounded-3xl border border-teal-400/30" />
+              </div>
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
+                <div className="hub-ring-2 h-24 w-52 rounded-3xl border border-teal-400/15" />
+              </div>
+
+              {/* Main Hub Container */}
+              <div className="hub-logo-card relative flex h-[72px] w-48 items-center justify-center rounded-2xl border border-teal-500/30 bg-white/96 px-4 shadow-[0_4px_32px_rgba(20,184,166,0.18)] backdrop-blur-sm">
+                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50/50 to-emerald-50/25" aria-hidden />
+                <Logo size="default" showWord />
               </div>
             </div>
 

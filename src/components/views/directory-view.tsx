@@ -5,8 +5,9 @@ import { SectionShell } from "@/components/shared/section";
 import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
-  PremiumCard, MetaRow, StatCard, CardSkeleton, EmptyState,
+  PremiumCard, StatCard, CardSkeleton, EmptyState,
   FilterChip, ViewToggle, SaveButton, Breadcrumbs,
 } from "@/components/shared/enterprise";
 import { getClinicImage } from "@/lib/images";
@@ -26,28 +27,73 @@ import {
   Search, MapPin, Video, Building2, Phone, Star, ShieldCheck, Clock,
   ArrowRight, SlidersHorizontal, LayoutGrid, List, Map, X, Heart,
   GitCompare, Stethoscope, CheckCircle2, Navigation, Sparkles, ChevronRight,
+  DollarSign, Check, HelpCircle, ShieldAlert, Award, Languages, Accessibility,
 } from "lucide-react";
 
 const PAGE_SIZE = 6;
 
+// Maps patient-level symptoms / concerns to medical specialties
+function getSpecialtiesForConcern(query: string): string[] {
+  const q = query.toLowerCase();
+  const specs: string[] = [];
+  if (q.includes("energy") || q.includes("fatigue") || q.includes("brain fog") || q.includes("focus") || q.includes("tired") || q.includes("sleep")) {
+    specs.push("Hormone Optimization", "Testosterone Replacement Therapy", "TRT", "Hormone Evaluation");
+  }
+  if (q.includes("libido") || q.includes("sex") || q.includes("erectile") || q.includes("ed") || q.includes("pe") || q.includes("ejaculation") || q.includes("prostate")) {
+    specs.push("Erectile Dysfunction", "Sexual Wellness", "Erectile Dysfunction Care");
+  }
+  if (q.includes("weight") || q.includes("fat") || q.includes("glp") || q.includes("semaglutide") || q.includes("tirzepatide") || q.includes("diet") || q.includes("metabolic")) {
+    specs.push("Medical Weight Loss", "GLP-1 Programs");
+  }
+  if (q.includes("hair") || q.includes("bald") || q.includes("thinning")) {
+    specs.push("Hair Restoration");
+  }
+  if (q.includes("longevity") || q.includes("aging") || q.includes("healthspan") || q.includes("biomarker") || q.includes("peptide")) {
+    specs.push("Longevity Medicine", "Peptide Therapy");
+  }
+  if (q.includes("preventive") || q.includes("primary") || q.includes("checkup")) {
+    specs.push("Preventive Men's Health");
+  }
+  return specs;
+}
+
 export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
+  // Search state
   const [query, setQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+
+  // Filter state
   const [state, setState] = useState("all");
   const [city, setCity] = useState("all");
   const [treatment, setTreatment] = useState("all");
-  const [telehealthOnly, setTelehealthOnly] = useState(false);
+  
+  // Advanced filters
+  const [careFormat, setCareFormat] = useState("all"); // all | telehealth | in-person | hybrid
+  const [providerType, setProviderType] = useState("all"); // all | Physician | Nurse Practitioner | PA | etc
+  const [clinicType, setClinicType] = useState("all"); // all | independent | group | longevity
+  const [pricingStatus, setPricingStatus] = useState("all"); // all | published | partial | consult
+  const [insuranceAccepted, setInsuranceAccepted] = useState(false);
+  const [hsaFsaAccepted, setHsaFsaAccepted] = useState(false);
+  const [onSiteLab, setOnSiteLab] = useState(false);
+  const [acceptingNewPatients, setAcceptingNewPatients] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [inPersonOnly, setInPersonOnly] = useState(false);
+  const [claimedStatus, setClaimedStatus] = useState("all"); // all | claimed | unclaimed
+
+  // Toolbar & view state
   const [sortBy, setSortBy] = useState("relevance");
   const [view, setView] = useState("grid");
   const [page, setPage] = useState(1);
   const [loading, startTransition] = useTransition();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [guidedOpen, setGuidedOpen] = useState(false);
 
-  // Derived filter options
+  // Derived filter options from clinics
   const allTreatments = useMemo(() => {
     const set = new Set<string>();
-    clinics.forEach((c) => splitCsv(c.specialties).forEach((s) => set.add(s)));
+    clinics.forEach((c) => {
+      splitCsv(c.specialties).forEach((s) => set.add(s));
+      c.treatments?.forEach((t) => set.add(t.name));
+    });
     return Array.from(set).sort();
   }, [clinics]);
 
@@ -67,19 +113,88 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
     };
   }
 
+  // Filter application logic
   const filtered = useMemo(() => {
     let result = clinics.filter((c) => {
+      // 1. Search Field 1: Care
       if (query) {
         const q = query.toLowerCase();
-        const hay = `${c.name} ${c.city} ${c.state} ${c.overview} ${c.specialties} ${c.tagline ?? ""}`.toLowerCase();
-        if (!hay.includes(q)) return false;
+        const textMatch = `${c.name} ${c.city} ${c.state} ${c.overview} ${c.specialties} ${c.tagline ?? ""}`.toLowerCase().includes(q);
+        
+        // Match providers
+        const providerMatch = c.providers?.some((p) => p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) || p.credentials.toLowerCase().includes(q));
+        
+        // Match mapped specialties from patient concerns
+        const mappedSpecs = getSpecialtiesForConcern(q);
+        const specMatch = mappedSpecs.some((spec) => 
+          splitCsv(c.specialties).some((s) => s.toLowerCase().includes(spec.toLowerCase()))
+        );
+
+        if (!textMatch && !providerMatch && !specMatch) return false;
       }
+
+      // 2. Search Field 2: Location
+      if (locationQuery) {
+        const loc = locationQuery.toLowerCase();
+        if (loc === "telehealth" || loc === "remote") {
+          if (!c.telehealth) return false;
+        } else {
+          const stateMatch = c.state.toLowerCase() === loc;
+          const cityMatch = c.city.toLowerCase().includes(loc);
+          const zipMatch = c.zip.includes(loc);
+          const serviceMatch = c.serviceArea?.toLowerCase().includes(loc);
+          if (!stateMatch && !cityMatch && !zipMatch && !serviceMatch) return false;
+        }
+      }
+
+      // 3. Location dropdown filters
       if (state !== "all" && c.state !== state) return false;
       if (city !== "all" && c.city !== city) return false;
-      if (treatment !== "all" && !splitCsv(c.specialties).includes(treatment)) return false;
-      if (telehealthOnly && !c.telehealth) return false;
-      if (inPersonOnly && c.telehealth && splitCsv(c.capabilities).length === 0) return false;
+
+      // 4. Treatment specialty dropdown
+      if (treatment !== "all") {
+        const clinicSpecs = splitCsv(c.specialties);
+        const hasSpec = clinicSpecs.some((s) => s.toLowerCase() === treatment.toLowerCase()) || 
+                        c.treatments?.some((t) => t.name.toLowerCase() === treatment.toLowerCase());
+        if (!hasSpec) return false;
+      }
+
+      // 5. Care format
+      if (careFormat === "telehealth" && !c.telehealth) return false;
+      if (careFormat === "in-person" && c.telehealth && !c.locations?.length) return false; // purely telehealth
+      if (careFormat === "hybrid" && (!c.telehealth || !c.locations?.length)) return false;
+
+      // 6. Provider Type
+      if (providerType !== "all" && !splitCsv(c.providerTypes).some((p) => p.toLowerCase().includes(providerType.toLowerCase()))) return false;
+
+      // 7. Clinic Type
+      if (clinicType !== "all") {
+        const typeStr = c.overview.toLowerCase() + " " + c.name.toLowerCase();
+        if (clinicType === "longevity" && !typeStr.includes("longevity")) return false;
+        if (clinicType === "weight" && !typeStr.includes("weight") && !typeStr.includes("metabolic")) return false;
+        if (clinicType === "telehealth-provider" && !c.telehealth) return false;
+        if (clinicType === "independent" && typeStr.includes("hospital") || typeStr.includes("collective group")) return false;
+      }
+
+      // 8. Pricing status
+      if (pricingStatus !== "all" && c.pricingStatus !== pricingStatus) return false;
+
+      // 9. Payment variables
+      if (insuranceAccepted && !c.insuranceAccepted) return false;
+      if (hsaFsaAccepted && !c.hsaFsaAccepted) return false;
+
+      // 10. Capabilities
+      if (onSiteLab) {
+        const hasOnsiteLab = splitCsv(c.capabilities).some((cap) => cap.toLowerCase().includes("lab") || cap.toLowerCase().includes("phlebotomy")) || 
+                             c.locations?.some((l) => l.onSiteLab || l.phlebotomy);
+        if (!hasOnsiteLab) return false;
+      }
+
+      // 11. Availability & claim status
+      if (acceptingNewPatients && !c.acceptingNewPatients) return false;
       if (verifiedOnly && !c.verified) return false;
+      if (claimedStatus !== "all" && c.claimStatus !== claimedStatus) return false;
+
       return true;
     });
 
@@ -90,46 +205,71 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       result = [...result].sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === "telehealth") {
       result = [...result].sort((a, b) => Number(b.telehealth) - Number(a.telehealth));
+    } else if (sortBy === "accepting") {
+      result = [...result].sort((a, b) => Number(b.acceptingNewPatients) - Number(a.acceptingNewPatients));
+    } else if (sortBy === "completeness") {
+      result = [...result].sort((a, b) => b.profileCompleteness - a.profileCompleteness);
+    } else if (sortBy === "pricing") {
+      result = [...result].sort((a, b) => {
+        const aHasPrice = a.initialConsultPrice !== null ? 1 : 0;
+        const bHasPrice = b.initialConsultPrice !== null ? 1 : 0;
+        return bHasPrice - aHasPrice; // Price published first
+      });
     }
-    // relevance = default order
     return result;
-  }, [clinics, query, state, city, treatment, telehealthOnly, verifiedOnly, inPersonOnly, sortBy]);
+  }, [clinics, query, locationQuery, state, city, treatment, careFormat, providerType, clinicType, pricingStatus, insuranceAccepted, hsaFsaAccepted, onSiteLab, acceptingNewPatients, verifiedOnly, claimedStatus, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Active filter chips
   const activeFilters: { label: string; clear: () => void }[] = [];
-  if (query) activeFilters.push({ label: `"${query}"`, clear: () => setQuery("") });
+  if (query) activeFilters.push({ label: `Care: "${query}"`, clear: () => setQuery("") });
+  if (locationQuery) activeFilters.push({ label: `Where: "${locationQuery}"`, clear: () => setLocationQuery("") });
   if (state !== "all") activeFilters.push({ label: `State: ${state}`, clear: () => setState("all") });
   if (city !== "all") activeFilters.push({ label: `City: ${city}`, clear: () => setCity("all") });
   if (treatment !== "all") activeFilters.push({ label: treatment, clear: () => setTreatment("all") });
-  if (telehealthOnly) activeFilters.push({ label: "Telehealth", clear: () => setTelehealthOnly(false) });
-  if (inPersonOnly) activeFilters.push({ label: "In-person", clear: () => setInPersonOnly(false) });
+  if (careFormat !== "all") activeFilters.push({ label: `Format: ${careFormat}`, clear: () => setCareFormat("all") });
+  if (providerType !== "all") activeFilters.push({ label: `Provider: ${providerType}`, clear: () => setProviderType("all") });
+  if (clinicType !== "all") activeFilters.push({ label: `Type: ${clinicType}`, clear: () => setClinicType("all") });
+  if (pricingStatus !== "all") activeFilters.push({ label: `Pricing: ${pricingStatus}`, clear: () => setPricingStatus("all") });
+  if (insuranceAccepted) activeFilters.push({ label: "Accepts Insurance", clear: () => setInsuranceAccepted(false) });
+  if (hsaFsaAccepted) activeFilters.push({ label: "Accepts HSA/FSA", clear: () => setHsaFsaAccepted(false) });
+  if (onSiteLab) activeFilters.push({ label: "On-site Lab/Phlebotomy", clear: () => setOnSiteLab(false) });
+  if (acceptingNewPatients) activeFilters.push({ label: "Accepting Patients", clear: () => setAcceptingNewPatients(false) });
   if (verifiedOnly) activeFilters.push({ label: "Verified only", clear: () => setVerifiedOnly(false) });
+  if (claimedStatus !== "all") activeFilters.push({ label: `Profile: ${claimedStatus}`, clear: () => setClaimedStatus("all") });
 
   function resetFilters() {
     startTransition(() => {
-      setQuery(""); setState("all"); setCity("all"); setTreatment("all");
-      setTelehealthOnly(false); setVerifiedOnly(false); setInPersonOnly(false); setSortBy("relevance");
-      setPage(1);
+      setQuery(""); setLocationQuery(""); setState("all"); setCity("all"); setTreatment("all");
+      setCareFormat("all"); setProviderType("all"); setClinicType("all"); setPricingStatus("all");
+      setInsuranceAccepted(false); setHsaFsaAccepted(false); setOnSiteLab(false);
+      setAcceptingNewPatients(false); setVerifiedOnly(false); setClaimedStatus("all");
+      setSortBy("relevance"); setPage(1);
     });
   }
 
-  // Stats for the directory header strip
+  // Quick statistics
   const verifiedCount = clinics.filter((c) => c.verified).length;
   const telehealthCount = clinics.filter((c) => c.telehealth).length;
   const stateCount = new Set(clinics.map((c) => c.state)).size;
 
   const filterContent = (
     <FiltersPanel
-      query={query} setQuery={updateFilter(setQuery)}
       state={state} setState={updateFilter(setState)}
       city={city} setCity={updateFilter(setCity)}
       treatment={treatment} setTreatment={updateFilter(setTreatment)}
-      telehealthOnly={telehealthOnly} setTelehealthOnly={updateFilter(setTelehealthOnly)}
+      careFormat={careFormat} setCareFormat={updateFilter(setCareFormat)}
+      providerType={providerType} setProviderType={updateFilter(setProviderType)}
+      clinicType={clinicType} setClinicType={updateFilter(setClinicType)}
+      pricingStatus={pricingStatus} setPricingStatus={updateFilter(setPricingStatus)}
+      insuranceAccepted={insuranceAccepted} setInsuranceAccepted={updateFilter(setInsuranceAccepted)}
+      hsaFsaAccepted={hsaFsaAccepted} setHsaFsaAccepted={updateFilter(setHsaFsaAccepted)}
+      onSiteLab={onSiteLab} setOnSiteLab={updateFilter(setOnSiteLab)}
+      acceptingNewPatients={acceptingNewPatients} setAcceptingNewPatients={updateFilter(setAcceptingNewPatients)}
       verifiedOnly={verifiedOnly} setVerifiedOnly={updateFilter(setVerifiedOnly)}
-      inPersonOnly={inPersonOnly} setInPersonOnly={updateFilter(setInPersonOnly)}
+      claimedStatus={claimedStatus} setClaimedStatus={updateFilter(setClaimedStatus)}
       allTreatments={allTreatments}
       allCities={allCities}
       onReset={resetFilters}
@@ -139,74 +279,141 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   return (
     <>
       {/* Hero */}
-      <section className="border-b border-border bg-gradient-to-b from-teal-50/50 to-background">
-        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <section className="border-b border-border bg-gradient-to-b from-teal-50/50 via-background to-background relative overflow-hidden">
+        <div className="absolute inset-0 novalyte-grid opacity-[0.03]" />
+        <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 relative">
           <Breadcrumbs items={[{ label: "Home", onClick: () => navigate("home") }, { label: "Clinic Directory" }]} />
-          <div className="mt-5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 px-3 py-1 text-xs font-semibold text-teal-700 backdrop-blur">
-              <Building2 className="h-3.5 w-3.5" /> Verified Clinic Directory
+          
+          <div className="mt-6 max-w-4xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50/70 px-3 py-1 text-xs font-semibold text-teal-800 backdrop-blur">
+              <Building2 className="h-3.5 w-3.5 text-teal-600" /> Discover Trusted Men's Health Care
             </div>
-            <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Find a trusted men's health clinic
+            
+            <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+              Find the Right Men’s Health Clinic for Your Needs
             </h1>
-            <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Search verified clinics by location, treatment specialty, telehealth availability, and clinic capabilities. Every clinic's verification status is shown clearly.
+            <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg max-w-3xl">
+              Search and compare men’s health clinics by treatment, location, telehealth availability, provider expertise, pricing information, and clinic capabilities.
             </p>
           </div>
 
-          {/* Quick stats strip */}
-          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Clinics" value={clinics.length} sub="In directory" icon={Building2} tone="teal" />
-            <StatCard label="Verified" value={verifiedCount} sub="Review completed" icon={ShieldCheck} tone="emerald" />
-            <StatCard label="Telehealth" value={telehealthCount} sub="Remote care" icon={Video} tone="teal" />
-            <StatCard label="States" value={stateCount} sub="Geographic reach" icon={MapPin} tone="emerald" />
-          </div>
-
-          {/* Big search bar */}
-          <div className="mt-7 flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-premium-sm sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by clinic name, city, or treatment..."
-                value={query}
-                onChange={(e) => updateFilter(setQuery)(e.target.value)}
-                className="border-0 pl-9 shadow-none focus-visible:ring-0"
-                aria-label="Search clinics"
-              />
+          {/* Dual Field Search Experience */}
+          <div className="mt-8 grid gap-4 p-4 rounded-2xl border border-border bg-card shadow-premium-md md:grid-cols-[1fr_1fr_auto] md:items-center">
+            {/* Field 1: What Care */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="search-care" className="text-xs font-medium text-foreground/80">What care are you looking for?</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="search-care"
+                  placeholder="TRT, low energy, ED care, weight loss..."
+                  value={query}
+                  onChange={(e) => updateFilter(setQuery)(e.target.value)}
+                  className="border-0 pl-10 bg-muted/30 focus-visible:ring-1 focus-visible:ring-teal-600 focus-visible:bg-card transition"
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={state} onValueChange={updateFilter(setState)}>
-                <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="State" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All states</SelectItem>
-                  {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                className="lg:hidden"
-                onClick={() => setMobileFiltersOpen(true)}
+
+            {/* Field 2: Where */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="search-location" className="text-xs font-medium text-foreground/80">Where?</Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="search-location"
+                  placeholder="City, state, ZIP code, or telehealth"
+                  value={locationQuery}
+                  onChange={(e) => updateFilter(setLocationQuery)(e.target.value)}
+                  className="border-0 pl-10 bg-muted/30 focus-visible:ring-1 focus-visible:ring-teal-600 focus-visible:bg-card transition"
+                />
+              </div>
+            </div>
+
+            {/* Actions Block */}
+            <div className="flex flex-col gap-2 pt-2 md:pt-5 md:flex-row">
+              <Button 
+                onClick={() => setPage(1)} 
+                className="bg-teal-600 hover:bg-teal-700 text-white shadow-premium-sm font-semibold h-10 px-5"
               >
-                <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Filters
-                {activeFilters.length > 0 && (
-                  <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">{activeFilters.length}</span>
-                )}
+                Search Clinics
               </Button>
             </div>
+          </div>
+
+          {/* Supporting Actions */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-teal-700">
+            <button
+              onClick={() => {
+                setLocationQuery("Denver, CO");
+                setPage(1);
+              }}
+              className="hover:text-teal-950 transition flex items-center gap-1"
+            >
+              <Navigation className="h-3.5 w-3.5" /> Use My Location
+            </button>
+            <span className="text-muted-foreground/30 hidden sm:inline">|</span>
+            <button
+              onClick={resetFilters}
+              className="hover:text-teal-950 transition flex items-center gap-1"
+            >
+              <Building2 className="h-3.5 w-3.5" /> View All Clinics
+            </button>
+            <span className="text-muted-foreground/30 hidden sm:inline">|</span>
+            <button
+              onClick={() => navigate("assessment")}
+              className="hover:text-teal-950 transition flex items-center gap-1"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Complete the Patient Assessment
+            </button>
+          </div>
+
+          {/* Quick-Search Chips */}
+          <div className="mt-6 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground mr-1">Quick searches:</span>
+            {[
+              { label: "Testosterone Therapy", search: "TRT" },
+              { label: "Erectile Dysfunction", search: "ED care" },
+              { label: "Medical Weight Loss", search: "weight loss" },
+              { label: "Hair Restoration", search: "hair restoration" },
+              { label: "Sexual Wellness", search: "sexual wellness" },
+              { label: "Longevity", search: "longevity" },
+              { label: "Preventive Care", search: "preventive" },
+              { label: "Telehealth", locSearch: "telehealth" },
+            ].map((chip) => (
+              <button
+                key={chip.label}
+                onClick={() => {
+                  if (chip.search) setQuery(chip.search);
+                  if (chip.locSearch) setLocationQuery(chip.locSearch);
+                  setPage(1);
+                }}
+                className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-teal-300 hover:bg-teal-50/50 hover:text-teal-700 transition"
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Directory Stats Strip */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Clinics Listed" value={clinics.length} sub="Men's health directory" icon={Building2} tone="teal" />
+            <StatCard label="Verified Clinics" value={verifiedCount} sub="Rigorous review complete" icon={ShieldCheck} tone="emerald" />
+            <StatCard label="Telehealth Providers" value={telehealthCount} sub="Remote consultations" icon={Video} tone="teal" />
+            <StatCard label="States Active" value={stateCount} sub="Geographic coverage" icon={MapPin} tone="emerald" />
           </div>
         </div>
       </section>
 
-      <SectionShell className="!pt-8 !pb-16">
+      <SectionShell className="!pt-8 !pb-16 bg-muted/10">
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          {/* Desktop filter sidebar */}
+          {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block">
             <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto novalyte-scroll pr-1">
               {filterContent}
             </div>
           </aside>
 
-          {/* Mobile filter sheet */}
+          {/* Mobile Filter Sheet */}
           <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
             <SheetContent side="left" className="w-full max-w-xs overflow-y-auto p-0">
               <SheetHeader className="border-b px-5 py-4">
@@ -216,22 +423,25 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             </SheetContent>
           </Sheet>
 
-          {/* Results column */}
+          {/* Results Column */}
           <div className="min-w-0">
-            {/* Results header */}
+            {/* Results Header Toolbar */}
             <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-semibold text-foreground">{filtered.length}</span>
-                <span className="text-muted-foreground">of {clinics.length} clinics</span>
+                <span className="text-muted-foreground">matching clinic{filtered.length !== 1 ? "s" : ""} found</span>
                 {loading && <span className="ml-1 text-xs text-teal-600">· updating…</span>}
               </div>
               <div className="flex items-center gap-2">
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8.5 w-[160px] text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="relevance">Most relevant</SelectItem>
                     <SelectItem value="verified">Verified first</SelectItem>
                     <SelectItem value="telehealth">Telehealth first</SelectItem>
+                    <SelectItem value="accepting">Accepting new patients</SelectItem>
+                    <SelectItem value="completeness">Most complete profile</SelectItem>
+                    <SelectItem value="pricing">Pricing published first</SelectItem>
                     <SelectItem value="az">A–Z</SelectItem>
                   </SelectContent>
                 </Select>
@@ -247,28 +457,43 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               </div>
             </div>
 
-            {/* Active filter chips */}
+            {/* Active Filter Chips */}
             {activeFilters.length > 0 && (
               <div className="mb-4 flex flex-wrap items-center gap-1.5">
                 {activeFilters.map((f, i) => (
                   <FilterChip key={i} label={f.label} onRemove={f.clear} />
                 ))}
-                <button onClick={resetFilters} className="ml-1 text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-                  Clear all
+                <button onClick={resetFilters} className="ml-1 text-xs font-semibold text-teal-700 hover:text-teal-800 underline underline-offset-2">
+                  Clear all filters
                 </button>
               </div>
             )}
 
-            {/* Results */}
+            {/* Guided Discovery Pathway Banner */}
+            <div className="mb-6 flex flex-col items-start gap-4 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50/80 to-transparent p-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-teal-900 flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-teal-600 animate-pulse" /> Unsure what care fits your goals?</h3>
+                <p className="mt-1 text-xs text-teal-800/80">Use our guided clinic discovery assistant to narrow results based on concerns, care models, and coverage preferences.</p>
+              </div>
+              <Button 
+                onClick={() => setGuidedOpen(true)}
+                size="sm"
+                className="bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1.5 shrink-0"
+              >
+                Help Me Find the Right Clinic <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            {/* Results Grid/List/Map */}
             {loading ? (
               <div className={cn("grid gap-4", view === "list" ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
-                {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
+                {Array.from({ length: PAGE_SIZE }).map((_, i) => <CardSkeleton key={i} />)}
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState
                 icon={Search}
-                title="No clinics match your filters"
-                description="Try widening your search area, removing a treatment filter, or clearing all filters to see more clinics."
+                title="No clinics match your criteria"
+                description="Try broadening your search query, selecting different states, or adjusting advanced filters."
                 action={<Button variant="outline" size="sm" onClick={resetFilters}><X className="mr-1.5 h-3.5 w-3.5" /> Clear all filters</Button>}
               />
             ) : view === "map" ? (
@@ -304,48 +529,103 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               </div>
             )}
 
-            <DisclaimerBanner className="mt-8" tone="teal">
-              Verification indicates that Novalyte AI has reviewed submitted business and provider information. It does not constitute endorsement or a guarantee of clinical outcomes. Licensure and credential information should be independently confirmed where appropriate.
+            {/* Claim Profile Banner Callout */}
+            <div className="mt-8 p-5 border border-dashed border-teal-200 bg-teal-50/30 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Award className="h-6 w-6 text-teal-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-teal-900">Are you a Men's Health Clinic Owner?</h4>
+                  <p className="mt-1 text-xs text-teal-800/80">Claim your directory listing to verify credentials, add provider profiles, publish custom treatments/pricing, and directly receive client consultation requests.</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-teal-600 text-teal-700 hover:bg-teal-50 font-semibold"
+                onClick={() => navigate("clinics")}
+              >
+                Claim or Register Clinic <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Bottom Trusted Disclaimer */}
+            <DisclaimerBanner className="mt-6 font-medium text-xs leading-normal" tone="teal">
+              Novalyte AI is a healthcare technology facilitator and does not provide clinical care, diagnoses, or treatments. Directory listings, verification states, and profile completeness do not constitute medical endorsement, clinical accreditations, or outcome guarantees. Always confirm local clinician licensing, diagnostic procedures, and complete pricing directly with the clinic during consultation.
             </DisclaimerBanner>
           </div>
         </div>
       </SectionShell>
+
+      {/* Guided Discovery Wizard */}
+      <GuidedDiscoveryWizard
+        open={guidedOpen}
+        onOpenChange={setGuidedOpen}
+        onComplete={(filters) => {
+          startTransition(() => {
+            if (filters.state) setState(filters.state);
+            if (filters.treatment && filters.treatment !== "all") setTreatment(filters.treatment);
+            if (filters.careFormat) setCareFormat(filters.careFormat);
+            if (filters.pricingModel) {
+              if (filters.pricingModel === "insurance") setInsuranceAccepted(true);
+            }
+            setPage(1);
+          });
+        }}
+      />
     </>
   );
 }
 
-/* ── Filters panel ───────────────────────────────────────────── */
+/* ── Filters Panel Component ────────────────────────────────── */
 function FiltersPanel({
-  query, setQuery, state, setState, city, setCity, treatment, setTreatment,
-  telehealthOnly, setTelehealthOnly, verifiedOnly, setVerifiedOnly,
-  inPersonOnly, setInPersonOnly, allTreatments, allCities, onReset,
+  state, setState, city, setCity, treatment, setTreatment,
+  careFormat, setCareFormat, providerType, setProviderType,
+  clinicType, setClinicType, pricingStatus, setPricingStatus,
+  insuranceAccepted, setInsuranceAccepted, hsaFsaAccepted, setHsaFsaAccepted,
+  onSiteLab, setOnSiteLab, acceptingNewPatients, setAcceptingNewPatients,
+  verifiedOnly, setVerifiedOnly, claimedStatus, setClaimedStatus,
+  allTreatments, allCities, onReset,
 }: {
-  query: string; setQuery: (v: string) => void;
   state: string; setState: (v: string) => void;
   city: string; setCity: (v: string) => void;
   treatment: string; setTreatment: (v: string) => void;
-  telehealthOnly: boolean; setTelehealthOnly: (v: boolean) => void;
+  careFormat: string; setCareFormat: (v: string) => void;
+  providerType: string; setProviderType: (v: string) => void;
+  clinicType: string; setClinicType: (v: string) => void;
+  pricingStatus: string; setPricingStatus: (v: string) => void;
+  insuranceAccepted: boolean; setInsuranceAccepted: (v: boolean) => void;
+  hsaFsaAccepted: boolean; setHsaFsaAccepted: (v: boolean) => void;
+  onSiteLab: boolean; setOnSiteLab: (v: boolean) => void;
+  acceptingNewPatients: boolean; setAcceptingNewPatients: (v: boolean) => void;
   verifiedOnly: boolean; setVerifiedOnly: (v: boolean) => void;
-  inPersonOnly: boolean; setInPersonOnly: (v: boolean) => void;
+  claimedStatus: string; setClaimedStatus: (v: string) => void;
   allTreatments: string[]; allCities: string[];
   onReset: () => void;
 }) {
+  const [filterSearch, setFilterSearch] = useState("");
+
+  const filteredTreatments = useMemo(() => {
+    if (!filterSearch) return allTreatments;
+    return allTreatments.filter((t) => t.toLowerCase().includes(filterSearch.toLowerCase()));
+  }, [allTreatments, filterSearch]);
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-premium-sm">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-premium-sm space-y-5">
+      <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <SlidersHorizontal className="h-4 w-4 text-teal-600" /> Filters
+          <SlidersHorizontal className="h-4 w-4 text-teal-600" /> Advanced Filters
         </h3>
-        <button onClick={onReset} className="text-xs font-medium text-muted-foreground hover:text-foreground">
-          Reset
+        <button onClick={onReset} className="text-xs font-semibold text-muted-foreground hover:text-foreground">
+          Clear All
         </button>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
+        {/* State */}
         <div className="grid gap-1.5">
-          <Label className="text-xs font-medium">State</Label>
+          <Label className="text-xs font-semibold text-foreground/80">State Coverage</Label>
           <Select value={state} onValueChange={setState}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="All states" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="All states" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All states</SelectItem>
               {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -353,10 +633,11 @@ function FiltersPanel({
           </Select>
         </div>
 
+        {/* City */}
         <div className="grid gap-1.5">
-          <Label className="text-xs font-medium">City</Label>
+          <Label className="text-xs font-semibold text-foreground/80">City</Label>
           <Select value={city} onValueChange={setCity}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="All cities" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="All cities" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All cities</SelectItem>
               {allCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -364,63 +645,198 @@ function FiltersPanel({
           </Select>
         </div>
 
+        <Separator />
+
+        {/* Treatment Specialty Searchable */}
         <div className="grid gap-1.5">
-          <Label className="text-xs font-medium">Treatment specialty</Label>
+          <Label className="text-xs font-semibold text-foreground/80">Treatment specialty</Label>
+          <div className="relative mb-1">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              placeholder="Search treatments..." 
+              value={filterSearch} 
+              onChange={(e) => setFilterSearch(e.target.value)}
+              className="h-8 pl-8 text-xs bg-muted/20 border-0"
+            />
+          </div>
           <Select value={treatment} onValueChange={setTreatment}>
-            <SelectTrigger className="h-9"><SelectValue placeholder="All treatments" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select specialty" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All treatments</SelectItem>
-              {allTreatments.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              {filteredTreatments.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         <Separator />
 
+        {/* Care Format */}
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold text-foreground/80">Care Format</Label>
+          <Select value={careFormat} onValueChange={setCareFormat}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Formats</SelectItem>
+              <SelectItem value="telehealth">Telehealth Only</SelectItem>
+              <SelectItem value="in-person">In-Person Only</SelectItem>
+              <SelectItem value="hybrid">Hybrid (Both)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Provider Type */}
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold text-foreground/80">Provider Type</Label>
+          <Select value={providerType} onValueChange={setProviderType}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="Physician">Physician / MD / DO</SelectItem>
+              <SelectItem value="Nurse Practitioner">Nurse Practitioner (NP)</SelectItem>
+              <SelectItem value="Physician Assistant">Physician Assistant (PA)</SelectItem>
+              <SelectItem value="Registered Nurse">Registered Nurse (RN)</SelectItem>
+              <SelectItem value="Medical Director">Medical Director</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clinic Model Type */}
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold text-foreground/80">Clinic Type</Label>
+          <Select value={clinicType} onValueChange={setClinicType}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Models</SelectItem>
+              <SelectItem value="longevity">Longevity Clinic</SelectItem>
+              <SelectItem value="weight">Medical Weight Loss</SelectItem>
+              <SelectItem value="telehealth-provider">Purely Telehealth</SelectItem>
+              <SelectItem value="independent">Independent Practice</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Separator />
+
+        {/* Pricing Status & Payment Mode */}
         <div className="space-y-3">
-          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Care format</Label>
-          <label className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2 text-foreground/80"><Video className="h-4 w-4 text-teal-600" /> Telehealth available</span>
-            <Switch checked={telehealthOnly} onCheckedChange={setTelehealthOnly} />
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pricing & Insurance</Label>
+          
+          <div className="grid gap-1.5">
+            <Select value={pricingStatus} onValueChange={setPricingStatus}>
+              <SelectTrigger className="h-8.5 text-xs"><SelectValue placeholder="Pricing transparency" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any Pricing Status</SelectItem>
+                <SelectItem value="Full Pricing Published">Full Pricing Published</SelectItem>
+                <SelectItem value="Partial Pricing Published">Partial Pricing</SelectItem>
+                <SelectItem value="Consultation Pricing Available">Consultation Pricing</SelectItem>
+                <SelectItem value="Contact Clinic for Pricing">Contact Clinic</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-teal-600" /> Accepts Insurance</span>
+            <Switch checked={insuranceAccepted} onCheckedChange={setInsuranceAccepted} className="scale-75" />
           </label>
-          <label className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2 text-foreground/80"><Building2 className="h-4 w-4 text-emerald-600" /> In-person care</span>
-            <Switch checked={inPersonOnly} onCheckedChange={setInPersonOnly} />
+
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-teal-600" /> Accepts HSA / FSA</span>
+            <Switch checked={hsaFsaAccepted} onCheckedChange={setHsaFsaAccepted} className="scale-75" />
           </label>
         </div>
 
         <Separator />
 
+        {/* Capabilities & Verification */}
         <div className="space-y-3">
-          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Trust & status</Label>
-          <label className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-2 text-foreground/80"><ShieldCheck className="h-4 w-4 text-teal-600" /> Verified only</span>
-            <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Capabilities & Status</Label>
+          
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span className="flex items-center gap-1.5"><Stethoscope className="h-3.5 w-3.5 text-teal-600" /> On-site Lab / Phlebotomy</span>
+            <Switch checked={onSiteLab} onCheckedChange={setOnSiteLab} className="scale-75" />
           </label>
+
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-teal-600" /> Accepting New Patients</span>
+            <Switch checked={acceptingNewPatients} onCheckedChange={setAcceptingNewPatients} className="scale-75" />
+          </label>
+
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Verified Only</span>
+            <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} className="scale-75" />
+          </label>
+
+          <div className="grid gap-1.5 pt-1">
+            <Label className="text-[10px] text-muted-foreground uppercase">Claim Status</Label>
+            <Select value={claimedStatus} onValueChange={setClaimedStatus}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clinics</SelectItem>
+                <SelectItem value="claimed">Claimed Profile</SelectItem>
+                <SelectItem value="unclaimed">Unclaimed Profile</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Clinic card (grid + list variants) ──────────────────────── */
+/* ── Clinic Card Component ──────────────────────────────────── */
 function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
   const saved = useSaved((s) => s.has("clinic", clinic.id));
   const toggleSave = useSaved((s) => s.toggle);
   const compareHas = useCompare((s) => s.has("clinic", clinic.id));
   const compareToggle = useCompare((s) => s.toggle);
   const c = colorClasses(clinic.logoColor);
-  const specs = splitCsv(clinic.specialties).slice(0, 4);
-  const caps = splitCsv(clinic.capabilities);
-  const providers = splitCsv(clinic.providerTypes);
+  
+  const specs = useMemo(() => splitCsv(clinic.specialties).slice(0, 4), [clinic.specialties]);
+  const caps = useMemo(() => splitCsv(clinic.capabilities), [clinic.capabilities]);
+  const providers = useMemo(() => splitCsv(clinic.providerTypes), [clinic.providerTypes]);
 
   const open = () => navigate("clinic-profile", undefined, { id: clinic.id });
 
+  // Render claimed vs unclaimed tags
+  const renderClaimBadge = () => {
+    if (clinic.claimStatus === "claimed") {
+      return (
+        <Badge variant="outline" className="border-emerald-300 bg-emerald-50/50 text-[10px] font-semibold text-emerald-800 flex items-center gap-1">
+          <Check className="h-2.5 w-2.5" /> Claimed
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="border-amber-300 bg-amber-50/50 text-[10px] font-semibold text-amber-800">
+        Unclaimed
+      </Badge>
+    );
+  };
+
+  const renderSpecs = () => (
+    <div className="flex flex-wrap gap-1">
+      {specs.map((s) => (
+        <Badge key={s} variant="outline" className="border-teal-100 bg-teal-50/30 text-[10px] text-teal-800">
+          {s}
+        </Badge>
+      ))}
+    </div>
+  );
+
+  const priceTag = () => {
+    if (clinic.initialConsultPrice !== null) {
+      if (clinic.initialConsultPrice === 0) return "Free Consult";
+      return `$${clinic.initialConsultPrice} Consult`;
+    }
+    return "Pricing Available";
+  };
+
   if (view === "list") {
     return (
-      <PremiumCard hover className="overflow-hidden" >
+      <PremiumCard hover className="overflow-hidden">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <button onClick={open} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl" aria-label={clinic.name}>
+          {/* Card image/logo */}
+          <button onClick={open} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-muted" aria-label={clinic.name}>
             <SmartImage
               src={getClinicImage(clinic.slug)}
               alt={`${clinic.name} clinic`}
@@ -434,30 +850,47 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
               }
             />
           </button>
+          
+          {/* Main info */}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <button onClick={open} className="text-base font-semibold text-foreground hover:text-teal-700">{clinic.name}</button>
+              <button onClick={open} className="text-base font-semibold text-foreground hover:text-teal-700 text-left">{clinic.name}</button>
               <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
+              {renderClaimBadge()}
               {clinic.telehealth && <StatusPill tone="teal"><Video className="h-3 w-3" /> Telehealth</StatusPill>}
             </div>
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-3.5 w-3.5" /> {clinic.city}, {clinic.state}{clinic.serviceArea ? ` · ${clinic.serviceArea}` : ""}</p>
-            <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{clinic.tagline ?? clinic.overview}</p>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {specs.slice(0, 3).map((s) => <Badge key={s} variant="outline" className="border-teal-200 bg-teal-50/50 text-[11px] text-teal-700">{s}</Badge>)}
+            
+            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" /> {clinic.city}, {clinic.state}
+              {clinic.serviceArea && <span className="text-muted-foreground/50">· {clinic.serviceArea}</span>}
+            </p>
+            
+            <p className="mt-1.5 line-clamp-1 text-xs text-muted-foreground">{clinic.tagline ?? clinic.overview}</p>
+            
+            <div className="mt-2.5 flex flex-wrap items-center gap-3">
+              {renderSpecs()}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{priceTag()}</span>
+                {clinic.membershipPrice !== null && <span>· ${clinic.membershipPrice}/mo</span>}
+              </div>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          
+          {/* Right Action blocks */}
+          <div className="flex shrink-0 flex-col gap-2 sm:items-end justify-between self-stretch">
             <div className="flex gap-1.5">
               <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} size="sm" label="Save" />
               <button
                 onClick={() => compareToggle("clinic", clinic.id)}
-                className={cn("inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
+                className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
                 title="Add to compare"
               >
-                <GitCompare className="h-3.5 w-3.5" />
+                <GitCompare className="h-4 w-4" />
               </button>
             </div>
-            <Button size="sm" variant="outline" onClick={open}>View profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" /></Button>
+            <Button size="sm" variant="outline" className="border-border hover:border-teal-200 font-semibold" onClick={open}>
+              View Profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
       </PremiumCard>
@@ -465,140 +898,365 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
   }
 
   return (
-    <PremiumCard hover className="group overflow-hidden">
-      {/* Clinic image with fallback */}
-      <div className="relative h-40 overflow-hidden">
-        <SmartImage
-          src={getClinicImage(clinic.slug)}
-          alt={`${clinic.name} clinic in ${clinic.city}, ${clinic.state}`}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className="transition duration-500 group-hover:scale-105"
-          imgClassName="object-cover"
-          fallback={
-            <div className={cn("flex h-full w-full items-center justify-center", c.soft)}>
-              <span className={cn("flex h-12 w-12 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm", c.bg)}>{initials(clinic.name)}</span>
+    <PremiumCard hover className="group overflow-hidden flex flex-col justify-between h-full">
+      <div>
+        {/* Clinic image cover */}
+        <div className="relative h-40 overflow-hidden bg-muted">
+          <SmartImage
+            src={getClinicImage(clinic.slug)}
+            alt={`${clinic.name} clinic`}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="transition duration-500 group-hover:scale-103"
+            imgClassName="object-cover"
+            fallback={
+              <div className={cn("flex h-full w-full items-center justify-center", c.soft)}>
+                <span className={cn("flex h-12 w-12 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm", c.bg)}>{initials(clinic.name)}</span>
+              </div>
+            }
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" aria-hidden />
+          
+          <div className="absolute left-3 bottom-3 flex items-center gap-2">
+            <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold text-white shadow-premium-sm ring-2 ring-background", c.bg)}>{initials(clinic.name)}</span>
+            <div className="flex flex-col gap-0.5">
+              <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
             </div>
-          }
-        />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" aria-hidden />
-        {/* Logo/initials badge */}
-        <div className="absolute left-3 bottom-3">
-          <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold text-white shadow-premium-sm", c.bg)}>{initials(clinic.name)}</span>
+          </div>
+
+          <div className="absolute right-3 top-3 flex gap-1.5">
+            <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} size="sm" />
+            <button
+              onClick={() => compareToggle("clinic", clinic.id)}
+              className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card/80 text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
+              title="Add to compare"
+            >
+              <GitCompare className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-        {/* Verification badge */}
-        <div className="absolute left-16 bottom-3">
-          <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
-        </div>
-        <div className="absolute right-3 top-3 flex gap-1.5">
-          <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} size="sm" />
-          <button
-            onClick={() => compareToggle("clinic", clinic.id)}
-            className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card/80 text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
-            title="Add to compare"
-          >
-            <GitCompare className="h-3.5 w-3.5" />
-          </button>
+
+        {/* Content body */}
+        <div className="p-5 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <button onClick={open} className="block text-left">
+              <h3 className="text-base font-semibold leading-tight text-foreground group-hover:text-teal-700 transition">{clinic.name}</h3>
+            </button>
+            {renderClaimBadge()}
+          </div>
+          
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {clinic.city}, {clinic.state}
+          </p>
+
+          <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">{clinic.tagline ?? clinic.overview}</p>
+
+          {renderSpecs()}
+
+          {/* Expanded capabilities & pricing metrics */}
+          <div className="flex flex-col gap-1 text-[11px] text-muted-foreground border-t border-border/60 pt-2.5">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3 text-teal-600" /> Consultation Fee</span>
+              <span className="font-semibold text-foreground">{priceTag()}</span>
+            </div>
+            {clinic.telehealth && (
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1"><Video className="h-3 w-3 text-teal-600" /> States Covered</span>
+                <span className="font-medium text-foreground">{clinic.statesServed || clinic.state}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-teal-600" /> Next Appointment</span>
+              <span className="font-medium text-foreground">{clinic.earliestAvailability || "Contact Clinic"}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="p-5">
-        <button onClick={open} className="block text-left">
-          <h3 className="text-base font-semibold leading-tight text-foreground group-hover:text-teal-700">{clinic.name}</h3>
-        </button>
-        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3" /> {clinic.city}, {clinic.state}
-        </p>
-        {clinic.tagline && <p className="mt-2 text-sm font-medium text-foreground/80">{clinic.tagline}</p>}
-        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{clinic.overview}</p>
+      {/* Button Actions */}
+      <div className="px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex gap-2">
+        <Button size="sm" variant="outline" className="flex-1 font-semibold border-border hover:border-teal-200" onClick={open}>
+          View profile
+        </Button>
+        <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={open}>
+          Request consult <ArrowRight className="ml-1 h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </PremiumCard>
+  );
+}
 
-        {/* Specialties */}
-        <div className="mt-3 flex flex-wrap gap-1">
-          {specs.map((s) => <Badge key={s} variant="outline" className="border-teal-200 bg-teal-50/50 text-[11px] text-teal-700">{s}</Badge>)}
+/* ── Map View Component ─────────────────────────────────────── */
+function MapView({ clinics }: { clinics: ClinicT[] }) {
+  const [selected, setSelected] = useState<ClinicT | null>(clinics[0] ?? null);
+  const color = selected ? colorClasses(selected.logoColor) : null;
+
+  return (
+    <PremiumCard className="overflow-hidden shadow-premium-sm border-border">
+      <div className="grid gap-0 lg:grid-cols-[1fr_320px]">
+        {/* Map canvas placeholder */}
+        <div className="relative h-[420px] overflow-hidden bg-teal-50/40 lg:h-[500px]">
+          <div className="novalyte-grid absolute inset-0 opacity-50" aria-hidden />
+          <div className="novalyte-dots absolute inset-0 opacity-30" aria-hidden />
+          
+          {/* Simulated interactive pins */}
+          {clinics.slice(0, 10).map((c, i) => {
+            const pos = [
+              { top: "15%", left: "20%" }, { top: "30%", left: "65%" }, { top: "55%", left: "25%" },
+              { top: "70%", left: "60%" }, { top: "40%", left: "45%" }, { top: "25%", left: "35%" },
+              { top: "60%", left: "75%" }, { top: "80%", left: "40%" }, { top: "45%", left: "80%" },
+              { top: "85%", left: "20%" }
+            ][i % 10];
+            const active = selected?.id === c.id;
+            
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className="absolute -translate-x-1/2 -translate-y-1/2 group"
+                style={pos}
+                aria-label={`Select ${c.name}`}
+              >
+                <span className={cn("flex items-center justify-center rounded-full border-2 border-white shadow-premium-sm transition duration-300", 
+                  active ? "h-9 w-9 bg-teal-600" : "h-7 w-7 bg-teal-500 hover:bg-teal-600 hover:scale-105")}>
+                  <MapPin className={cn("text-white", active ? "h-4.5 w-4.5" : "h-3.5 w-3.5")} />
+                </span>
+                {active && <span className="novalyte-pulse-ring absolute inset-0 rounded-full bg-teal-400/40 animate-ping" />}
+              </button>
+            );
+          })}
+          
+          <div className="absolute bottom-3 left-3 rounded-lg border border-border bg-card/90 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground shadow-sm backdrop-blur">
+            Interactive Local & Telehealth Map view · {clinics.length} clinics plotted
+          </div>
         </div>
 
-        {/* Trust signals row */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {clinic.telehealth && <span className="inline-flex items-center gap-1"><Video className="h-3 w-3 text-teal-600" /> Telehealth</span>}
-          {caps.includes("On-site phlebotomy") && <span className="inline-flex items-center gap-1"><Stethoscope className="h-3 w-3 text-emerald-600" /> Phlebotomy</span>}
-          {providers.length > 0 && <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-teal-600" /> {providers.length} provider type{providers.length > 1 ? "s" : ""}</span>}
-        </div>
+        {/* Selected Clinic Sidebar */}
+        <div className="border-t border-border p-5 lg:border-l lg:border-t-0 bg-card flex flex-col justify-between">
+          {selected ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white", color?.bg)}>
+                  {initials(selected.name)}
+                </span>
+                <div className="min-w-0">
+                  <h4 className="truncate text-sm font-semibold text-foreground leading-tight">{selected.name}</h4>
+                  <p className="flex items-center gap-0.5 text-xs text-muted-foreground mt-0.5">
+                    <MapPin className="h-3 w-3" /> {selected.city}, {selected.state}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-1.5">
+                <VerificationBadge verified={selected.verified} status={selected.verificationStatus} />
+                <Badge variant="outline" className="text-[10px] font-semibold border-border">{selected.claimStatus === "claimed" ? "Claimed" : "Unclaimed"}</Badge>
+                {selected.telehealth && <Badge className="bg-teal-50 text-teal-700 text-[10px] font-medium border-teal-100 hover:bg-teal-50">Telehealth</Badge>}
+              </div>
 
-        {/* Actions */}
-        <div className="mt-4 flex gap-2 border-t border-border pt-4">
-          <Button size="sm" variant="outline" className="flex-1" onClick={open}>View profile</Button>
-          <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={open}>
-            Request consult <ArrowRight className="ml-0.5 h-3.5 w-3.5" />
-          </Button>
+              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">{selected.tagline ?? selected.overview}</p>
+              
+              <div className="space-y-1 text-xs border-t border-border/50 pt-3">
+                <div className="flex justify-between"><span className="text-muted-foreground">Consultation Fee</span><span className="font-semibold text-foreground">{selected.initialConsultPrice !== null ? `$${selected.initialConsultPrice}` : "Pricing Available"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Earliest Appt</span><span className="font-medium text-foreground">{selected.earliestAvailability || "Contact Clinic"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Provider Types</span><span className="font-medium text-foreground truncate max-w-[140px]">{selected.providerTypes || "N/A"}</span></div>
+              </div>
+
+              <Button size="sm" className="w-full bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold mt-2" onClick={() => navigate("clinic-profile", undefined, { id: selected.id })}>
+                View Profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center justify-center h-full"><HelpCircle className="h-8 w-8 text-muted-foreground/40 mb-2" /> Select a pin to view clinic details</p>
+          )}
         </div>
       </div>
     </PremiumCard>
   );
 }
 
-/* ── Map view (stylized placeholder — no external map service) ── */
-function MapView({ clinics }: { clinics: ClinicT[] }) {
-  const [selected, setSelected] = useState<ClinicT | null>(clinics[0] ?? null);
+/* ── Guided Discovery Wizard Component ─────────────────────── */
+type GuidedWizardState = {
+  step: number;
+  concern: string;
+  state: string;
+  careFormat: string;
+  pricingModel: string;
+};
+
+function GuidedDiscoveryWizard({
+  open,
+  onOpenChange,
+  onComplete,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onComplete: (filters: Partial<GuidedWizardState>) => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [concern, setConcern] = useState("");
+  const [state, setState] = useState("");
+  const [careFormat, setCareFormat] = useState("");
+  const [pricingModel, setPricingModel] = useState("");
+
+  const handleComplete = () => {
+    // Map patient concern option to actual treatment category slug
+    const mapping: Record<string, string> = {
+      trt: "Testosterone Replacement Therapy (TRT)",
+      ed: "Erectile Dysfunction Care",
+      weight: "GLP-1 Medical Weight Loss Program",
+      longevity: "Longevity & Healthspan Assessment",
+      hair: "Hair Restoration Treatment",
+    };
+
+    onComplete({
+      state,
+      treatment: mapping[concern] || "all",
+      careFormat: careFormat || "all",
+      pricingModel: pricingModel || "all",
+    });
+    
+    // reset state
+    setStep(0);
+    setConcern("");
+    setState("");
+    setCareFormat("");
+    setPricingModel("");
+    onOpenChange(false);
+  };
+
   return (
-    <PremiumCard className="overflow-hidden">
-      <div className="grid gap-0 lg:grid-cols-[1fr_320px]">
-        {/* Map canvas */}
-        <div className="relative h-[420px] overflow-hidden bg-teal-50/40 lg:h-[520px]">
-          <div className="novalyte-grid absolute inset-0 opacity-50" aria-hidden />
-          <div className="novalyte-dots absolute inset-0 opacity-30" aria-hidden />
-          {/* Simulated clinic pins positioned by index */}
-          {clinics.slice(0, 8).map((c, i) => {
-            const pos = [
-              { top: "15%", left: "20%" }, { top: "30%", left: "65%" }, { top: "55%", left: "25%" },
-              { top: "70%", left: "60%" }, { top: "40%", left: "45%" }, { top: "25%", left: "35%" },
-              { top: "60%", left: "75%" }, { top: "80%", left: "40%" },
-            ][i % 8];
-            const active = selected?.id === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => setSelected(c)}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
-                style={pos}
-                aria-label={`Select ${c.name}`}
-              >
-                <span className={cn("flex items-center justify-center rounded-full border-2 border-white shadow-premium-sm transition", active ? "h-9 w-9 bg-teal-600" : "h-7 w-7 bg-teal-500 hover:bg-teal-600")}>
-                  <MapPin className={cn("text-white", active ? "h-4 w-4" : "h-3.5 w-3.5")} />
-                </span>
-                {active && <span className="novalyte-pulse-ring absolute inset-0 rounded-full bg-teal-400/40" />}
-              </button>
-            );
-          })}
-          <div className="absolute bottom-3 left-3 rounded-lg border border-border bg-card/90 px-2.5 py-1 text-[10px] font-medium text-muted-foreground shadow-sm backdrop-blur">
-            Map view · {clinics.length} clinics shown
-          </div>
-        </div>
-        {/* Selected clinic panel */}
-        <div className="border-t border-border p-4 lg:border-l lg:border-t-0">
-          {selected ? (
-            <div>
-              <div className="flex items-center gap-3">
-                <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold text-white", colorClasses(selected.logoColor).bg)}>{initials(selected.name)}</span>
-                <div className="min-w-0">
-                  <h4 className="truncate text-sm font-semibold text-foreground">{selected.name}</h4>
-                  <p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> {selected.city}, {selected.state}</p>
-                </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[460px] p-6 rounded-2xl bg-card border border-border shadow-premium-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-1.5 text-base font-semibold text-teal-950">
+            <Sparkles className="h-5 w-5 text-teal-600 animate-pulse" /> Clinic Discovery Assistant
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Let's find the best care match. Step {step + 1} of 4
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-4 min-h-[160px] flex flex-col justify-center">
+          {step === 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-teal-900">What primary concern brings you here?</Label>
+              <div className="grid gap-2">
+                {[
+                  { value: "trt", label: "Low testosterone, lack of energy, or TRT interest" },
+                  { value: "ed", label: "Erectile difficulties, libido, or sexual wellness" },
+                  { value: "weight", label: "Medical weight loss, GLP-1, or metabolism" },
+                  { value: "hair", label: "Hair loss or restoration therapies" },
+                  { value: "longevity", label: "Longevity medicine, biomarkers, and healthspan" },
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    onClick={() => setConcern(item.value)}
+                    className={cn("w-full text-left p-3 rounded-lg border text-xs font-semibold transition", 
+                      concern === item.value ? "border-teal-500 bg-teal-50/50 text-teal-950" : "border-border bg-card hover:bg-muted/30 text-foreground/80")}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
-              <div className="mt-2"><VerificationBadge verified={selected.verified} status={selected.verificationStatus} /></div>
-              <p className="mt-3 line-clamp-3 text-xs text-muted-foreground">{selected.overview}</p>
-              <div className="mt-3 flex flex-wrap gap-1">
-                {splitCsv(selected.specialties).slice(0, 3).map((s) => <Badge key={s} variant="outline" className="border-teal-200 bg-teal-50/50 text-[10px] text-teal-700">{s}</Badge>)}
-              </div>
-              <Button size="sm" className="mt-4 w-full bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("clinic-profile", undefined, { id: selected.id })}>
-                View profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
             </div>
-          ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">Select a pin to view clinic details</p>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-4">
+              <Label className="text-sm font-semibold text-teal-900">Which state do you currently reside in?</Label>
+              <p className="text-[11px] text-muted-foreground">This ensures matching clinics are licensed to treat patients in your state.</p>
+              <Select value={state} onValueChange={setState}>
+                <SelectTrigger className="w-full text-xs h-10"><SelectValue placeholder="Select your state" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-teal-900">Do you prefer telehealth or in-person visits?</Label>
+              <div className="grid gap-2">
+                {[
+                  { value: "telehealth", label: "100% Remote / Telehealth consultation", desc: "No travel required; medication and lab orders coordinated online." },
+                  { value: "in-person", label: "In-Person physical clinic visit", desc: "Allows face-to-face physician exams and on-site phlebotomy." },
+                  { value: "hybrid", label: "Hybrid care model", desc: "Initial visit in-person with ongoing telehealth monitoring." },
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    onClick={() => setCareFormat(item.value)}
+                    className={cn("w-full text-left p-3 rounded-lg border transition", 
+                      careFormat === item.value ? "border-teal-500 bg-teal-50/50 text-teal-950" : "border-border bg-card hover:bg-muted/30 text-foreground/80")}
+                  >
+                    <div className="text-xs font-semibold">{item.label}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-teal-900">Are you looking for insurance-based or self-pay options?</Label>
+              <div className="grid gap-2">
+                {[
+                  { value: "insurance", label: "Insurance-based care coverage", desc: "Clinic files claims with major insurance providers (co-pays apply)." },
+                  { value: "self-pay", label: "Direct-Pay / Self-Pay membership options", desc: "Transparent upfront monthly fees (HSA/FSA cards often accepted)." },
+                  { value: "all", label: "Open to either payment model", desc: "Show all matching clinics." },
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    onClick={() => setPricingModel(item.value)}
+                    className={cn("w-full text-left p-3 rounded-lg border transition", 
+                      pricingModel === item.value ? "border-teal-500 bg-teal-50/50 text-teal-950" : "border-border bg-card hover:bg-muted/30 text-foreground/80")}
+                  >
+                    <div className="text-xs font-semibold">{item.label}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-      </div>
-    </PremiumCard>
+
+        <DialogFooter className="flex items-center justify-between border-t border-border pt-4">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            disabled={step === 0}
+            className="text-xs font-semibold"
+          >
+            Back
+          </Button>
+
+          {step < 3 ? (
+            <Button
+              size="sm"
+              disabled={
+                (step === 0 && !concern) ||
+                (step === 1 && !state) ||
+                (step === 2 && !careFormat)
+              }
+              onClick={() => setStep((s) => s + 1)}
+              className="bg-teal-600 text-white hover:bg-teal-700 font-semibold"
+            >
+              Continue
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              disabled={!pricingModel}
+              onClick={handleComplete}
+              className="bg-teal-600 text-white hover:bg-teal-700 font-semibold flex items-center gap-1"
+            >
+              Show Matches <Sparkles className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

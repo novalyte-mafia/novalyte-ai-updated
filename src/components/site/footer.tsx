@@ -134,7 +134,10 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
               responsible for all clinical decisions. © {new Date().getFullYear()} Novalyte AI. All rights reserved.
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">Designed for secure healthcare workflows.</p>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <p className="text-xs text-muted-foreground">Designed for secure healthcare workflows.</p>
+            <p className="text-xs text-muted-foreground font-medium">Made with ❤️ in San Francisco</p>
+          </div>
         </div>
       </div>
     </footer>

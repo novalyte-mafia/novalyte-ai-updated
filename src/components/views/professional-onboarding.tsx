@@ -34,6 +34,7 @@ const PRO_STEPS = [
 export function ProfessionalOnboarding() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Record<string, unknown>>({});
+  const [submitting, setSubmitting] = useState(false);
   const total = PRO_STEPS.length;
   const progress = ((step + 1) / total) * 100;
 
@@ -41,11 +42,74 @@ export function ProfessionalOnboarding() {
     setData((prev) => ({ ...prev, [key]: value }));
   }
 
-  function next() {
-    if (step < total - 1) setStep(step + 1);
-    else {
-      toast.success("Professional profile created. Welcome to Novalyte Workforce.");
-      navigate("workforce");
+  async function next() {
+    // Validate required fields
+    if (step === 0) {
+      if (!data.firstName || !data.lastName || !data.email || !data.password || !data.phone || !data.state) {
+        toast.error("Please fill in all required fields to continue.");
+        return;
+      }
+    }
+    if (step === 1) {
+      if (!data.headline) {
+        toast.error("Please enter your professional headline/title.");
+        return;
+      }
+    }
+
+    if (step < total - 1) {
+      setStep(step + 1);
+    } else {
+      if (submitting) return;
+      setSubmitting(true);
+      try {
+        const payload = {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          professionalTitle: data.headline,
+          bio: data.bio ?? "",
+          stateOrLocation: `${data.city ?? ""}, ${data.state ?? ""}`.trim().replace(/^,\s*/, ""),
+          resumeUrl: data.linkedin ? `LinkedIn: ${data.linkedin}` : "Resume Uploaded",
+          linkedinUrl: data.linkedin ?? "",
+          employmentHistory: Array.isArray(data.employmentHistory) ? data.employmentHistory : [],
+          education: Array.isArray(data.education) ? data.education : [],
+          licenses: Array.isArray(data.credentials) ? data.credentials : [],
+          specialties: Array.isArray(data.specialties) ? data.specialties : [],
+          employmentPreference: Array.isArray(data.empTypes) ? data.empTypes : [],
+          workArrangement: data.workArrangement ?? "",
+          relocationPreference: !!data.relocate,
+          telehealthAvailability: !!data.telehealth,
+          visibilitySettings: {
+            discoverable: data.discoverable ?? true,
+            contactVisible: data.contactVisible ?? false,
+            compVisible: data.compVisible ?? false,
+            currentEmpVisible: data.currentEmpVisible ?? true,
+            recruiterContact: data.recruiterContact ?? true,
+            talentSearch: data.talentSearch ?? true,
+          },
+        };
+
+        const res = await fetch("/api/professional-onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const resData = await res.json();
+        if (!res.ok || !resData.profileId) {
+          throw new Error("Failed to save professional profile");
+        }
+
+        toast.success("Professional profile created. Welcome to Novalyte Workforce.");
+        navigate("workforce-dashboard", undefined, { id: resData.profileId });
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to submit professional application. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
     }
   }
 
@@ -106,11 +170,11 @@ export function ProfessionalOnboarding() {
 
             {/* Nav */}
             <div className="mt-8 flex items-center justify-between border-t pt-5">
-              <Button variant="ghost" onClick={back}>
+              <Button variant="ghost" onClick={back} disabled={submitting}>
                 <ArrowLeft className="mr-1 h-4 w-4" /> {step === 0 ? "Back to Join" : "Back"}
               </Button>
-              <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={next}>
-                {step < total - 1 ? <>Continue <ArrowRight className="ml-1 h-4 w-4" /></> : <>Publish Profile <CheckCircle2 className="ml-1 h-4 w-4" /></>}
+              <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={next} disabled={submitting}>
+                {submitting ? "Publishing..." : step < total - 1 ? <>Continue <ArrowRight className="ml-1 h-4 w-4" /></> : <>Publish Profile <CheckCircle2 className="ml-1 h-4 w-4" /></>}
               </Button>
             </div>
           </div>

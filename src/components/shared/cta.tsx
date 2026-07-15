@@ -27,7 +27,7 @@ export function CTASection({
   return (
     <section
       className={cn(
-        "py-16 sm:py-20",
+        "py-12 sm:py-16",
         tone === "dark" ? "bg-foreground text-background" : "bg-gradient-to-b from-teal-50/60 to-background",
       )}
     >

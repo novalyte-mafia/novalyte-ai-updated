@@ -45,22 +45,45 @@ export function ClinicCompareTray({ clinics }: { clinics: ClinicT[] }) {
               </tr>
             </thead>
             <tbody>
-              {[
-                { label: "Telehealth", get: (c: ClinicT) => c.telehealth ? "Yes" : "No" },
-                { label: "Specialties", get: (c: ClinicT) => splitCsv(c.specialties).join(", ") || "—" },
-                { label: "Capabilities", get: (c: ClinicT) => splitCsv(c.capabilities).join(", ") || "—" },
-                { label: "Provider types", get: (c: ClinicT) => splitCsv(c.providerTypes).join(", ") || "—" },
-                { label: "Service area", get: (c: ClinicT) => c.serviceArea ?? "—" },
-                { label: "Hours", get: (c: ClinicT) => c.hours ?? "—" },
-                { label: "Phone", get: (c: ClinicT) => c.phone ?? "—" },
-              ].map((row) => (
-                <tr key={row.label} className="border-t border-border">
-                  <td className="p-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{row.label}</td>
-                  {selected.map((c) => (
-                    <td key={c.id} className="p-3 text-foreground/80">{row.get(c)}</td>
-                  ))}
-                </tr>
-              ))}
+              {(() => {
+                const rows = [
+                  { label: "Telehealth Available", get: (c: ClinicT) => c.telehealth ? "Yes" : "No" },
+                  { label: "States Served", get: (c: ClinicT) => c.statesServed ?? c.state },
+                  { label: "Accepting New Patients", get: (c: ClinicT) => c.acceptingNewPatients ? "Yes" : "No" },
+                  { label: "Initial Consult Fee", get: (c: ClinicT) => c.initialConsultPrice !== null ? (c.initialConsultPrice === 0 ? "Free" : `$${c.initialConsultPrice}`) : "Contact Clinic" },
+                  { label: "Monthly Membership", get: (c: ClinicT) => c.membershipPrice !== null ? `$${c.membershipPrice}/mo` : "None / Direct-pay" },
+                  { label: "Insurance Accepted", get: (c: ClinicT) => c.insuranceAccepted ? "Yes" : "No" },
+                  { label: "HSA / FSA Accepted", get: (c: ClinicT) => c.hsaFsaAccepted ? "Yes" : "No" },
+                  { label: "Earliest Availability", get: (c: ClinicT) => c.earliestAvailability ?? "Contact Clinic" },
+                  { label: "Languages", get: (c: ClinicT) => c.languages ?? "English" },
+                  { label: "Accessibility", get: (c: ClinicT) => c.accessibility ?? "Wheelchair accessible" },
+                  { label: "Pricing Transparency", get: (c: ClinicT) => c.pricingStatus ?? "Full Pricing Published" },
+                  { label: "Specialties", get: (c: ClinicT) => splitCsv(c.specialties).join(", ") || "—" },
+                  { label: "Capabilities", get: (c: ClinicT) => splitCsv(c.capabilities).join(", ") || "—" },
+                  { label: "Provider types", get: (c: ClinicT) => splitCsv(c.providerTypes).join(", ") || "—" },
+                  { label: "Locations", get: (c: ClinicT) => c.locations?.map((l) => l.name).join(", ") || `${c.city}, ${c.state}` },
+                  { label: "Service area", get: (c: ClinicT) => c.serviceArea ?? "—" },
+                  { label: "Hours", get: (c: ClinicT) => c.hours ?? "—" },
+                  { label: "Phone", get: (c: ClinicT) => c.phone ?? "—" },
+                ];
+
+                // Hide row if all selected clinics have empty, null, or placeholder values
+                const visibleRows = rows.filter((row) => {
+                  return selected.some((c) => {
+                    const val = row.get(c);
+                    return val !== null && val !== undefined && val !== "" && val !== "—" && val !== "Contact Clinic";
+                  });
+                });
+
+                return visibleRows.map((row) => (
+                  <tr key={row.label} className="border-t border-border">
+                    <td className="p-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{row.label}</td>
+                    {selected.map((c) => (
+                      <td key={c.id} className="p-3 text-foreground/80 text-xs leading-normal">{row.get(c)}</td>
+                    ))}
+                  </tr>
+                ));
+              })()}
               <tr className="border-t border-border">
                 <td className="p-3"></td>
                 {selected.map((c) => (

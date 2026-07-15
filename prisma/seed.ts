@@ -1,11 +1,4 @@
-// Novalyte AI — Development seed fixtures
-// IMPORTANT: This data is clearly-marked, development-only sample data.
-// None of these clinics, professionals, vendors, or metrics represent real entities.
-// Replace before production launch.
-
-import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+import { db } from "../src/lib/db";
 
 function csv(...items: (string | undefined)[]): string {
   return items.filter(Boolean).join(",");
@@ -15,20 +8,23 @@ async function main() {
   console.log("🌱 Seeding Novalyte AI development fixtures...");
 
   // ── Clinics ──────────────────────────────────────────────
+  // Clear existing clinics to prevent primary key or relation issues during development
+  await db.clinic.deleteMany();
+  console.log("Cleared old clinics.");
+
   const clinics = [
     {
       name: "Meridian Men's Health",
       slug: "meridian-mens-health",
       tagline: "Evidence-based optimization for modern men",
-      overview:
-        "Meridian Men's Health is a physician-led clinic focused on hormone optimization, metabolic health, and longevity medicine. Care is delivered through structured intake, lab-guided protocols, and ongoing provider support.",
+      overview: "Meridian Men's Health is a physician-led clinic focused on hormone optimization, metabolic health, and longevity medicine. Care is delivered through structured intake, lab-guided protocols, and ongoing provider support.",
       logoColor: "teal",
       city: "Austin",
       state: "TX",
       zip: "78701",
       serviceArea: "Greater Austin & telehealth across TX",
       specialties: csv("Testosterone Replacement Therapy", "Hormone Optimization", "Longevity Medicine", "Medical Weight Loss"),
-      capabilities: csv("On-site phlebotomy", "Body composition analysis", "Telehealth", "Lab coordination"),
+      capabilities: csv("On-site phlebotomy", "Body composition analysis", "Telehealth", "Lab coordination", "Online scheduling", "Secure patient portal"),
       telehealth: true,
       providerTypes: csv("Physician", "Nurse Practitioner"),
       phone: "(512) 555-0142",
@@ -37,20 +33,50 @@ async function main() {
       hours: "Mon–Fri 8am–6pm, Sat 9am–1pm",
       verified: true,
       verificationStatus: "verified",
+      // Extended fields:
+      acceptingNewPatients: true,
+      claimStatus: "claimed",
+      profileCompleteness: 90,
+      initialConsultPrice: 150,
+      membershipPrice: 99,
+      insuranceAccepted: false,
+      hsaFsaAccepted: true,
+      earliestAvailability: "Next day",
+      statesServed: "TX, FL, CO",
+      languages: "English, Spanish",
+      accessibility: "Fully accessible",
+      pricingStatus: "Full Pricing Published",
+      whatToExpect: "Initial consultation, Intake form submission, Comprehensive lab panel, Medical review & protocol design, In-clinic or home delivery setup",
+      locations: [
+        { name: "Downtown Austin Office", address: "100 Congress Ave, Austin, TX 78701", phone: "(512) 555-0142", hours: "Mon–Fri 8am–6pm, Sat 9am–1pm", parking: "Garage validation available", transit: "Bus lines 1, 2, 7, 10", accessibility: "Wheelchair accessible ramps and elevators", onSiteLab: true, phlebotomy: true, earliestAppt: "Next day" },
+        { name: "Dallas North Metro Office", address: "5400 Legacy Dr, Plano, TX 75024", phone: "(469) 555-0211", hours: "Mon–Fri 9am–5pm", parking: "On-site open parking", transit: "Plano park & ride nearby", accessibility: "Ground level entrance", onSiteLab: false, phlebotomy: true, earliestAppt: "3 days" }
+      ],
+      providers: [
+        { name: "Dr. Alan Pierce", credentials: "MD", role: "Medical Director", specialties: "TRT, Hormone Optimization, Longevity", yearsExperience: 12, bio: "Board-certified physician with over a decade in men's health and longevity medicine.", languages: "English, Spanish", telehealth: true, avatarUrl: null },
+        { name: "Sarah Whitfield, NP", credentials: "NP", role: "Nurse Practitioner", specialties: "TRT, Medical Weight Loss, GLP-1", yearsExperience: 7, bio: "Nurse practitioner focused on hormone health and metabolic medicine across multi-state telehealth.", languages: "English", telehealth: true, avatarUrl: null }
+      ],
+      treatments: [
+        { name: "Testosterone Replacement Therapy (TRT)", category: "Hormone Optimization", description: "Evidence-based TRT via injections or topical gels. Includes lab tests, provider follow-ups, and home medication shipping.", concerns: "Low libido, Low energy, Muscle loss, Brain fog", priceRange: "$100 - $200 / month", labRequired: true, consultRequired: true, careFormat: "hybrid" },
+        { name: "Medical Weight Loss & GLP-1", category: "Weight Management", description: "Medically supervised weight management using Semaglutide or Tirzepatide, paired with metabolic monitoring.", concerns: "Weight gain, Slow metabolism, Insulin resistance", priceRange: "$249 - $399 / month", labRequired: true, consultRequired: true, careFormat: "telehealth" },
+        { name: "Hormone Evaluation", category: "Diagnostics", description: "Comprehensive lab panel testing total & free testosterone, estradiol, SHBG, thyroid profile, and blood counts.", concerns: "General wellness, Fatigue, Poor sleep", priceRange: "$150 / panel", labRequired: true, consultRequired: true, careFormat: "in-person" }
+      ],
+      reviews: [
+        { rating: 5, author: "John D.", content: "Great clinic. Professional staff and quick turnaround on labs. Highly recommend for TRT.", category: "Testosterone", verifiedPatient: true, response: "Thank you for the feedback, John! We are glad to support you." },
+        { rating: 4, author: "Mark R.", content: "Very happy with the telehealth options. The NP was extremely thorough.", category: "Telehealth", verifiedPatient: true, response: null }
+      ]
     },
     {
       name: "Summit Vitality Clinic",
       slug: "summit-vitality-clinic",
       tagline: "Performance, recovery, and preventive care",
-      overview:
-        "Summit Vitality Clinic combines preventive men's health with performance and recovery programs. Services include IV therapy, peptide protocols, and recovery technology alongside primary men's health care.",
+      overview: "Summit Vitality Clinic combines preventive men's health with performance and recovery programs. Services include IV therapy, peptide protocols, and recovery technology alongside primary men's health care.",
       logoColor: "emerald",
       city: "Denver",
       state: "CO",
       zip: "80202",
       serviceArea: "Front Range & telehealth across CO",
       specialties: csv("Peptide Therapy", "Performance & Recovery", "Preventive Men's Health", "TRT"),
-      capabilities: csv("Recovery suite", "Telehealth", "On-site phlebotomy"),
+      capabilities: csv("Recovery suite", "Telehealth", "On-site phlebotomy", "Imaging access", "Secure messaging"),
       telehealth: true,
       providerTypes: csv("Physician", "Physician Assistant"),
       phone: "(303) 555-0188",
@@ -59,20 +85,47 @@ async function main() {
       hours: "Mon–Fri 7am–5pm",
       verified: true,
       verificationStatus: "verified",
+      // Extended fields:
+      acceptingNewPatients: true,
+      claimStatus: "claimed",
+      profileCompleteness: 85,
+      initialConsultPrice: 100,
+      membershipPrice: 120,
+      insuranceAccepted: false,
+      hsaFsaAccepted: true,
+      earliestAvailability: "2 days",
+      statesServed: "CO, AZ, UT",
+      languages: "English",
+      accessibility: "Wheelchair accessible",
+      pricingStatus: "Partial Pricing Published",
+      whatToExpect: "Initial consultation, Recovery suite tour, Personalized peptide/TRT setup, Weekly recovery tracking",
+      locations: [
+        { name: "Denver LoDo Office", address: "1600 Wynkoop St, Denver, CO 80202", phone: "(303) 555-0188", hours: "Mon–Fri 7am–5pm", parking: "Valet parking available", transit: "Union Station bus/rail terminal", accessibility: "Elevator access", onSiteLab: true, phlebotomy: true, earliestAppt: "2 days" }
+      ],
+      providers: [
+        { name: "Dr. Alan Pierce", credentials: "MD", role: "Consulting Physician", specialties: "Preventive Care, Hormones", yearsExperience: 12, bio: "Collaborates on medical oversight for performance protocols.", languages: "English, Spanish", telehealth: true, avatarUrl: null },
+        { name: "Marcus Lee, PA-C", credentials: "PA-C", role: "Physician Assistant", specialties: "Peptide Therapy, Performance", yearsExperience: 5, bio: "Physician assistant specializing in sexual wellness and aesthetic men's health services.", languages: "English", telehealth: false, avatarUrl: null }
+      ],
+      treatments: [
+        { name: "Peptide Therapy Protocols", category: "Peptide Therapy", description: "Custom peptide formulations (Sermorelin, Ipamorelin) for muscle recovery, tissue repair, and healthspan support.", concerns: "Poor recovery, Muscle loss, Aging", priceRange: "$150 - $300 / month", labRequired: true, consultRequired: true, careFormat: "hybrid" },
+        { name: "Performance & Recovery Infusions", category: "IV Therapy", description: "Amino acid and hydration IV therapy optimized for athletes and recovery.", concerns: "Fatigue, Dehydration, Low energy", priceRange: "$99 / session", labRequired: false, consultRequired: true, careFormat: "in-person" }
+      ],
+      reviews: [
+        { rating: 5, author: "David S.", content: "The recovery suite is unmatched. Helped my recovery time significantly.", category: "Performance", verifiedPatient: true, response: "Glad we could help you reach your goals, David!" }
+      ]
     },
     {
       name: "Northpoint Wellness Collective",
       slug: "northpoint-wellness-collective",
       tagline: "Integrated men's health and sexual wellness",
-      overview:
-        "Northpoint Wellness offers integrated care across sexual wellness, hair restoration, and hormone health, with a coordinated team approach and structured consultation pathways.",
+      overview: "Northpoint Wellness offers integrated care across sexual wellness, hair restoration, and hormone health, with a coordinated team approach and structured consultation pathways.",
       logoColor: "blue",
       city: "Seattle",
       state: "WA",
       zip: "98101",
       serviceArea: "Puget Sound region",
       specialties: csv("Sexual Wellness", "Hair Restoration", "Erectile Dysfunction", "Hormone Optimization"),
-      capabilities: csv("Telehealth", "In-person consults"),
+      capabilities: csv("Telehealth", "In-person consults", "Online scheduling"),
       telehealth: true,
       providerTypes: csv("Physician", "Nurse Practitioner", "Medical Assistant"),
       phone: "(206) 555-0119",
@@ -81,20 +134,46 @@ async function main() {
       hours: "Mon–Sat 9am–6pm",
       verified: false,
       verificationStatus: "under_review",
+      // Extended fields:
+      acceptingNewPatients: true,
+      claimStatus: "unclaimed",
+      profileCompleteness: 60,
+      initialConsultPrice: 175,
+      membershipPrice: null,
+      insuranceAccepted: true,
+      hsaFsaAccepted: true,
+      earliestAvailability: "Same day",
+      statesServed: "WA, OR",
+      languages: "English, French",
+      accessibility: "Elevator access",
+      pricingStatus: "Consultation Pricing Available",
+      whatToExpect: "Intake form, Confidential consultation, Custom compound selection",
+      locations: [
+        { name: "Downtown Seattle Clinic", address: "1201 3rd Ave, Seattle, WA 98101", phone: "(206) 555-0119", hours: "Mon–Sat 9am–6pm", parking: "Garage parking, no validation", transit: "University Street Station LRT", accessibility: "Elevators available", onSiteLab: false, phlebotomy: false, earliestAppt: "Same day" }
+      ],
+      providers: [
+        { name: "Marcus Lee, PA-C", credentials: "PA-C", role: "Physician Assistant", specialties: "Sexual Wellness, Aesthetics", yearsExperience: 5, bio: "Physician assistant specializing in sexual wellness and aesthetic men's health services.", languages: "English", telehealth: true, avatarUrl: null }
+      ],
+      treatments: [
+        { name: "Erectile Dysfunction Care", category: "Sexual Health", description: "Personalized medical management for erectile dysfunction, including tailored sublingual medications.", concerns: "Erectile difficulties", priceRange: "$50 - $150 / month", labRequired: false, consultRequired: true, careFormat: "telehealth" },
+        { name: "Hair Restoration Treatment", category: "Aesthetics", description: "Topical and oral combinations of Finasteride/Minoxidil to target male pattern baldness.", concerns: "Hair loss", priceRange: "$99 - $199 / month", labRequired: false, consultRequired: true, careFormat: "telehealth" }
+      ],
+      reviews: [
+        { rating: 5, author: "Chris T.", content: "Highly discreet and professional. Vance was the best provider.", category: "Sexual Wellness", verifiedPatient: true, response: null }
+      ]
     },
     {
       name: "Cardinal Health Partners",
       slug: "cardinal-health-partners",
       tagline: "Weight management and metabolic care",
-      overview:
-        "Cardinal Health Partners specializes in medical weight loss and GLP-1 programs, with dietitian-supported protocols and continuous progress monitoring.",
+      overview: "Cardinal Health Partners specializes in medical weight loss and GLP-1 programs, with dietitian-supported protocols and continuous progress monitoring.",
       logoColor: "amber",
       city: "Charlotte",
       state: "NC",
       zip: "28202",
       serviceArea: "Charlotte metro",
       specialties: csv("Medical Weight Loss", "GLP-1 Programs"),
-      capabilities: csv("On-site phlebotomy", "Body composition analysis"),
+      capabilities: csv("On-site phlebotomy", "Body composition analysis", "Prescription delivery", "Secure patient portal", "Online scheduling"),
       telehealth: false,
       providerTypes: csv("Physician", "Registered Nurse", "Medical Assistant"),
       phone: "(704) 555-0173",
@@ -103,20 +182,46 @@ async function main() {
       hours: "Mon–Fri 8am–5pm",
       verified: true,
       verificationStatus: "verified",
+      // Extended fields:
+      acceptingNewPatients: true,
+      claimStatus: "claimed",
+      profileCompleteness: 95,
+      initialConsultPrice: 0,
+      membershipPrice: 249,
+      insuranceAccepted: false,
+      hsaFsaAccepted: true,
+      earliestAvailability: "3 days",
+      statesServed: "NC, SC, GA",
+      languages: "English",
+      accessibility: "Ramp and wide doors",
+      pricingStatus: "Full Pricing Published",
+      whatToExpect: "Free initial assessment, Body composition analysis, GLP-1 self-injection training, Weekly checkins, Monthly nutrition consultation",
+      locations: [
+        { name: "Uptown Charlotte Clinic", address: "201 S Tryon St, Charlotte, NC 28202", phone: "(704) 555-0173", hours: "Mon–Fri 8am–5pm", parking: "Street parking and validations available", transit: "LNX light rail stop", accessibility: "Ramps and wide entryways", onSiteLab: true, phlebotomy: true, earliestAppt: "3 days" }
+      ],
+      providers: [
+        { name: "Dana Brooks, RN", credentials: "RN", role: "Registered Nurse", specialties: "Weight Management, Phlebotomy", yearsExperience: 9, bio: "Registered nurse with experience in weight management clinics and infusion protocols.", languages: "English", telehealth: false, avatarUrl: null }
+      ],
+      treatments: [
+        { name: "GLP-1 Medical Weight Loss Program", category: "Weight Management", description: "Comprehensive weight management protocol utilizing compounded Semaglutide or Tirzepatide. Includes nurse injections or home delivery training.", concerns: "Weight gain, Insulin resistance", priceRange: "$249 - $349 / month", labRequired: true, consultRequired: true, careFormat: "in-person" },
+        { name: "Body Composition Analysis", category: "Diagnostics", description: "Advanced segment bioelectrical impedance analysis to track fat, lean muscle mass, and water distribution.", concerns: "Weight gain", priceRange: "$49 / scan", labRequired: false, consultRequired: false, careFormat: "in-person" }
+      ],
+      reviews: [
+        { rating: 5, author: "James L.", content: "Down 30 pounds in 4 months. The dietitian and RN support makes a huge difference.", category: "Weight Loss", verifiedPatient: true, response: "We are thrilled for you, James! Keep up the great work." }
+      ]
     },
     {
       name: "Pacific Longevity Institute",
       slug: "pacific-longevity-institute",
       tagline: "Advanced longevity and preventive medicine",
-      overview:
-        "Pacific Longevity Institute delivers comprehensive longevity assessments, advanced diagnostics, and personalized prevention plans for men seeking long-term healthspan.",
+      overview: "Pacific Longevity Institute delivers comprehensive longevity assessments, advanced diagnostics, and personalized prevention plans for men seeking long-term healthspan.",
       logoColor: "violet",
       city: "San Diego",
       state: "CA",
       zip: "92101",
       serviceArea: "Southern CA & nationwide telehealth",
       specialties: csv("Longevity Medicine", "Preventive Men's Health", "Hormone Optimization", "Peptide Therapy"),
-      capabilities: csv("Advanced diagnostics", "Telehealth", "Body composition analysis"),
+      capabilities: csv("Advanced diagnostics", "Telehealth", "Body composition analysis", "Imaging access", "Secure patient portal"),
       telehealth: true,
       providerTypes: csv("Physician", "Physician Assistant", "Medical Director"),
       phone: "(619) 555-0150",
@@ -125,20 +230,46 @@ async function main() {
       hours: "Mon–Fri 9am–6pm",
       verified: false,
       verificationStatus: "pending",
+      // Extended fields:
+      acceptingNewPatients: true,
+      claimStatus: "claimed",
+      profileCompleteness: 88,
+      initialConsultPrice: 350,
+      membershipPrice: 300,
+      insuranceAccepted: false,
+      hsaFsaAccepted: false,
+      earliestAvailability: "5 days",
+      statesServed: "CA, NV, AZ, OR, WA",
+      languages: "English, Mandarin",
+      accessibility: "Fully accessible",
+      pricingStatus: "Full Pricing Published",
+      whatToExpect: "Comprehensive biomarker panel, DEXA scan, Advanced longevity consultation, healthspan plan implementation, continuous remote monitoring",
+      locations: [
+        { name: "La Jolla Flagship Facility", address: "4225 Executive Dr, La Jolla, CA 92037", phone: "(619) 555-0150", hours: "Mon–Fri 9am–6pm", parking: "Complimentary valet parking", transit: "UCSD Blue Line Trolley stop", accessibility: "Full ADA compliance", onSiteLab: true, phlebotomy: true, earliestAppt: "5 days" }
+      ],
+      providers: [
+        { name: "Dr. Priya Nair", credentials: "MD", role: "Medical Director", specialties: "Longevity, Peptide Therapy, Hormones", yearsExperience: 15, bio: "Medical director with extensive experience overseeing multi-state telehealth men's health programs.", languages: "English, Mandarin", telehealth: true, avatarUrl: null }
+      ],
+      treatments: [
+        { name: "Longevity & Healthspan Assessment", category: "Longevity", description: "Comprehensive clinical analysis tracking biological age, VO2 max estimation, lipid panels, inflammation markers, and DEXA scans.", concerns: "Preventive health, Cognitive health, General wellness", priceRange: "$350 / session", labRequired: true, consultRequired: true, careFormat: "hybrid" },
+        { name: "Advanced Biomarker Screenings", category: "Diagnostics", description: "Testing for metabolic markers, cardiovascular inflammation, full hormone cascade, and micronutrient status.", concerns: "Fatigue, Brain fog, Risk screening", priceRange: "$499 / panel", labRequired: true, consultRequired: true, careFormat: "hybrid" }
+      ],
+      reviews: [
+        { rating: 5, author: "Richard M.", content: "Incredibly thorough. They look at biomarkers that other doctors ignore.", category: "Longevity", verifiedPatient: true, response: "Thank you, Richard. Our goal is to extend healthspan." }
+      ]
     },
     {
       name: "Harbor Men's Clinic",
       slug: "harbor-mens-clinic",
       tagline: "Accessible men's health, close to home",
-      overview:
-        "Harbor Men's Clinic provides accessible primary men's health services including testosterone therapy, erectile dysfunction care, and preventive screening.",
+      overview: "Harbor Men's Clinic provides accessible primary men's health services including testosterone therapy, erectile dysfunction care, and preventive screening.",
       logoColor: "teal",
       city: "Tampa",
       state: "FL",
       zip: "33602",
       serviceArea: "Tampa Bay area",
       specialties: csv("TRT", "Erectile Dysfunction", "Preventive Men's Health"),
-      capabilities: csv("In-person consults", "On-site phlebotomy"),
+      capabilities: csv("In-person consults", "On-site phlebotomy", "Prescription delivery", "Secure messaging"),
       telehealth: true,
       providerTypes: csv("Nurse Practitioner", "Medical Assistant"),
       phone: "(813) 555-0166",
@@ -147,16 +278,49 @@ async function main() {
       hours: "Mon–Fri 8am–6pm, Sat 10am–2pm",
       verified: true,
       verificationStatus: "verified",
-    },
+      // Extended fields:
+      acceptingNewPatients: true,
+      claimStatus: "unclaimed",
+      profileCompleteness: 70,
+      initialConsultPrice: 49,
+      membershipPrice: 89,
+      insuranceAccepted: true,
+      hsaFsaAccepted: true,
+      earliestAvailability: "Same day",
+      statesServed: "FL, GA",
+      languages: "English, Spanish",
+      accessibility: "Wheelchair accessible",
+      pricingStatus: "Full Pricing Published",
+      whatToExpect: "Initial consult with provider, Rapid lab testing on-site, Custom protocol selection, Free prescription shipping",
+      locations: [
+        { name: "Tampa Bay Main Office", address: "401 E Jackson St, Tampa, FL 33602", phone: "(813) 555-0166", hours: "Mon–Fri 8am–6pm, Sat 10am–2pm", parking: "Garage parking, fee applies", transit: "TECO Line Streetcar", accessibility: "Wheelchair accessible", onSiteLab: true, phlebotomy: true, earliestAppt: "Same day" }
+      ],
+      providers: [
+        { name: "Elena Vasquez, MA", credentials: "CMA", role: "Medical Assistant", specialties: "Phlebotomy, Patient Support", yearsExperience: 3, bio: "Certified medical assistant supporting clinical workflows and on-site phlebotomy.", languages: "English, Spanish", telehealth: false, avatarUrl: null }
+      ],
+      treatments: [
+        { name: "Low-Testosterone Protocol (TRT)", category: "Hormone Optimization", description: "Affordable, provider-led testosterone replacement therapy. In-office injections or home shipping.", concerns: "Low testosterone, Low energy, Muscle loss", priceRange: "$89 / month", labRequired: true, consultRequired: true, careFormat: "hybrid" },
+        { name: "Erectile Dysfunction Medication", category: "Sexual Health", description: "Sildenafil or Tadalafil prescriptions with quick telehealth screening and discreet packaging.", concerns: "Erectile difficulties", priceRange: "$39 / month", labRequired: false, consultRequired: true, careFormat: "telehealth" }
+      ],
+      reviews: [
+        { rating: 4, author: "Will G.", content: "Fast service and very affordable consult fee. Highly recommended.", category: "Hormones", verifiedPatient: true, response: null }
+      ]
+    }
   ];
 
   for (const c of clinics) {
-    await db.clinic.upsert({
-      where: { slug: c.slug },
-      update: {},
-      create: c,
+    const { locations, providers, treatments, reviews, ...clinicData } = c;
+    await db.clinic.create({
+      data: {
+        ...clinicData,
+        locations: { create: locations },
+        providers: { create: providers },
+        treatments: { create: treatments },
+        reviews: { create: reviews }
+      }
     });
   }
+  console.log(`Successfully seeded ${clinics.length} clinics with relational details.`);
 
   // ── Professionals ─────────────────────────────────────────
   const professionals = [

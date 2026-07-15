@@ -50,5 +50,9 @@ test
 prompt
 
 server.log
+
+# Supabase local CLI state
+/supabase/.temp/
+
 # Skills directory
 /skills/

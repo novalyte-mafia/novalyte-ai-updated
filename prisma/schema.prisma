@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -40,11 +40,103 @@ model Clinic {
   updatedAt     DateTime @updatedAt
   deletedAt     DateTime?
 
-  consultations ConsultationRequest[]
+  // Extended Discovery & Owner Fields
+  acceptingNewPatients Boolean  @default(true)
+  claimStatus          String   @default("unclaimed") // claimed | unclaimed
+  profileCompleteness  Int      @default(50)
+  initialConsultPrice  Int?
+  membershipPrice      Int?
+  insuranceAccepted    Boolean  @default(false)
+  hsaFsaAccepted       Boolean  @default(true)
+  earliestAvailability String?
+  statesServed         String?  // CSV of states
+  languages            String   @default("English") // CSV
+  accessibility        String   @default("Wheelchair accessible")
+  pricingStatus        String   @default("Full Pricing Published") // Full Pricing Published | Partial | Consultation Pricing Available | Contact Clinic
+  whatToExpect         String?  // JSON string or step-by-step CSV
+
+  consultations        ConsultationRequest[]
+  locations            ClinicLocation[]
+  providers            ClinicProvider[]
+  treatments           ClinicTreatment[]
+  reviews              ClinicReview[]
 
   @@index([state])
   @@index([verified])
   @@index([slug])
+}
+
+model ClinicLocation {
+  id            String   @id @default(cuid())
+  clinicId      String
+  clinic        Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name          String
+  address       String
+  phone         String?
+  hours         String?
+  parking       String?
+  transit       String?
+  accessibility String?
+  onSiteLab     Boolean  @default(false)
+  phlebotomy    Boolean  @default(false)
+  earliestAppt  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clinicId])
+}
+
+model ClinicProvider {
+  id              String   @id @default(cuid())
+  clinicId        String
+  clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name            String
+  credentials     String
+  role            String
+  specialties     String?
+  yearsExperience Int      @default(0)
+  bio             String?
+  languages       String?  @default("English")
+  telehealth      Boolean  @default(false)
+  avatarUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clinicId])
+}
+
+model ClinicTreatment {
+  id              String   @id @default(cuid())
+  clinicId        String
+  clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name            String
+  category        String
+  description     String?
+  concerns        String?  // CSV of concerns addressed
+  priceRange      String?
+  labRequired     Boolean  @default(false)
+  consultRequired Boolean  @default(true)
+  careFormat      String?  // in-person | telehealth | hybrid
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clinicId])
+}
+
+model ClinicReview {
+  id              String   @id @default(cuid())
+  clinicId        String
+  clinic          Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  rating          Int
+  author          String
+  content         String
+  category        String?
+  verifiedPatient Boolean  @default(true)
+  response        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clinicId])
 }
 
 // ───────────────────────────────────────────────────────────────

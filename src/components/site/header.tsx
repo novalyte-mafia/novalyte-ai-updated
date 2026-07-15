@@ -60,16 +60,8 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
           </ul>
         </nav>
 
-        {/* RIGHT: Sign In + Marketplace */}
+        {/* RIGHT: Marketplace */}
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden sm:inline-flex"
-            onClick={() => go("join")}
-          >
-            Sign In
-          </Button>
           <Button
             size="sm"
             className="bg-teal-600 text-white hover:bg-teal-700 shadow-sm"
@@ -102,7 +94,7 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                       key={item.view}
                       onClick={() => go(item.view)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-muted",
+                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-muted",
                         isActive && "bg-teal-50 text-teal-700",
                       )}
                     >
@@ -118,7 +110,6 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                   >
                     <Store className="mr-1.5 h-4 w-4" /> Marketplace
                   </Button>
-                  <Button variant="outline" onClick={() => go("join")}>Sign In</Button>
                 </div>
               </nav>
             </SheetContent>

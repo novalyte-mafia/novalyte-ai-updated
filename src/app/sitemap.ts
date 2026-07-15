@@ -11,8 +11,27 @@ const SITE_URL = "https://novalyte.ai";
  * `#journal/category/{name}`). We expose these URLs to crawlers so the
  * structured data and canonical URLs are discoverable.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+import { db } from "@/lib/db";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+
+  // Fetch clinics dynamically for SEO coverage
+  let clinicRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const clinics = await db.clinic.findMany({
+      where: { deletedAt: null },
+      select: { slug: true },
+    });
+    clinicRoutes = clinics.map((c) => ({
+      url: `${SITE_URL}/#directory/${c.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
+  } catch (e) {
+    console.error("Failed to fetch clinics for sitemap", e);
+  }
 
   // Main app routes (single-page, hash-fragmented)
   const mainRoutes: MetadataRoute.Sitemap = [
@@ -52,5 +71,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/#cookies`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...legalRoutes];
+  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...clinicRoutes, ...legalRoutes];
 }
