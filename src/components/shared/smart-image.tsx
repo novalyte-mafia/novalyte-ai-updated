@@ -54,7 +54,7 @@ export function SmartImage({
   }
 
   return (
-    <div className={cn("relative overflow-hidden", !fill && "inline-block", className)}>
+    <div className={cn("relative overflow-hidden", fill ? "h-full w-full" : "inline-block", className)}>
       {!loaded && (
         <div className="novalyte-shimmer absolute inset-0" aria-hidden />
       )}

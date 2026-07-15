@@ -257,17 +257,52 @@
 }
 
 /* ── Novalyte AI logo pulse animation ───────────────────────── */
-@keyframes novalyte-logo-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.08); }
+@keyframes novalyte-star-pulsate {
+  0%, 100% {
+    transform: scale(0.92);
+    filter: drop-shadow(0 0 2px rgb(20 184 166 / 0.4));
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 10px rgb(94 234 212 / 0.95));
+    opacity: 1;
+  }
 }
-.novalyte-logo-glow {
-  animation: novalyte-logo-pulse 3.5s ease-in-out infinite;
+.novalyte-pulsating-star {
+  animation: novalyte-star-pulsate 2.5s ease-in-out infinite;
+  transform-origin: 16px 16px;
 }
+/* Hero ecosystem hub: slow, layered motion that reads as infrastructure rather than a loader. */
+@keyframes novalyte-hub-scale-pulse {
+  0%, 100% {
+    transform: scale(0.97);
+    box-shadow: 0 0 10px oklch(0.7 0.14 185 / 0.18), 0 2px 16px oklch(0.7 0.14 185 / 0.1);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 28px oklch(0.72 0.15 185 / 0.45), 0 4px 24px oklch(0.72 0.15 185 / 0.22);
+  }
+}
+@keyframes novalyte-hub-ring-out {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+.novalyte-hub-card {
+  animation: novalyte-hub-scale-pulse 4s ease-in-out infinite;
+  transform-origin: center;
+}
+.novalyte-hub-ring {
+  animation: novalyte-hub-ring-out 4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  transform-origin: center;
+}
+.novalyte-hub-ring-delayed { animation-delay: 2s; }
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .novalyte-logo-glow,
+  .novalyte-pulsating-star,
+  .novalyte-hub-card,
+  .novalyte-hub-ring,
   .novalyte-pulse-ring,
   .novalyte-float,
   .novalyte-shimmer,

@@ -24,6 +24,14 @@ export const IMAGES = {
     ecosystem: "/images/hero/hero-6.jpg",
   },
 
+  // Original Novalyte AI pillar photography, generated for the marketing surface.
+  pillars: {
+    acquisition: "/images/pillars/patient-acquisition.jpg",
+    directory: "/images/pillars/clinic-directory.jpg",
+    workforce: "/images/pillars/workforce-hub.jpg",
+    marketplace: "/images/pillars/services-marketplace.jpg",
+  },
+
   // Clinic directory + profile images
   clinics: {
     exterior: [

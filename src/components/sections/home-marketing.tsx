@@ -91,16 +91,16 @@ export function ProblemSection() {
 
 export function PillarsSection() {
   const pillarImages: Record<string, string> = {
-    acquisition: IMAGES.patients.consultation,
-    directory: IMAGES.clinics.exterior[0],
-    workforce: IMAGES.professionals[4],
-    marketplace: IMAGES.marketplace.lab[0],
+    acquisition: IMAGES.pillars.acquisition,
+    directory: IMAGES.pillars.directory,
+    workforce: IMAGES.pillars.workforce,
+    marketplace: IMAGES.pillars.marketplace,
   };
-  const pillarAlts: Record<string, string> = {
-    acquisition: "Adult male patient in healthcare consultation completing digital intake",
-    directory: "Modern men's health clinic reception and consultation environment",
-    workforce: "Healthcare professionals collaborating in a clinical setting",
-    marketplace: "Modern laboratory technology and clinical equipment",
+  const pillarImagePosition: Record<string, string> = {
+    acquisition: "object-[68%_center]",
+    directory: "object-[72%_center]",
+    workforce: "object-[72%_center]",
+    marketplace: "object-[74%_center]",
   };
   return (
     <SectionShell id="pillars">
@@ -121,8 +121,7 @@ export function PillarsSection() {
           return (
             <div
               key={p.key}
-              onClick={() => navigate(p.view)}
-              className="group relative overflow-hidden rounded-2xl border border-neutral-800 bg-black min-h-[380px] flex flex-col justify-end cursor-pointer shadow-premium-sm transition duration-300 hover:border-teal-500/50 hover:shadow-premium-lg"
+              className="group relative flex min-h-[380px] flex-col justify-end overflow-hidden rounded-2xl border border-neutral-800 bg-black shadow-premium-sm transition duration-300 hover:border-teal-500/50 hover:shadow-premium-lg"
             >
               {/* Pillar background image — explicit positioned wrapper so fill has a valid height */}
               <div className="absolute inset-0 overflow-hidden">
@@ -132,7 +131,7 @@ export function PillarsSection() {
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="transition duration-700 group-hover:scale-[1.04]"
-                  imgClassName="object-cover opacity-85"
+                  imgClassName={cn("object-cover opacity-90", pillarImagePosition[p.key])}
                 />
                 {/* Dark teal gradient overlay */}
                 <div
@@ -162,9 +161,13 @@ export function PillarsSection() {
                 </p>
 
                 <div className="pt-1">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-300 transition-all group-hover:text-teal-200 group-hover:gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => navigate(p.view)}
+                    className="inline-flex items-center gap-1.5 rounded-md text-left text-sm font-bold text-teal-300 outline-none transition-all hover:gap-2.5 hover:text-teal-200 focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#041f1c]"
+                  >
                     {p.cta} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                  </span>
+                  </button>
                 </div>
               </div>
             </div>

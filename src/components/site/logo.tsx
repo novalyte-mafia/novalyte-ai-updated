@@ -26,25 +26,6 @@ export function Logo({
 
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes novalyte-star-pulsate {
-          0%, 100% {
-            transform: scale(0.92);
-            filter: drop-shadow(0 0 2px rgba(20, 184, 166, 0.4));
-            opacity: 0.75;
-          }
-          50% {
-            transform: scale(1.08);
-            filter: drop-shadow(0 0 10px rgba(94, 234, 212, 0.95));
-            opacity: 1;
-          }
-        }
-        .novalyte-pulsating-star {
-          animation: novalyte-star-pulsate 2.5s infinite ease-in-out;
-          transform-origin: 16px 16px;
-        }
-      `}} />
-
       {/* Bordered black background container */}
       <span className={cn(
         "relative inline-flex items-center justify-center rounded-xl bg-black border border-neutral-800 shadow-md shadow-black/40 overflow-hidden",

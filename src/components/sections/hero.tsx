@@ -81,47 +81,19 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
             </svg>
 
             {/* center hub */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes hub-scale-pulse {
-                  0%, 100% { transform: scale(0.97); box-shadow: 0 0 10px rgba(20,184,166,0.18), 0 2px 16px rgba(20,184,166,0.10); }
-                  50%       { transform: scale(1.03); box-shadow: 0 0 28px rgba(20,184,166,0.45), 0 4px 24px rgba(20,184,166,0.22); }
-                }
-                @keyframes ring-out {
-                  0%   { transform: scale(1);   opacity: 0.55; }
-                  100% { transform: scale(1.65); opacity: 0; }
-                }
-                .hub-logo-card {
-                  animation: hub-scale-pulse 4s ease-in-out infinite;
-                  transform-origin: center;
-                }
-                .hub-ring-1 {
-                  animation: ring-out 4s cubic-bezier(0.16,1,0.3,1) infinite;
-                  transform-origin: center;
-                }
-                .hub-ring-2 {
-                  animation: ring-out 4s cubic-bezier(0.16,1,0.3,1) infinite;
-                  animation-delay: 2s;
-                  transform-origin: center;
-                }
-                @media (prefers-reduced-motion: reduce) {
-                  .hub-logo-card { animation: none; }
-                  .hub-ring-1, .hub-ring-2 { display: none; }
-                }
-              `}} />
-
+            <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
               {/* Outer expanding rings — centred via negative margin trick */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-                <div className="hub-ring-1 h-24 w-52 rounded-3xl border border-teal-400/30" />
+                <div className="novalyte-hub-ring h-24 w-52 rounded-3xl border border-teal-400/30" />
               </div>
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-                <div className="hub-ring-2 h-24 w-52 rounded-3xl border border-teal-400/15" />
+                <div className="novalyte-hub-ring novalyte-hub-ring-delayed h-24 w-52 rounded-3xl border border-teal-400/15" />
               </div>
 
               {/* Main Hub Container */}
-              <div className="hub-logo-card relative flex h-[72px] w-48 items-center justify-center rounded-2xl border border-teal-500/30 bg-white/96 px-4 shadow-[0_4px_32px_rgba(20,184,166,0.18)] backdrop-blur-sm">
+              <div className="novalyte-hub-card relative flex h-[72px] w-48 items-center justify-center rounded-2xl border border-teal-500/30 bg-white/95 px-4 shadow-[0_4px_32px_rgba(20,184,166,0.18)] backdrop-blur-sm sm:w-52">
                 <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50/50 to-emerald-50/25" aria-hidden />
-                <Logo size="default" showWord />
+                <Logo size="default" showWord className="relative z-10" />
               </div>
             </div>
 
