@@ -698,3 +698,77 @@ Stage Summary:
 - Full application no longer exposed on the marketing page
 - Bot protection (honeypot), verification flow, save-and-resume messaging
 - All disclaimers present: no guarantee of leads/revenue/outcomes, illustrative estimates only
+
+---
+Task ID: 20
+Agent: Z.ai Code (subagent for Task 20)
+Task: Rebuild WorkforceView as ecosystem-integrated, healthcare-broad (no longer men's-health-only)
+
+Work Log:
+- Completely rewrote `/home/z/my-project/src/components/views/workforce-view.tsx` (1731 → 2121 lines). Preserved the required signature `WorkforceView({ professionals, jobs, onGetStarted })`.
+- 16 sections in the spec order:
+  1. Hero — headline "Connect Patient Demand with the Workforce Required to Deliver Care" (teal→emerald gradient on the bold phrase). Three CTAs (Browse Healthcare Roles → scrolls to #browse-jobs; Join as a Professional → onGetStarted; Post a Role → onGetStarted). Compact trust row with all 6 required items. Real prop-derived stat row (active roles + professionals in network). SmartImage hero from /images/professionals/pro-5.jpg.
+  2. Ecosystem Connection — "One Ecosystem Built Around Healthcare Growth". Four connected stages (Patient Demand → Clinic & Provider Growth → Workforce Capacity → Operational Enablement) with arrow connectors on desktop. Teal callout: "More patient demand requires more workforce capacity. Novalyte connects both."
+  3. Workforce Models — Permanent Hiring / Contract & Flexible Work / Capacity Expansion (PremiumCards with CheckItem point lists).
+  4. Job Search & Filters — keyword, state (US_STATES), employment type (derived), compensation range, remote-only switch; sort; ViewToggle (grid/list); active FilterChip row; pagination (10/page); EmptyState; CardSkeleton loading. **Uses `useTransition` (`isPending`) for loading — NOT useEffect+setState.** Job cards: organization name + Featured pill + Verified pill + SaveButton (useSaved + toast), clickable title → navigate("job-detail", undefined, { id: job.id }), location/employment/remote pills, compensation, specialty tags, required licenses, description, schedule, Apply now + View details.
+  5. Browse by Healthcare Category — 7 categories (Clinical Care, Allied Health, Behavioral Health, Operations & Administration, Revenue Cycle, Healthcare Technology, Specialty Care). Clicking dispatches a window CustomEvent `novalyte:set-job-keyword` that the JobsSection listens for (one-time useEffect) → applies the keyword filter and scrolls back to #browse-jobs with a toast. Men's health lives under Specialty Care, not the page focus.
+  6. Professional Pathway — "Build One Professional Profile. Access Multiple Healthcare Opportunities." 10 capabilities listed. CTAs: Create Your Talent Profile (onGetStarted) + Browse Healthcare Roles.
+  7. Flexible Talent Pathway — "Make Your Availability Work for You." 9 availability options. DisclaimerBanner uses "planned" / "designed to support" language.
+  8. Professional Profile Preview — "Demonstration preview" amber pill. Mock candidate card with SmartImage headshot (/images/professionals/pro-3.jpg), title, location, years, specialties, employment pref, availability, licensed states, remote eligibility, skills, resume-uploaded + LinkedIn-added pills, profile completion %, and 6 layered verification badges (Email / Phone / Identity / Resume Reviewed / License / Certification Verified).
+  9. Application Tracking Preview — "Product preview · Demonstration data only" amber pill. 8-stage application flow (Draft → … → Hired / Not Selected) with current stages highlighted, 4 mock active applications, side StatCards (Saved roles, Recommended, Profile views, Employer messages).
+  10. Employer Pathway — "Build the Capacity Required to Serve More Patients." 10 organization capabilities listed. CTAs: Post a Healthcare Role + Create Organization Account (both onGetStarted).
+  11. Novalyte Partner Clinic Connection — "Your Patient Pipeline and Workforce Capacity Should Grow Together." Four benefit cards. DisclaimerBanner uses "future" / "will be able to" language.
+  12. Employer Dashboard Preview — "Product preview · Demonstration data only" amber pill. StatCard row (Active jobs, New applicants, Shortlisted, In interview) + applicant-pipeline bar chart + recent applicants list + candidate recommendations + listing-performance card.
+  13. Matching Methodology — "How Novalyte Aligns Healthcare Talent and Opportunity." 17 matching factors (Role, Location, Licensure, Licensed states, Specialty, Remote availability, Experience, Employment preference, Schedule, Credential status, Assignment duration, Start date, Shift, Compensation, Organization type, Care setting, Travel radius). Amber DisclaimerBanner with the required employer-responsibility disclaimer.
+  14. Trust & Responsibility — 6 compact cards (Employer verification, Credential-aware profiles, Secure document handling, Candidate privacy, Profile visibility controls, Listing review & fraud reporting). Muted DisclaimerBanner explicitly stating Novalyte does not represent independent verification and does not guarantee outcomes.
+  15. Final Employer CTA — "Need More Capacity as Patient Demand Grows?" CTAs: Post a Role (onGetStarted) + Find Healthcare Talent (scroll to jobs). Note: "Novalyte partner organizations can manage roles from their connected dashboard."
+  16. Final Professional CTA — Dark section. "Find Work That Matches Your Credentials, Goals, and Availability." CTAs: Join as a Professional (onGetStarted) + Browse Healthcare Roles (scroll to jobs). Inlined (not CTASection) so the secondary button scrolls to jobs instead of reloading the view.
+- Used only existing shadcn/ui components (button, input, label, badge, select, switch, sheet, pagination, separator) and shared components (PremiumCard, MetaRow, StatCard, CardSkeleton, EmptyState, FilterChip, ViewToggle, SaveButton, Breadcrumbs, SectionShell, SectionHeading, StatusPill, CheckItem, DisclaimerBanner, SmartImage). Dropped unused VerificationBadge and CTASection imports.
+- Used `navigate` and `useSaved` from @/lib/nav; `splitCsv`, `colorClasses`, `initials`, `US_STATES` from @/lib/constants; `cn` from @/lib/utils; `toast` from sonner; icons from lucide-react.
+- No indigo/blue as primary — teal/emerald throughout (sky only for the Remote-eligible pill in the profile preview).
+- All demonstration/preview data clearly labeled with amber pills + muted DisclaimerBanners.
+- TypeScript strict, no `any`. Fully responsive (mobile-first).
+- `bun run lint` clean (0 errors, 0 warnings). Dev server compiles successfully.
+
+Stage Summary:
+- WorkforceView is now ecosystem-integrated (Patient Demand → Provider Growth → Workforce Capacity → Operational Enablement) and healthcare-broad (clinical, allied health, behavioral health, operations, revenue cycle, technology, specialty care).
+- Men's health is one specialty under "Specialty Care" — not the page focus.
+- Job board uses `useTransition` for loading (replacing the previous useEffect+setTimeout pattern).
+- Browse-by-Category drives the job filter via a window CustomEvent so the spec section ordering (jobs before categories) is preserved while keeping the click→filter UX.
+- All 8 demonstration/preview sections clearly labeled.
+- Employer-responsibility disclaimers preserved and expanded.
+- `JobDetailView` import continues to work — Apply/View Details call `navigate("job-detail", undefined, { id: job.id })`.
+- `onGetStarted` wired to every professional/employer signup CTA.
+
+---
+Task ID: 21
+Agent: Main (Z.ai Code)
+Task: Workforce ecosystem redesign — seed data expansion + verification
+
+Work Log:
+- Updated seed data: expanded from 5 men's health jobs to 26 healthcare-broad jobs across categories (clinical care, allied health, behavioral health, operations, revenue cycle, healthcare technology, specialty care including men's health)
+- Re-seeded database (cleared old jobs, ran seed — 26 jobs, 16 professionals)
+- Dispatched subagent (Task 20) to rebuild workforce-view.tsx with 16 sections:
+  - Ecosystem-connected hero with healthcare-broad headline
+  - Ecosystem connection section (Patient Demand → Provider Growth → Workforce Capacity → Operational Enablement)
+  - Workforce models (Permanent, Contract & Flexible, Capacity Expansion)
+  - Job search with 26 healthcare roles, filters, pagination, save/apply
+  - Browse by healthcare category (7 categories)
+  - Professional pathway + Flexible talent pathway
+  - Professional profile preview with layered verification
+  - Application tracking preview
+  - Employer pathway + Partner clinic connection
+  - Employer dashboard preview
+  - Matching methodology (17 factors)
+  - Trust & responsibility
+  - Final employer CTA + Final professional CTA
+- Verified with Agent Browser: hero with 3 CTAs, ecosystem section, workforce models, 26 healthcare jobs (RN, NP, MA, Revenue Cycle, Behavioral Health, PT, Rad Tech, Lab Tech, Coder, Data Analyst, etc.), 7 categories, professional pathway, employer CTA, mobile responsive
+
+Stage Summary:
+- Workforce page transformed from men's-health-only job board to ecosystem-integrated healthcare workforce platform
+- 26 demonstration healthcare jobs across 7+ categories
+- Men's health is one specialty within the broader network
+- Connected to Novalyte ecosystem (patient demand → clinic growth → workforce → marketplace)
+- All demonstration data clearly labeled
+- No fabricated functionality claims (future features use "planned" language)
+- Lint clean, server healthy, mobile responsive

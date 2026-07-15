@@ -1,0 +1,1519 @@
+```text
+# NOVALYTE WORKFORCE — ECOSYSTEM-INTEGRATED HEALTHCARE WORKFORCE PLATFORM
+
+## PRIMARY OBJECTIVE
+
+Redesign and expand the existing Novalyte Workforce experience so it becomes the workforce, hiring, talent-discovery, and flexible-staffing layer within the broader Novalyte healthcare ecosystem.
+
+Do not position Workforce as an unrelated standalone product.
+
+Do not limit Workforce exclusively to men’s health.
+
+Novalyte Workforce must remain structurally, visually, and strategically connected to:
+
+- Patient acquisition
+- Clinic growth
+- Clinic directory
+- Healthcare marketplace
+- Clinic and organization profiles
+- Clinic and employer dashboards
+- Healthcare professional profiles
+- Job publishing
+- Hiring workflows
+- Applicant tracking
+- Flexible staffing
+- Workforce-capacity expansion
+
+The platform should support the broader healthcare market while maintaining a clear connection to Novalyte’s initial focus on men’s health clinics.
+
+---
+
+# DESIGN-SYSTEM REQUIREMENT
+
+Before making any design or implementation changes, inspect the existing Novalyte application and identify the established design system, including:
+
+- Global CSS variables
+- Design tokens
+- Tailwind configuration
+- Typography system
+- Brand colors
+- Accent colors
+- Surface colors
+- Border colors
+- Button styles
+- Input styles
+- Card styles
+- Spacing rules
+- Border-radius rules
+- Shadow system
+- Icon system
+- Shared navigation
+- Shared footer
+- Existing responsive behavior
+- Reusable UI components
+
+The Workforce experience must use the existing Novalyte design tokens and shared component patterns.
+
+Do not introduce a separate Workforce theme.
+
+Do not create arbitrary one-off colors, typography, spacing, buttons, cards, form styles, or interface patterns.
+
+Do not replace the existing approved brand palette with visually similar custom colors.
+
+Where existing shared components are appropriate, reuse them.
+
+Where new components are necessary, build them using the same tokens, visual language, interaction behavior, and accessibility standards used throughout the existing application.
+
+The Workforce page must feel like a native part of Novalyte—not a separate template, microsite, or third-party job board.
+
+---
+
+# CORE ECOSYSTEM STRATEGY
+
+Novalyte operates as one connected healthcare ecosystem.
+
+The relationship between the platform’s major components should be clearly communicated:
+
+1. Patient acquisition creates qualified patient demand for healthcare organizations.
+2. Clinics and providers receive more patient opportunities.
+3. Growing organizations require additional clinical and operational capacity.
+4. Novalyte Workforce helps organizations find permanent, part-time, contract, temporary, and flexible talent.
+5. Novalyte Marketplace helps organizations obtain equipment, technology, services, supplies, and operational resources.
+6. The Clinic Directory improves provider visibility and patient discovery.
+7. Organization dashboards connect patient-growth workflows, job listings, applicants, marketplace activity, and future operational capabilities.
+
+The Workforce page should communicate that it is part of this connected system.
+
+Primary strategic message:
+
+“More patient demand requires more workforce capacity. Novalyte connects both.”
+
+---
+
+# POSITIONING
+
+Novalyte Workforce is the talent and staffing infrastructure layer of the Novalyte healthcare ecosystem.
+
+It helps healthcare organizations:
+
+- Publish permanent positions
+- Publish full-time and part-time positions
+- Publish contract roles
+- Publish temporary assignments
+- Find flexible healthcare professionals
+- Add clinical capacity
+- Add administrative capacity
+- Add operational capacity
+- Discover qualified professionals
+- Build candidate pipelines
+- Review applicants
+- Manage hiring workflows
+- Prepare for increases in patient volume
+- Manage workforce activity from their organization dashboard
+
+It helps healthcare professionals:
+
+- Create a professional account
+- Build a complete healthcare talent profile
+- Add a professional biography
+- Upload a resume
+- Add a LinkedIn profile
+- Add professional links
+- Add employment history
+- Add education
+- Add licenses
+- Add certifications
+- Add specialties
+- Add skills
+- Upload professional documents
+- Set employment preferences
+- Set location preferences
+- Set schedule preferences
+- Indicate permanent or flexible availability
+- Browse healthcare opportunities
+- Save jobs
+- Apply to multiple positions
+- Track application status
+- Receive employer communication
+- Manage professional documents
+- Control profile visibility
+- Receive relevant job recommendations
+
+---
+
+# MARKET SCOPE
+
+Novalyte Workforce must serve the broader healthcare market.
+
+Supported healthcare organizations may include:
+
+- Men’s health clinics
+- Primary care practices
+- Specialty clinics
+- Hospitals
+- Health systems
+- Telehealth organizations
+- Behavioral health providers
+- Medical weight-management clinics
+- Women’s health organizations
+- Rehabilitation providers
+- Imaging centers
+- Laboratories
+- Dental practices
+- Home health organizations
+- Urgent care centers
+- Pharmacies
+- Healthcare technology companies
+- Medical device companies
+- Healthcare service organizations
+- Revenue-cycle organizations
+- Wellness providers
+- Longevity clinics
+- Outpatient care organizations
+- Ambulatory care centers
+
+Men’s health should remain an important specialty category within the platform, but it must not define the entire Workforce experience.
+
+---
+
+# CURRENT PAGE ASSESSMENT
+
+The current Workforce page already contains useful foundations, including:
+
+- Job listings
+- Job filters
+- Grid and list views
+- Featured roles
+- Verified-employer indicators
+- Compensation information
+- License requirements
+- Specialty tags
+- Application requirements
+- Professional browsing
+- Employer role publishing
+- Structured matching information
+
+Retain and improve these working patterns where appropriate.
+
+The current positioning is too narrowly centered on men’s health.
+
+Replace messaging such as:
+
+“Specialized Talent for the Future of Men’s Health”
+
+with broader ecosystem-connected healthcare workforce positioning.
+
+Expand:
+
+- Hero messaging
+- Job categories
+- Demonstration roles
+- Search filters
+- Specialty filters
+- Employer messaging
+- Candidate messaging
+- Matching criteria
+- Organization types
+- Flexible staffing pathways
+
+Do not remove working functionality simply to redesign the page.
+
+---
+
+# HERO SECTION
+
+Replace the existing specialty-restricted hero with an ecosystem-connected healthcare workforce hero.
+
+Recommended headline:
+
+“Connect Patient Demand with the Workforce Required to Deliver Care”
+
+Use the existing Novalyte heading treatment and typography system.
+
+Emphasize the most important phrase using the approved brand-accent treatment already used throughout the application.
+
+Recommended supporting copy:
+
+“Find qualified clinical and operational professionals, publish permanent or flexible healthcare roles, and expand your team as patient volume grows. Novalyte Workforce connects healthcare organizations and professionals through one integrated platform.”
+
+Primary calls to action:
+
+- Browse Healthcare Roles
+- Join as a Professional
+- Post a Role
+
+Optional supporting action:
+
+- Find Flexible Talent
+
+Keep the hero concise, clear, and action-oriented.
+
+The hero should visually communicate both audiences:
+
+- Healthcare professionals
+- Healthcare organizations
+
+---
+
+# HERO SEARCH EXPERIENCE
+
+Include a prominent healthcare job-search interface.
+
+Search fields should support:
+
+- Job title
+- Role
+- Specialty
+- Certification
+- Skill
+- Keyword
+- City
+- State
+- ZIP code
+- Remote work
+
+Recommended interface:
+
+Field 1:
+“Job title, specialty, certification, or keyword”
+
+Field 2:
+“City, state, ZIP code, or remote”
+
+Primary action:
+“Search Healthcare Roles”
+
+Optional quick filters:
+
+- Remote
+- Contract
+- Temporary
+- Full-time
+- Part-time
+- Recently posted
+
+Ensure the search experience works cleanly across desktop, tablet, and mobile.
+
+---
+
+# TRUST AND CAPABILITY INDICATORS
+
+Replace specialty-only indicators with broader workforce capabilities.
+
+Recommended indicators:
+
+- Credential-aware professional profiles
+- Clinical and operational roles
+- Permanent and flexible opportunities
+- Multi-state license matching
+- Verified healthcare organizations
+- Direct applications
+- Application tracking
+- Healthcare-wide specialty coverage
+
+Use concise labels and supporting descriptions.
+
+---
+
+# ECOSYSTEM CONNECTION SECTION
+
+Add a visually strong section explaining how Workforce connects to the broader Novalyte platform.
+
+Recommended heading:
+
+“One Ecosystem Built Around Healthcare Growth”
+
+Present the ecosystem as a connected sequence.
+
+## Patient Demand
+
+Novalyte helps qualified patients discover and connect with appropriate clinics and healthcare organizations.
+
+## Clinic and Provider Growth
+
+Organizations receive stronger visibility, patient opportunities, and pathways for growth.
+
+## Workforce Capacity
+
+Organizations publish permanent, contract, temporary, and flexible roles to build the teams required to support demand.
+
+## Operational Enablement
+
+The Novalyte Marketplace provides access to healthcare equipment, technology, services, supplies, and operational resources.
+
+The section should clearly communicate that Workforce is not an isolated job board.
+
+It is the workforce-capacity layer within the Novalyte ecosystem.
+
+---
+
+# WORKFORCE MODELS
+
+The platform should visually support and prepare for three workforce models.
+
+## Permanent Hiring
+
+Support:
+
+- Full-time positions
+- Part-time positions
+- Permanent clinical roles
+- Permanent administrative roles
+- Permanent operational roles
+- Leadership positions
+- Management positions
+
+## Contract and Flexible Work
+
+Support:
+
+- Contract roles
+- Temporary assignments
+- Per-diem opportunities
+- Locum-style opportunities where appropriate
+- Short-term coverage
+- Project-based healthcare work
+- Remote healthcare operations
+- Telehealth positions
+- Seasonal staffing
+- Part-time flexible schedules
+
+## Capacity Expansion
+
+Support organizations that need to add staff because:
+
+- Patient volume increased
+- A new service line launched
+- A new location opened
+- Current staff are overloaded
+- Temporary coverage is required
+- Seasonal demand increased
+- Scheduling volume increased
+- Intake demand increased
+- Administrative backlogs developed
+- Clinical capacity became constrained
+
+Use language that communicates workforce capacity, growth, and operational support—not only traditional recruiting.
+
+---
+
+# JOB SEARCH AND FILTERING
+
+Retain and improve the current filtering system.
+
+Filters should support:
+
+- Keyword
+- Job title
+- Role category
+- Specialty
+- Location
+- State
+- Distance
+- Remote, hybrid, or on-site
+- Employment type
+- Full-time
+- Part-time
+- Permanent
+- Contract
+- Temporary
+- Flexible
+- Per-diem
+- Compensation range
+- Compensation type
+- Required license
+- Required certification
+- Experience level
+- Schedule
+- Shift
+- Organization type
+- Care setting
+- Assignment duration
+- Start-date availability
+- Date posted
+- Verified organizations only
+
+Maintain:
+
+- Grid view
+- List view
+- Sorting
+- Saved jobs
+- Apply controls
+- Detailed job views
+- Filter reset
+- Active-filter indicators
+- Result count
+- Pagination or progressive loading
+- Empty states
+- Loading states
+- No-results states
+
+On mobile, use the existing application’s established responsive filter pattern.
+
+---
+
+# JOB LISTING CONTENT
+
+Expand the current job mix to represent healthcare broadly.
+
+Example roles may include:
+
+- Registered Nurse — Outpatient Care
+- Nurse Practitioner — Telehealth
+- Medical Assistant — Phlebotomy
+- Patient Intake Coordinator
+- Practice Operations Manager
+- Behavioral Health Therapist
+- Physical Therapist
+- Occupational Therapist
+- Radiologic Technologist
+- Sonographer
+- Laboratory Technician
+- Revenue Cycle Specialist
+- Medical Coder
+- Prior Authorization Specialist
+- Insurance Verification Specialist
+- Clinic Administrator
+- Medical Director — Contract
+- Healthcare Customer Success Manager
+- Healthcare Data Analyst
+- Health Informatics Specialist
+- Remote Scheduling Coordinator
+- Temporary Patient Support Specialist
+- Front Office Coordinator
+- Patient Access Representative
+- Clinical Operations Manager
+
+Retain relevant specialty roles such as:
+
+- Nurse Practitioner — Hormone Care
+- Registered Nurse — Medical Weight Management
+- Patient Coordinator — Men’s Health
+- Medical Director — Longevity and Telehealth
+- Medical Assistant — TRT Clinic
+- Patient Intake Specialist — Sexual Wellness
+
+Men’s health should appear as one specialty within the broader healthcare workforce network.
+
+---
+
+# JOB CARDS
+
+Each job card should support:
+
+- Job title
+- Organization name
+- Organization logo
+- Verified-employer badge
+- Featured indicator
+- Location
+- Remote, hybrid, or on-site status
+- Employment type
+- Permanent, contract, temporary, or flexible classification
+- Compensation range
+- Compensation type
+- Specialty
+- Required license
+- Required certification
+- Experience level
+- Schedule
+- Shift
+- Start date
+- Assignment length where relevant
+- Short role summary
+- Number of application requirements
+- Date posted
+- Save-job control
+- Apply action
+- View-details action
+
+Use the existing application’s component patterns and design tokens.
+
+Do not fabricate real employer relationships.
+
+Where actual data does not exist, use clearly labeled demonstration data.
+
+---
+
+# JOB-DETAIL EXPERIENCE
+
+Job-detail pages should support:
+
+- Full job title
+- Organization profile
+- Verification status
+- Location
+- Work arrangement
+- Employment type
+- Compensation
+- Schedule
+- Shift
+- Role summary
+- Responsibilities
+- Required qualifications
+- Preferred qualifications
+- Required licenses
+- Required certifications
+- Experience requirements
+- Benefits
+- Application questions
+- Application deadline
+- Number of openings
+- Application status
+- Save-job action
+- Apply action
+- Similar jobs
+- Organization’s other open roles
+
+Keep the job-detail experience consistent with the existing Novalyte application.
+
+---
+
+# PROFESSIONAL PATHWAY
+
+Create a dedicated section for healthcare professionals.
+
+Recommended heading:
+
+“Build One Professional Profile. Access Multiple Healthcare Opportunities.”
+
+Professionals should understand that they can:
+
+- Create a free account
+- Add a professional title
+- Write a professional summary
+- Upload a resume
+- Add a LinkedIn URL
+- Add a portfolio or professional website
+- Add employment history
+- Add education
+- Add specialties
+- Add clinical skills
+- Add operational skills
+- Add active licenses
+- Add certifications
+- Upload supporting documents
+- Set preferred locations
+- Set compensation preferences
+- Select permanent or flexible work
+- Set schedule availability
+- Select remote, hybrid, or on-site preferences
+- Save roles
+- Apply to multiple positions
+- Track applications
+- Receive employer messages
+- Receive job recommendations
+- Manage profile visibility
+
+Primary action:
+
+“Create Your Talent Profile”
+
+Secondary action:
+
+“Browse Healthcare Roles”
+
+---
+
+# PROFESSIONAL PROFILE
+
+The future talent profile should support:
+
+## Basic Information
+
+- Full name
+- Professional title
+- Profile image
+- Current location
+- Contact information
+- Professional summary
+- Years of experience
+- Current employment status
+- Availability date
+
+## Professional Links
+
+- LinkedIn
+- Personal website
+- Portfolio
+- Publications
+- Research links
+- GitHub for technical roles
+- Other relevant professional profiles
+
+## Employment History
+
+- Organization
+- Position
+- Employment type
+- Start date
+- End date
+- Responsibilities
+- Achievements
+- Specialty
+- Care setting
+- Technologies and systems used
+
+## Education
+
+- School
+- Degree
+- Field of study
+- Graduation date
+- Residency
+- Fellowship
+- Continuing education
+
+## Licenses and Certifications
+
+- License type
+- Issuing state
+- Issuing authority
+- Issue date
+- Expiration date
+- Verification status
+- Supporting document
+
+## Skills and Specialties
+
+- Clinical specialties
+- Procedures
+- Patient populations
+- Healthcare software
+- EHR platforms
+- Medical devices
+- Languages
+- Leadership skills
+- Administrative competencies
+- Technology skills
+
+## Documents
+
+- Resume
+- Cover letter
+- License documents
+- Certifications
+- Transcripts
+- References
+- Portfolio documents
+
+Use appropriate privacy and visibility controls.
+
+Do not publicly expose sensitive professional information.
+
+---
+
+# PROFESSIONAL VERIFICATION
+
+Use layered verification states instead of one generic verification badge.
+
+Potential indicators:
+
+- Email Verified
+- Phone Verified
+- Identity Verified
+- Resume Reviewed
+- License Verified
+- Certification Verified
+- Employment History Verified
+- Profile Complete
+
+The interface must distinguish between:
+
+- Self-reported
+- Submitted
+- Under review
+- Verified
+- Expired
+- Rejected
+- Additional information required
+
+Do not claim verification has occurred when it has not.
+
+---
+
+# FLEXIBLE TALENT PATHWAY
+
+Add a dedicated flexible-work section.
+
+Recommended heading:
+
+“Make Your Availability Work for You”
+
+Professionals should be able to indicate availability for:
+
+- Temporary assignments
+- Contract work
+- Per-diem shifts
+- Part-time positions
+- Remote support
+- Telehealth work
+- Project-based work
+- Short-term coverage
+- Permanent opportunities
+
+The future interface should support:
+
+- Available immediately
+- Available from a selected date
+- Weekly availability
+- Preferred shifts
+- Maximum travel distance
+- Licensed states
+- Assignment-duration preference
+- Remote availability
+- Desired compensation
+- Preferred care setting
+
+Do not present temporary placement or shift-booking functionality as active unless it is implemented.
+
+---
+
+# APPLICATION EXPERIENCE
+
+Candidates should eventually be able to:
+
+- Start an application
+- Save an application as a draft
+- Reuse profile information
+- Select a resume
+- Select supporting documents
+- Answer employer screening questions
+- Add a cover letter
+- Review the application
+- Submit the application
+- Receive confirmation
+- Track the application
+- Withdraw the application
+- respond to employer requests
+- Schedule interviews
+- Review offer information where appropriate
+
+Avoid requiring candidates to re-enter information already contained in their completed profile unless the employer specifically requests it.
+
+---
+
+# APPLICATION TRACKING
+
+Create a polished preview of the candidate application experience.
+
+Application stages may include:
+
+- Draft
+- Submitted
+- Under Review
+- Screening Requested
+- Screening Scheduled
+- Interview Requested
+- Interview Scheduled
+- Additional Information Required
+- Credential Review
+- Reference Check
+- Offer Extended
+- Hired
+- Not Selected
+- Withdrawn
+
+Also support:
+
+- Saved roles
+- Recommended opportunities
+- Employer messages
+- Credential reminders
+- Pending actions
+- Interview reminders
+- Application timelines
+- Status-change notifications
+
+Only implement live functionality that the current backend supports.
+
+---
+
+# EMPLOYER PATHWAY
+
+Use broad healthcare-organization language rather than clinic-only language.
+
+Recommended heading:
+
+“Build the Capacity Required to Serve More Patients”
+
+Recommended supporting copy:
+
+“Publish permanent, contract, temporary, or flexible healthcare roles and connect with professionals whose credentials, availability, and experience align with your organization.”
+
+Organizations should understand that they will eventually be able to:
+
+- Create an organization account
+- Build an organization profile
+- Verify the organization
+- Publish job listings
+- Save drafts
+- Preview roles
+- Edit roles
+- Pause listings
+- Close listings
+- Duplicate listings
+- Renew listings
+- Archive listings
+- Review applicants
+- Filter candidates
+- Manage hiring stages
+- Add internal notes
+- Collaborate with team members
+- Request documents
+- Schedule interviews
+- Build a talent pipeline
+- Track listing performance
+- Manage Workforce activity from the broader Novalyte organization dashboard
+
+Primary action:
+
+“Post a Healthcare Role”
+
+Secondary action:
+
+“Create Organization Account”
+
+Optional action:
+
+“Find Flexible Talent”
+
+---
+
+# ORGANIZATION PROFILE
+
+Healthcare organizations should eventually be able to create profiles containing:
+
+- Legal organization name
+- Public organization name
+- Organization type
+- Logo
+- Website
+- Headquarters
+- Locations
+- Organization description
+- Specialties
+- Care settings
+- Number of employees
+- Benefits
+- Workplace model
+- Contact person
+- Business email
+- Phone number
+- Social links
+- Accreditation information
+- NPI information where relevant
+- Verification status
+- Open roles
+
+Organization profiles should connect directly to published jobs.
+
+---
+
+# ORGANIZATION VERIFICATION
+
+Potential verification methods may include:
+
+- Business email verification
+- Domain verification
+- Authorized representative verification
+- Organization identity review
+- Business-registration review
+- Address verification
+- NPI verification where relevant
+- Manual Novalyte review
+
+Clearly represent each verification state.
+
+Do not represent an organization as verified unless the platform has actually completed the required review.
+
+---
+
+# JOB-POSTING WORKFLOW
+
+The employer job-posting experience should support:
+
+- Job title
+- Department
+- Role category
+- Specialty
+- Organization location
+- Work arrangement
+- Employment type
+- Permanent, contract, temporary, or flexible classification
+- Shift
+- Schedule
+- Compensation range
+- Compensation type
+- Benefits
+- Role summary
+- Responsibilities
+- Required qualifications
+- Preferred qualifications
+- Required licenses
+- Required certifications
+- Experience requirements
+- Application questions
+- Number of openings
+- Start date
+- Application deadline
+- Hiring manager
+- Internal reference information
+
+Workflow actions should include:
+
+- Save as draft
+- Preview
+- Publish
+- Edit
+- Pause
+- Duplicate
+- Close
+- Renew
+- Archive
+
+Published roles should appear on the public Workforce job board after required validation or moderation.
+
+---
+
+# NOVALYTE PARTNER CLINIC CONNECTION
+
+Add a dedicated section explaining how Workforce connects to Novalyte partner clinics.
+
+Recommended heading:
+
+“Your Patient Pipeline and Workforce Capacity Should Grow Together”
+
+Recommended supporting copy:
+
+“Healthcare organizations using Novalyte for patient acquisition and clinic growth will be able to manage open roles, applicants, staffing needs, and workforce activity through the same connected organization dashboard.”
+
+Future connected workflows may include:
+
+- Publish a role from the clinic dashboard
+- Automatically display the role on the Workforce job board
+- Review applicants from the clinic dashboard
+- Receive talent recommendations
+- Identify workforce-capacity needs
+- Add patient-intake support
+- Add clinical support
+- Add temporary operational support
+- Coordinate workforce activity alongside patient-growth workflows
+
+Do not claim predictive staffing or automated recommendations are active unless they are currently implemented.
+
+---
+
+# EMPLOYER DASHBOARD
+
+Prepare the architecture and interface direction for an employer Workforce dashboard containing:
+
+- Active jobs
+- Draft jobs
+- Paused jobs
+- Closed jobs
+- New applicants
+- Reviewed applicants
+- Shortlisted applicants
+- Screening stages
+- Interview stages
+- Credential-review stages
+- Offers
+- Hires
+- Temporary staffing needs
+- Candidate recommendations
+- Listing performance
+- Applicant conversion
+- Team collaboration
+- Expiring listings
+- Hiring activity log
+
+The Workforce modules must feel integrated into the broader Novalyte organization dashboard.
+
+---
+
+# APPLICANT MANAGEMENT
+
+The future applicant-management system should support stages such as:
+
+- New Applicant
+- Reviewed
+- Shortlisted
+- Screening
+- Interview
+- Credential Review
+- Reference Check
+- Offer
+- Hired
+- Rejected
+- Withdrawn
+
+Employers should be able to:
+
+- View candidate profiles
+- Review resumes
+- Review submitted documents
+- Add internal notes
+- Assign candidates to team members
+- Update candidate stages
+- Request additional information
+- Send messages
+- Schedule interviews
+- Search applicants
+- Filter applicants
+- Export appropriate reports
+- Maintain hiring activity records
+
+---
+
+# MATCHING SYSTEM
+
+Retain and expand the current matching explanation.
+
+Matching criteria may include:
+
+- Role
+- Location
+- Licensure
+- Licensed states
+- Specialty
+- Remote availability
+- Experience
+- Employment preference
+- Schedule
+- Credential status
+- Assignment duration
+- Start-date availability
+- Shift preference
+- Compensation expectation
+- Organization type
+- Care setting
+- Travel radius
+- Permanent versus flexible preference
+
+Recommended heading:
+
+“How Novalyte Aligns Healthcare Talent and Opportunity”
+
+Explain that Novalyte supports structured, license-aware discovery and matching.
+
+Do not imply that Novalyte replaces required employer responsibilities.
+
+Employers remain responsible for:
+
+- Background checks
+- License confirmation
+- Credential verification
+- Employment eligibility
+- Clinical supervision
+- Regulatory compliance
+- Final hiring decisions
+
+---
+
+# EXPLAINABLE MATCHING
+
+The future interface may display a profile-match indicator.
+
+Example:
+
+“91% Profile Match”
+
+The interface must explain the factors behind the match.
+
+Example explanation:
+
+- Active license matches
+- Specialty experience matches
+- Location preference matches
+- Compensation preference matches
+- Schedule preference matches
+- Work-arrangement preference matches
+
+Do not create unexplained or misleading AI-generated scores.
+
+---
+
+# HEALTHCARE CATEGORIES
+
+Expand category browsing beyond men’s health.
+
+## Clinical Care
+
+- Physicians
+- Nurse Practitioners
+- Physician Assistants
+- Registered Nurses
+- Licensed Practical Nurses
+- Medical Assistants
+- Nursing Support
+- Pharmacists
+- Dental Professionals
+
+## Allied Health
+
+- Physical Therapy
+- Occupational Therapy
+- Respiratory Therapy
+- Speech Therapy
+- Imaging
+- Radiology
+- Sonography
+- Laboratory Services
+- Surgical Technology
+
+## Behavioral Health
+
+- Psychiatry
+- Psychology
+- Therapy
+- Counseling
+- Social Work
+- Behavioral Health Support
+- Substance-Use Services
+
+## Operations and Administration
+
+- Practice Management
+- Clinic Administration
+- Patient Intake
+- Patient Coordination
+- Scheduling
+- Front Office
+- Healthcare Operations
+- Regional Leadership
+- Executive Leadership
+
+## Revenue Cycle
+
+- Medical Billing
+- Medical Coding
+- Prior Authorization
+- Insurance Verification
+- Claims
+- Revenue-Cycle Management
+- Payment Operations
+
+## Healthcare Technology and Business
+
+- Health Informatics
+- Data and Analytics
+- Healthcare Software
+- Product Management
+- Customer Success
+- Implementation
+- Cybersecurity
+- Healthcare Sales
+- Technical Support
+
+## Specialty Care
+
+- Men’s Health
+- Women’s Health
+- Primary Care
+- Urgent Care
+- Telehealth
+- Medical Weight Management
+- Behavioral Health
+- Home Health
+- Rehabilitation
+- Oncology
+- Cardiology
+- Orthopedics
+- Dermatology
+- Endocrinology
+- Longevity and Wellness
+
+---
+
+# FEATURED ORGANIZATIONS
+
+Add a section for featured or verified healthcare organizations where supported.
+
+Each organization card may contain:
+
+- Organization logo
+- Organization name
+- Verification status
+- Organization type
+- Locations
+- Specialty areas
+- Number of open roles
+- View-organization action
+
+Only use real organizations when real data exists.
+
+Otherwise use clearly labeled demonstration content.
+
+---
+
+# CAREER RESOURCES
+
+Add a Workforce career-resource section connected to the existing Novalyte content system where appropriate.
+
+Potential topics:
+
+- Healthcare resume guidance
+- Interview preparation
+- License and credential management
+- Career-transition guidance
+- Compensation education
+- Remote healthcare careers
+- Clinical-to-non-clinical career paths
+- Healthcare leadership careers
+- Contract and temporary work guidance
+
+Reuse the existing Journal or content architecture where appropriate.
+
+---
+
+# TRUST, PRIVACY, AND RESPONSIBILITY
+
+Add a clear section addressing:
+
+- Employer verification
+- Credential-aware professional profiles
+- Secure document handling
+- Candidate privacy controls
+- Profile-visibility controls
+- Job-listing review
+- Fraud reporting
+- Transparent verification states
+- Candidate control over discoverability
+- Employer hiring responsibility
+
+Do not make unsupported compliance, certification, credentialing, or security claims.
+
+Use accurate language based on what the platform currently supports.
+
+---
+
+# FINAL EMPLOYER CTA
+
+Replace narrow messaging such as:
+
+“Hiring for your men’s health clinic?”
+
+with:
+
+“Need More Capacity as Patient Demand Grows?”
+
+Recommended supporting copy:
+
+“Publish permanent, contract, temporary, or flexible healthcare roles and connect with qualified professionals across clinical, administrative, and operational functions.”
+
+Primary action:
+
+“Post a Role”
+
+Secondary action:
+
+“Find Healthcare Talent”
+
+Optional supporting text:
+
+“Novalyte partner organizations can manage roles and applicants from their connected organization dashboard.”
+
+---
+
+# FINAL PROFESSIONAL CTA
+
+Add a dedicated professional call to action.
+
+Recommended heading:
+
+“Find Work That Matches Your Credentials, Goals, and Availability”
+
+Recommended supporting copy:
+
+“Create one healthcare talent profile, explore permanent and flexible opportunities, apply to multiple roles, and track your progress from one account.”
+
+Primary action:
+
+“Join as a Professional”
+
+Secondary action:
+
+“Browse Healthcare Roles”
+
+---
+
+# RECOMMENDED PAGE ORDER
+
+Use approximately this page structure:
+
+1. Global Novalyte navigation
+2. Workforce-specific navigation
+3. Ecosystem-connected hero
+4. Job-search interface
+5. Trust and capability indicators
+6. Ecosystem connection section
+7. Featured healthcare opportunities
+8. Search filters and job results
+9. Browse by healthcare category
+10. Professional pathway
+11. Flexible talent pathway
+12. Professional-profile preview
+13. Application-tracking preview
+14. Employer pathway
+15. Novalyte partner-clinic connection
+16. Organization-profile preview
+17. Employer-dashboard preview
+18. Matching methodology
+19. Featured healthcare organizations
+20. Career resources
+21. Trust and responsibility section
+22. Final employer CTA
+23. Final professional CTA
+24. Existing global Novalyte footer
+
+Avoid unnecessary repetition between sections.
+
+---
+
+# RESPONSIVE REQUIREMENTS
+
+Desktop:
+
+- Full search experience
+- Clear filter controls
+- Multi-column job layouts where appropriate
+- Rich professional and employer previews
+- Strong information hierarchy
+
+Tablet:
+
+- Condensed search controls
+- Responsive card layouts
+- Collapsible filters
+- Simplified navigation
+
+Mobile:
+
+- Stacked search fields
+- Mobile filter interface
+- Single-column job cards
+- Large touch targets
+- Clear application actions
+- No horizontal overflow
+- Accessible forms
+- Responsive profile previews
+- Responsive dashboard previews
+
+Follow the existing application’s established responsive patterns.
+
+---
+
+# ACCESSIBILITY REQUIREMENTS
+
+Use strong accessibility practices:
+
+- Semantic HTML
+- Correct heading hierarchy
+- Keyboard navigation
+- Visible focus states
+- Form labels
+- Descriptive links
+- Accessible contrast
+- Appropriate ARIA attributes
+- Screen-reader-friendly job information
+- Accessible validation messages
+- Reduced-motion support
+- Logical tab order
+- Clear disabled states
+- Clear error and success states
+
+---
+
+# TECHNICAL REQUIREMENTS
+
+Before implementation, inspect:
+
+- The complete existing Workforce page
+- Existing job data structures
+- Existing filters
+- Job-detail routes
+- Candidate routes
+- Employer routes
+- Authentication flows
+- Talent-profile routes
+- Organization-profile routes
+- Clinic-dashboard architecture
+- Application flows
+- Database tables
+- API routes
+- Server actions
+- Shared UI components
+- Existing design tokens
+- Existing Markdown documentation
+- Existing Workforce implementation notes
+
+Preserve:
+
+- Working job search
+- Existing routes
+- Existing authentication
+- Existing filters
+- Existing job details
+- Existing application flows
+- Existing backend integrations
+- Existing shared components
+- Existing design tokens
+- Existing application conventions
+
+Do not:
+
+- Rewrite the application architecture unnecessarily
+- Remove working functionality
+- Fabricate integrations
+- Break existing routes
+- Expose secrets
+- Hardcode production data
+- Represent demonstration employers as real partners
+- Claim staffing functionality is operational when it is not
+- Introduce a separate design system
+- Introduce inconsistent component styling
+- Replace approved brand tokens
+- Duplicate shared components without a clear reason
+
+Use clearly labeled demonstration data where necessary.
+
+---
+
+# IMPLEMENTATION PROCESS
+
+Follow this process:
+
+1. Inspect the current Workforce implementation.
+2. Inspect all connected routes and data structures.
+3. Inspect the Novalyte design system and reusable components.
+4. Document which existing functionality will be preserved.
+5. Identify missing Workforce functionality.
+6. Build the public Workforce page first.
+7. Reuse working components and routes.
+8. Expand the job categories and demonstration data.
+9. Connect candidate and employer pathways to existing routes.
+10. Add only functionality supported by the current backend.
+11. Use previews for functionality that is not yet implemented.
+12. Test desktop, tablet, and mobile behavior.
+13. Test all links, buttons, filters, forms, and empty states.
+14. Verify visual consistency with the rest of Novalyte.
+15. Verify that no existing functionality has been broken.
+
+---
+
+# FINAL PRODUCT STANDARD
+
+The completed Workforce experience must not look like a generic job-board template.
+
+It must communicate that Novalyte Workforce is the workforce-capacity layer within one integrated healthcare-growth ecosystem.
+
+The relationship should be immediately understandable:
+
+“Novalyte helps healthcare organizations attract patient demand, expand workforce capacity, increase visibility, and access the operational resources required to grow.”
+
+The final experience must support Novalyte’s initial men’s health clinic strategy while establishing a credible foundation for a broader healthcare workforce network.
+
+It must feel like a complete, enterprise-grade Novalyte product built from the application’s existing design tokens, components, architecture, and interaction patterns.
+```
