@@ -336,8 +336,8 @@ export default function ContactPage() {
         </section>
 
         {/* Content Section */}
-        <section className="py-16 px-4">
-          <div className="mx-auto max-w-5xl">
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1240px] w-full">
             {success ? (
               // Success Screen
               <div className="mx-auto max-w-xl bg-white border border-neutral-200 p-8 rounded-3xl shadow-premium-md text-center space-y-6">
@@ -383,9 +383,9 @@ export default function ContactPage() {
               </div>
             ) : (
               // Form Layout
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Form Main Area (left 2 cols) */}
-                <div className="lg:col-span-2 bg-white border border-neutral-200/80 p-8 rounded-3xl shadow-premium-sm space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 lg:gap-10">
+                {/* Form Main Area (left 7 cols) */}
+                <div className="lg:col-span-7 bg-white border border-neutral-200/80 p-8 rounded-3xl shadow-premium-sm space-y-8">
                   {/* Honeypot field (hidden from users) */}
                   <div className="hidden" aria-hidden="true">
                     <input
@@ -670,8 +670,8 @@ export default function ContactPage() {
                   </form>
                 </div>
 
-                {/* Sidebar (right 1 col) */}
-                <div className="space-y-6">
+                {/* Sidebar (right 3 cols) */}
+                <div className="lg:col-span-3 space-y-6">
                   {/* Contact Info Card */}
                   <div className="bg-white border border-neutral-200/80 p-6 rounded-3xl shadow-premium-sm space-y-6">
                     <h3 className="text-lg font-bold text-neutral-900">Direct Contact</h3>
