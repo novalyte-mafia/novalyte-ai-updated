@@ -825,3 +825,29 @@ Stage Summary:
 - All Workforce CTAs route to correct destinations (no more generic forms)
 - Sign In routes to JoinGateway
 - Lint clean, server compiling (note: server may need restart due to memory pressure from large components)
+
+---
+Task ID: 23
+Agent: Main (Z.ai Code)
+Task: Workforce job board refinement — remove duplicate controls, expand filters, clean toolbar
+
+Work Log:
+- Removed duplicate grid/list view controls: consolidated two separate toolbar rows (one mobile, one desktop) into a single unified toolbar showing: result count (left) + mobile Filters button + Sort dropdown + single ViewToggle (right)
+- Added "Showing X of Y healthcare opportunities" result count to the unified toolbar
+- Expanded job filters with new options:
+  - Work arrangement (All / Remote / On-site / Hybrid) — new filter
+  - Healthcare category (All + 7 categories: Clinical Care, Allied Health, Behavioral Health, Operations & Admin, Revenue Cycle, Healthcare Technology, Specialty Care) — new filter with keyword-based matching against job specialties and titles
+  - Existing filters retained: Keyword, State, Employment type, Compensation, Remote only toggle
+- Added "Featured roles" sort option (contract roles and higher compensation first)
+- Added "Most recent" sort with actual date sorting
+- Updated filter chips to include work arrangement and category filters
+- Updated keyword search to also search requiredLicenses field
+- Category filter logic: matches job treatmentSpecialties and title against category keywords
+- Verified with Agent Browser: single toolbar (no duplicates), "Showing 10 of 26 healthcare opportunities", all expanded filters visible (Keyword, Employment type, Work arrangement, Healthcare category, Compensation, Remote only)
+
+Stage Summary:
+- Duplicate grid/list controls completely removed
+- Single unified toolbar with result count, sort, and view toggle
+- Job filters expanded with Work arrangement and Healthcare category
+- All existing functionality preserved (search, sort, save, apply, view details, pagination)
+- Lint clean, server healthy

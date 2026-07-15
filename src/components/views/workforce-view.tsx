@@ -670,6 +670,9 @@ type JobFilters = {
   empType: string;
   remoteOnly: boolean;
   compRange: string;
+  workArrangement: string; // all | remote | on-site | hybrid
+  category: string; // healthcare category filter
+  verifiedOnly: boolean;
 };
 
 const DEFAULT_JOB_FILTERS: JobFilters = {
@@ -678,15 +681,19 @@ const DEFAULT_JOB_FILTERS: JobFilters = {
   empType: "all",
   remoteOnly: false,
   compRange: "all",
+  workArrangement: "all",
+  category: "all",
+  verifiedOnly: false,
 };
 
-type JobSort = "relevant" | "newest" | "comp-high" | "comp-low";
+type JobSort = "relevant" | "newest" | "comp-high" | "comp-low" | "featured";
 
 const JOB_SORTS: { value: JobSort; label: string }[] = [
   { value: "relevant", label: "Most relevant" },
-  { value: "newest", label: "Newest" },
-  { value: "comp-high", label: "Compensation: high to low" },
-  { value: "comp-low", label: "Compensation: low to high" },
+  { value: "newest", label: "Most recent" },
+  { value: "featured", label: "Featured roles" },
+  { value: "comp-high", label: "Highest compensation" },
+  { value: "comp-low", label: "Lowest compensation" },
 ];
 
 function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
@@ -749,13 +756,24 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
     const q = filters.query.trim().toLowerCase();
     const out = jobs.filter((j) => {
       if (q) {
-        const hay = `${j.title} ${j.clinicName} ${j.city} ${j.state} ${j.description} ${j.treatmentSpecialties ?? ""}`.toLowerCase();
+        const hay = `${j.title} ${j.clinicName} ${j.city} ${j.state} ${j.description} ${j.treatmentSpecialties ?? ""} ${j.requiredLicenses ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (filters.state !== "all" && j.state !== filters.state) return false;
       if (filters.empType !== "all" && j.employmentType !== filters.empType) return false;
       if (filters.remoteOnly && !j.remote) return false;
+      if (filters.workArrangement === "remote" && !j.remote) return false;
+      if (filters.workArrangement === "on-site" && j.remote) return false;
       if (!inCompRange(j.compMin, j.compMax, filters.compRange)) return false;
+      // Category filter — match against treatmentSpecialties keywords
+      if (filters.category !== "all") {
+        const cat = HEALTHCARE_CATEGORIES.find((c) => c.label === filters.category);
+        if (cat) {
+          const specs = (j.treatmentSpecialties ?? "").toLowerCase();
+          const hasMatch = cat.keywords.some((kw) => specs.includes(kw.toLowerCase()) || j.title.toLowerCase().includes(kw.toLowerCase()));
+          if (!hasMatch) return false;
+        }
+      }
       return true;
     });
 
@@ -764,6 +782,15 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
       sorted.sort((a, b) => (b.compMax ?? b.compMin ?? 0) - (a.compMax ?? a.compMin ?? 0));
     } else if (sort === "comp-low") {
       sorted.sort((a, b) => (a.compMin ?? a.compMax ?? Number.POSITIVE_INFINITY) - (b.compMin ?? b.compMax ?? Number.POSITIVE_INFINITY));
+    } else if (sort === "newest") {
+      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sort === "featured") {
+      // Featured = contract roles and higher compensation first
+      sorted.sort((a, b) => {
+        if (a.employmentType === "contract" && b.employmentType !== "contract") return -1;
+        if (b.employmentType === "contract" && a.employmentType !== "contract") return 1;
+        return (b.compMax ?? 0) - (a.compMax ?? 0);
+      });
     }
     return sorted;
   }, [jobs, filters, sort]);
@@ -778,7 +805,7 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
   const chips = useMemo(() => {
     const arr: { label: string; clear: () => void }[] = [];
     if (filters.query.trim()) {
-      arr.push({ label: `“${filters.query.trim()}”`, clear: () => applyFilter({ query: "" }) });
+      arr.push({ label: `"${filters.query.trim()}"`, clear: () => applyFilter({ query: "" }) });
     }
     if (filters.state !== "all") {
       arr.push({ label: `State: ${filters.state}`, clear: () => applyFilter({ state: "all" }) });
@@ -788,6 +815,12 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
     }
     if (filters.remoteOnly) {
       arr.push({ label: "Remote only", clear: () => applyFilter({ remoteOnly: false }) });
+    }
+    if (filters.workArrangement !== "all") {
+      arr.push({ label: filters.workArrangement, clear: () => applyFilter({ workArrangement: "all" }) });
+    }
+    if (filters.category !== "all") {
+      arr.push({ label: filters.category, clear: () => applyFilter({ category: "all" }) });
     }
     if (filters.compRange !== "all") {
       const r = COMP_RANGES.find((c) => c.value === filters.compRange);
@@ -825,45 +858,52 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
         </aside>
 
         <div>
-          {/* Mobile filters + Sort + View toggle row */}
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <SlidersHorizontal className="h-4 w-4" /> Filters
-                  {chips.length > 0 && (
-                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1.5 text-[11px] font-semibold text-white">
-                      {chips.length}
-                    </span>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[88%] max-w-sm overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
+          {/* Unified toolbar: result count + sort + view toggle + mobile filters */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                Showing <span className="font-semibold text-foreground">{filtered.length}</span> of {jobs.length} healthcare opportunities
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Mobile filter button */}
+              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 lg:hidden">
                     <SlidersHorizontal className="h-4 w-4" /> Filters
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="px-4 pb-6">
-                  {filtersNode}
-                  <div className="mt-5 flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={clearAll}>
-                      Clear all
-                    </Button>
-                    <Button
-                      className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      Show {filtered.length} results
-                    </Button>
+                    {chips.length > 0 && (
+                      <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1.5 text-[11px] font-semibold text-white">
+                        {chips.length}
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[88%] max-w-sm overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <SlidersHorizontal className="h-4 w-4" /> Filters
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="px-4 pb-6">
+                    {filtersNode}
+                    <div className="mt-5 flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={clearAll}>
+                        Clear all
+                      </Button>
+                      <Button
+                        className="flex-1 bg-teal-600 text-white hover:bg-teal-700"
+                        onClick={() => setSheetOpen(false)}
+                      >
+                        Show {filtered.length} results
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            <div className="ml-auto flex items-center gap-2">
+                </SheetContent>
+              </Sheet>
+              {/* Sort control */}
               <Select value={sort} onValueChange={(v) => applySort(v as JobSort)}>
-                <SelectTrigger size="sm" className="h-9 w-[180px] gap-1.5 text-xs">
+                <SelectTrigger size="sm" className="h-9 w-[160px] gap-1.5 text-xs sm:w-[200px]">
+                  <span className="text-muted-foreground">Sort:</span>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -874,6 +914,7 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
                   ))}
                 </SelectContent>
               </Select>
+              {/* Single view toggle */}
               <ViewToggle
                 value={view}
                 onChange={(v) => applyView(v as "grid" | "list")}
@@ -883,31 +924,6 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
                 ]}
               />
             </div>
-          </div>
-
-          {/* Desktop sort + view row */}
-          <div className="mb-4 hidden items-center justify-between gap-3 lg:flex">
-            <Select value={sort} onValueChange={(v) => applySort(v as JobSort)}>
-              <SelectTrigger className="h-9 w-[220px] gap-1.5 text-xs">
-                <span className="text-muted-foreground">Sort:</span>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {JOB_SORTS.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <ViewToggle
-              value={view}
-              onChange={(v) => applyView(v as "grid" | "list")}
-              options={[
-                { value: "grid", label: "Grid", icon: LayoutGrid },
-                { value: "list", label: "List", icon: List },
-              ]}
-            />
           </div>
 
           {/* Applied filter chips */}
@@ -1097,6 +1113,38 @@ function JobFiltersContent({
             {allEmpTypes.map((t) => (
               <SelectItem key={t} value={t}>
                 {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-1.5">
+        <Label className="text-xs font-medium text-muted-foreground">Work arrangement</Label>
+        <Select value={filters.workArrangement} onValueChange={(v) => update({ workArrangement: v })}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="All arrangements" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All arrangements</SelectItem>
+            <SelectItem value="remote">Remote</SelectItem>
+            <SelectItem value="on-site">On-site</SelectItem>
+            <SelectItem value="hybrid">Hybrid</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-1.5">
+        <Label className="text-xs font-medium text-muted-foreground">Healthcare category</Label>
+        <Select value={filters.category} onValueChange={(v) => update({ category: v })}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {HEALTHCARE_CATEGORIES.map((c) => (
+              <SelectItem key={c.label} value={c.label}>
+                {c.label}
               </SelectItem>
             ))}
           </SelectContent>
