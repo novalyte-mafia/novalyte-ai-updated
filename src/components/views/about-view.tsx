@@ -111,7 +111,7 @@ const PILLARS = [
   },
 ];
 
-export function AboutView({ onGetStarted }: { onGetStarted: () => void }) {
+export function AboutView() {
   return (
     <>
       {/* Hero */}
@@ -235,10 +235,6 @@ export function AboutView({ onGetStarted }: { onGetStarted: () => void }) {
       <CTASection
         title="Join the Novalyte Network"
         description="Whether you're a patient, clinic, professional, or vendor — there's a place for you in the ecosystem."
-        primaryLabel="Join the Novalyte Network"
-        onPrimary={onGetStarted}
-        secondaryLabel="Browse Clinic Directory"
-        secondaryView="directory"
         tone="dark"
       />
     </>

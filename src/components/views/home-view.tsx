@@ -17,10 +17,6 @@ export function HomeView({ onGetStarted }: { data: PlatformData; onGetStarted: (
       <CTASection
         title="The Men's Health Industry Is Growing. Its Infrastructure Should Grow With It."
         description="Join the ecosystem connecting patient demand, verified clinics, specialized talent, and operational services."
-        primaryLabel="Join the Novalyte Ecosystem"
-        onPrimary={onGetStarted}
-        secondaryLabel="Contact Novalyte AI"
-        secondaryView="about"
         tone="dark"
       />
     </>

@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
-import { useCookieConsent } from "@/lib/cookie-consent-store";
 
 export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Promise<void> }) {
   const [email, setEmail] = useState("");
@@ -28,25 +26,26 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
     }
   }
 
-  function openCookiePreferences() {
-    useCookieConsent.getState().setShowPreferencesModal(true);
-  }
-
   return (
     <footer className="mt-auto border-t border-border bg-muted/30">
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-        {/* Main Footer Content */}
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between lg:gap-10">
-          {/* Brand Area */}
-          <div className="max-w-md space-y-3">
+      <div className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 sm:py-8 lg:px-8">
+        <div className="grid gap-5 md:grid-cols-2 md:items-end lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.75fr)_auto] lg:items-start lg:gap-8">
+          <div className="max-w-xl">
             <Logo />
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Novalyte AI is the operating system for men's health — connecting patient demand,
-              verified clinics, specialized professionals, and operational services through one
-              intelligent healthcare ecosystem.
+            <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              Novalyte AI is a healthcare technology platform and does not provide medical care,
+              diagnosis, or treatment. Clinics and licensed professionals are independently
+              responsible for all clinical decisions.
             </p>
-            <form onSubmit={subscribe} className="flex max-w-sm gap-2">
+          </div>
+
+          <form onSubmit={subscribe} className="w-full max-w-sm lg:pt-1">
+            <label htmlFor="footer-newsletter-email" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-foreground">
+              Product updates
+            </label>
+            <div className="flex gap-2">
               <Input
+                id="footer-newsletter-email"
                 type="email"
                 required
                 placeholder="Work email for updates"
@@ -58,13 +57,11 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
               <Button type="submit" size="sm" className="bg-teal-600 text-white hover:bg-teal-700" disabled={loading}>
                 {loading ? "..." : "Subscribe"}
               </Button>
-            </form>
-          </div>
+            </div>
+          </form>
 
-          {/* Legal Section */}
-          <div className="shrink-0">
-            <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">Legal</h4>
-            <ul className="mt-3 space-y-1.5">
+          <nav aria-label="Policies" className="md:col-span-2 lg:col-span-1 lg:pt-1">
+            <ul className="flex flex-wrap gap-x-4 gap-y-2 lg:flex-col lg:gap-1.5">
               <li>
                 <button
                   onClick={() => navigate("privacy")}
@@ -81,37 +78,12 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
                   Terms of Service
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={openCookiePreferences}
-                  className="text-sm text-muted-foreground transition hover:text-teal-700"
-                >
-                  Cookie Preferences
-                </button>
-              </li>
             </ul>
-          </div>
+          </nav>
         </div>
 
-        {/* Bottom Area: Disclaimer + Copyright */}
-        <div className="mt-6 border-t border-border pt-5">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-            {/* Medical Disclaimer */}
-            <div className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed max-w-3xl">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
-              <p>
-                Novalyte AI is a healthcare technology platform and does not provide medical care,
-                diagnosis, or treatment. Clinics and licensed professionals are independently
-                responsible for all clinical decisions.
-              </p>
-            </div>
-            
-            {/* Copyright & Location */}
-            <div className="flex flex-col gap-1 text-xs text-muted-foreground lg:text-right shrink-0">
-              <p>© {new Date().getFullYear()} Novalyte AI. All rights reserved.</p>
-              <p className="font-medium">Made with ❤️ in San Francisco</p>
-            </div>
-          </div>
+        <div className="mt-4 border-t border-border pt-3 text-[11px] text-muted-foreground sm:text-xs lg:text-right">
+          <p className="font-medium">Made with ❤️ in San Francisco</p>
         </div>
       </div>
     </footer>

@@ -231,7 +231,7 @@ export function AppShell({ data }: { data: PlatformData }) {
         )}
         {view === "professional-onboarding" && <ProfessionalOnboarding />}
         {view === "employer-onboarding" && <EmployerOnboarding />}
-        {view === "about" && <AboutView onGetStarted={() => setGetStartedOpen(true)} />}
+        {view === "about" && <AboutView />}
         {(view === "privacy" || view === "terms" || view === "medical-disclaimer" || view === "accessibility" || view === "cookies") && (
           <LegalView view={view} />
         )}
