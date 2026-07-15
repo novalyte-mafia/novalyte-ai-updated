@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { JoinGateway } from "@/components/site/join-gateway";
@@ -55,6 +55,25 @@ export function AppShell({ data }: { data: PlatformData }) {
   const [getStartedOpen, setGetStartedOpen] = useState(false);
   const compareClinics = useCompare((s) => s.clinics);
   const compareProducts = useCompare((s) => s.products);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const queryView = searchParams.get("view") as ViewKey | null;
+      const queryParamsRaw = searchParams.get("params");
+      let queryParams = undefined;
+      if (queryParamsRaw) {
+        try {
+          queryParams = JSON.parse(decodeURIComponent(queryParamsRaw));
+        } catch (e) {}
+      }
+      const queryAnchor = searchParams.get("anchor") || undefined;
+      
+      if (queryView) {
+        useNav.getState().setView(queryView, queryAnchor, queryParams);
+      }
+    }
+  }, []);
 
   async function subscribe(email: string) {
     const res = await fetch("/api/newsletter", {

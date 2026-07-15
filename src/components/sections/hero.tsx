@@ -84,16 +84,16 @@ export function Hero({ onGetStarted }: { onGetStarted: () => void }) {
             <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
               {/* Outer expanding rings — centred via negative margin trick */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-                <div className="novalyte-hub-ring h-24 w-52 rounded-3xl border border-teal-400/30" />
+                <div className="novalyte-hub-ring h-24 w-24 rounded-full border border-teal-400/30" />
               </div>
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden>
-                <div className="novalyte-hub-ring novalyte-hub-ring-delayed h-24 w-52 rounded-3xl border border-teal-400/15" />
+                <div className="novalyte-hub-ring novalyte-hub-ring-delayed h-24 w-24 rounded-full border border-teal-400/15" />
               </div>
 
               {/* Main Hub Container */}
-              <div className="novalyte-hub-card relative flex h-[72px] w-48 items-center justify-center rounded-2xl border border-teal-500/30 bg-white/95 px-4 shadow-[0_4px_32px_rgba(20,184,166,0.18)] backdrop-blur-sm sm:w-52">
-                <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-50/50 to-emerald-50/25" aria-hidden />
-                <Logo size="default" showWord className="relative z-10" />
+              <div className="novalyte-hub-card relative flex h-24 w-24 items-center justify-center rounded-full border border-teal-500/30 bg-white/95 shadow-[0_4px_32px_rgba(20,184,166,0.18)] backdrop-blur-sm sm:h-28 sm:w-28">
+                <div className="pointer-events-none absolute inset-1 rounded-full bg-gradient-to-br from-teal-50/50 to-emerald-50/25" aria-hidden />
+                <Logo size="lg" showWord={false} animated className="relative z-10" />
               </div>
             </div>
 

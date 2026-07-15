@@ -91,25 +91,25 @@ export function ProblemSection() {
 
 export function PillarsSection() {
   const pillarImages: Record<string, string> = {
-    acquisition: IMAGES.pillars.acquisition,
-    directory: IMAGES.pillars.directory,
-    workforce: IMAGES.pillars.workforce,
-    marketplace: IMAGES.pillars.marketplace,
+    acquisition: IMAGES.patients.consultation,
+    directory: IMAGES.clinics.exterior[0],
+    workforce: IMAGES.professionals[4],
+    marketplace: IMAGES.marketplace.lab[0],
   };
-  const pillarImagePosition: Record<string, string> = {
-    acquisition: "object-[68%_center]",
-    directory: "object-[72%_center]",
-    workforce: "object-[72%_center]",
-    marketplace: "object-[74%_center]",
+  const pillarAlts: Record<string, string> = {
+    acquisition: "Adult male patient in healthcare consultation completing digital intake",
+    directory: "Modern men's health clinic reception and consultation environment",
+    workforce: "Healthcare professionals collaborating in a clinical setting",
+    marketplace: "Modern laboratory technology and clinical equipment",
   };
   return (
-    <SectionShell id="pillars">
+    <SectionShell id="pillars" tone="muted">
       <SectionHeading
-        eyebrow="Four Connected Pillars"
+        eyebrow="The Connected Platform"
         title="One platform. Four ways it powers the men's health economy."
         description="Each pillar is a complete product on its own — and exponentially more valuable connected to the ecosystem."
       />
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
+      <div className="mt-10 grid gap-6 md:grid-cols-2">
         {PILLARS.map((p) => {
           const Icon = PILLAR_ICONS[p.icon] ?? Building2;
           const NUMBER_LABEL: Record<string, string> = {
@@ -121,53 +121,52 @@ export function PillarsSection() {
           return (
             <div
               key={p.key}
-              className="group relative flex min-h-[380px] flex-col justify-end overflow-hidden rounded-2xl border border-neutral-800 bg-black shadow-premium-sm transition duration-300 hover:border-teal-500/50 hover:shadow-premium-lg"
+              onClick={() => navigate(p.view)}
+              className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white cursor-pointer shadow-premium-xs transition-all duration-300 hover:border-teal-500/40 hover:shadow-premium-md"
             >
-              {/* Pillar background image — explicit positioned wrapper so fill has a valid height */}
-              <div className="absolute inset-0 overflow-hidden">
+              {/* Pillar Image - top half */}
+              <div className="relative h-52 w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
                 <SmartImage
                   src={pillarImages[p.key] ?? IMAGES.hero.clinicScene}
-                  alt=""
+                  alt={pillarAlts[p.key] ?? p.label}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="transition duration-700 group-hover:scale-[1.04]"
-                  imgClassName={cn("object-cover opacity-90", pillarImagePosition[p.key])}
+                  className="transition duration-700 group-hover:scale-[1.03]"
+                  imgClassName="object-cover"
                 />
-                {/* Dark teal gradient overlay */}
+                {/* Subtle soft gradient fade at the bottom of the image */}
                 <div
-                  className="absolute inset-0 bg-gradient-to-t from-[rgba(4,31,28,0.97)] via-[rgba(4,31,28,0.72)] to-[rgba(4,31,28,0.18)]"
+                  className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/10 to-transparent"
                   aria-hidden
                 />
               </div>
 
-              {/* Text content sits above overlay */}
-              <div className="relative z-10 space-y-3 p-6">
-                {/* Category pill */}
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10 border border-teal-500/25 text-teal-300">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="text-[11px] font-bold text-teal-300 tracking-widest uppercase">
-                    {NUMBER_LABEL[p.key]}
-                  </span>
+              {/* Text content sits below the image */}
+              <div className="flex flex-1 flex-col justify-between p-6 space-y-4">
+                <div className="space-y-2">
+                  {/* Category pill */}
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-600 border border-teal-100/50">
+                      <Icon className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="text-[10px] font-bold text-teal-700 tracking-wider uppercase">
+                      {NUMBER_LABEL[p.key]}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-foreground tracking-tight leading-snug">
+                    {p.label}
+                  </h3>
+
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {p.description}
+                  </p>
                 </div>
 
-                <h3 className="text-xl font-bold text-white tracking-tight leading-snug">
-                  {p.label}
-                </h3>
-
-                <p className="text-sm leading-relaxed text-neutral-300 font-medium">
-                  {p.description}
-                </p>
-
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => navigate(p.view)}
-                    className="inline-flex items-center gap-1.5 rounded-md text-left text-sm font-bold text-teal-300 outline-none transition-all hover:gap-2.5 hover:text-teal-200 focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#041f1c]"
-                  >
-                    {p.cta} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                  </button>
+                <div className="pt-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 transition-all group-hover:text-teal-700 group-hover:gap-2">
+                    {p.cta} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </span>
                 </div>
               </div>
             </div>

@@ -12,17 +12,20 @@ export function Logo({
   className,
   showWord = true,
   size = "default",
+  animated = false,
 }: {
   className?: string;
   showWord?: boolean;
   size?: "sm" | "default" | "lg";
+  animated?: boolean;
 }) {
   const sizeMap = {
     sm: { box: "h-8 w-8", star: "h-5 w-5", text: "text-base" },
+    md: { box: "h-10 w-10", star: "h-6 w-6", text: "text-lg" },
     default: { box: "h-10 w-10", star: "h-6 w-6", text: "text-lg" },
     lg: { box: "h-14 w-14", star: "h-9 w-9", text: "text-xl" },
   };
-  const s = sizeMap[size];
+  const s = sizeMap[size] || sizeMap.default;
 
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
@@ -31,7 +34,7 @@ export function Logo({
         "relative inline-flex items-center justify-center rounded-xl bg-black border border-neutral-800 shadow-md shadow-black/40 overflow-hidden",
         s.box
       )}>
-        <svg viewBox="0 0 32 32" className={cn(s.star, "novalyte-pulsating-star")} fill="none" aria-hidden="true">
+        <svg viewBox="0 0 32 32" className={cn(s.star, animated && "novalyte-pulsating-star")} fill="none" aria-hidden="true">
           <defs>
             <radialGradient id="logo-core" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#5eead4" />

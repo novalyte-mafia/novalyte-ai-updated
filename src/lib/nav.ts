@@ -52,6 +52,14 @@ export function navigate(
   anchor?: string,
   params?: { id?: string; slug?: string; clinicId?: string },
 ) {
+  if (typeof window !== "undefined" && window.location.pathname !== "/") {
+    let url = `/?view=${view}`;
+    if (anchor) url += `&anchor=${encodeURIComponent(anchor)}`;
+    if (params) url += `&params=${encodeURIComponent(JSON.stringify(params))}`;
+    window.location.href = url;
+    return;
+  }
+
   useNav.getState().setView(view, anchor, params);
   if (typeof window !== "undefined") {
     window.scrollTo({ top: 0, behavior: anchor ? "smooth" : "auto" });

@@ -16,8 +16,6 @@
  * industry piece that does not require clinical review.
  */
 
-import { getArticleImage } from "@/lib/images";
-
 export type ArticleBlock =
   | { type: "heading"; level: 2 | 3; text: string; id: string }
   | { type: "paragraph"; text: string }
@@ -432,7 +430,7 @@ const trtArticle: ArticleContent = {
   publishedAt: "2024-09-12T09:00:00.000Z",
   updatedAt: "2025-02-10T09:00:00.000Z",
   readingTime: 9,
-  heroImage: getArticleImage("understanding-trt-overview"),
+  heroImage: "/images/articles/trt-consultation.jpg",
   heroImageAlt:
     "A male patient reviewing lab results with a healthcare provider during a testosterone evaluation consult.",
   tableOfContents: tocFromBlocks(trtBlocks),
@@ -493,7 +491,7 @@ const glp1Article: ArticleContent = {
   publishedAt: "2024-10-04T09:00:00.000Z",
   updatedAt: "2025-02-10T09:00:00.000Z",
   readingTime: 9,
-  heroImage: getArticleImage("glp-1-medical-weight-loss"),
+  heroImage: "/images/articles/glp1-consultation.jpg",
   heroImageAlt:
     "A clinician reviewing a medical weight loss plan with a male patient, including nutrition and activity tracking.",
   tableOfContents: tocFromBlocks(glp1Blocks),
@@ -551,9 +549,9 @@ const opsArticle: ArticleContent = {
   publishedAt: "2024-11-19T09:00:00.000Z",
   updatedAt: "2025-01-15T09:00:00.000Z",
   readingTime: 8,
-  heroImage: getArticleImage("state-of-mens-health-clinic-operations"),
+  heroImage: "/images/articles/clinic-operations.jpg",
   heroImageAlt:
-    "Operations team reviewing clinic workflow dashboards and patient-journey analytics on a screen.",
+    "Clinical and operations team reviewing a clinic intake workflow together.",
   tableOfContents: tocFromBlocks(opsBlocks),
   body: opsBlocks,
   references: [
@@ -598,7 +596,7 @@ const recruitingArticle: ArticleContent = {
   publishedAt: "2024-12-03T09:00:00.000Z",
   updatedAt: "2025-01-15T09:00:00.000Z",
   readingTime: 8,
-  heroImage: getArticleImage("recruiting-specialized-talent-mens-health"),
+  heroImage: "/images/articles/workforce-recruiting.jpg",
   heroImageAlt:
     "A clinic administrator interviewing a nurse practitioner candidate for a men's health role.",
   tableOfContents: tocFromBlocks(recruitingBlocks),
@@ -653,7 +651,7 @@ const longevityArticle: ArticleContent = {
   publishedAt: "2025-01-09T09:00:00.000Z",
   updatedAt: "2025-02-10T09:00:00.000Z",
   readingTime: 10,
-  heroImage: getArticleImage("longevity-medicine-science-vs-hype"),
+  heroImage: "/images/articles/longevity-consultation.jpg",
   heroImageAlt:
     "A clinician and patient discussing preventive health metrics and lab results during a longevity consultation.",
   tableOfContents: tocFromBlocks(longevityBlocks),
@@ -706,9 +704,9 @@ const telehealthArticle: ArticleContent = {
   publishedAt: "2025-01-23T09:00:00.000Z",
   updatedAt: "2025-02-10T09:00:00.000Z",
   readingTime: 8,
-  heroImage: getArticleImage("compliant-telehealth-mens-health"),
+  heroImage: "/images/articles/telehealth-practice.jpg",
   heroImageAlt:
-    "A clinician conducting a structured telehealth consult with documentation visible on a second screen.",
+    "A clinician conducting a private telehealth consultation with an adult male patient on a laptop.",
   tableOfContents: tocFromBlocks(telehealthBlocks),
   body: telehealthBlocks,
   references: [

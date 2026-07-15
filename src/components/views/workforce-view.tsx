@@ -427,6 +427,65 @@ const TRUST_ROW_ITEMS = [
    Page-level view
    ──────────────────────────────────────────────────────────────── */
 
+function AccountAccessSection() {
+  return (
+    <SectionShell id="account-access" tone="muted" className="!py-8 border-b border-border bg-white">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Already have an account?</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">Access your professional profile workspace or organization's hiring hub.</p>
+        </div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {/* Professional Sign In Card */}
+          <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/30 p-5 shadow-premium-xs flex flex-col justify-between hover:border-teal-500/20 transition-all duration-300">
+            <div>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
+                <Users className="h-4.5 w-4.5" />
+              </span>
+              <h3 className="mt-3 text-sm font-bold text-foreground">Professional Sign In</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Access your professional profile, applications, saved roles, credentials, availability, and account settings.
+              </p>
+            </div>
+            <div className="mt-4">
+              <Button
+                size="sm"
+                className="bg-teal-600 text-white hover:bg-teal-700 font-semibold w-full"
+                onClick={() => window.location.href = "/workforce/professional/sign-in"}
+              >
+                Professional Sign In
+              </Button>
+            </div>
+          </div>
+
+          {/* Employer Sign In Card */}
+          <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/30 p-5 shadow-premium-xs flex flex-col justify-between hover:border-teal-500/20 transition-all duration-300">
+            <div>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                <Briefcase className="h-4.5 w-4.5" />
+              </span>
+              <h3 className="mt-3 text-sm font-bold text-foreground">Employer Sign In</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Access your organization’s hiring workspace, job listings, applicants, and workforce activity.
+              </p>
+            </div>
+            <div className="mt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-semibold w-full"
+                onClick={() => window.location.href = "/workforce/employer/sign-in"}
+              >
+                Employer Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
 export function WorkforceView({
   professionals,
   jobs,
@@ -439,6 +498,7 @@ export function WorkforceView({
   return (
     <>
       <Hero onGetStarted={onGetStarted} professionalsCount={professionals.length} jobsCount={jobs.length} />
+      <AccountAccessSection />
       <EcosystemConnectionSection />
       <WorkforceModelsSection />
       <JobsSection jobs={jobs} />
@@ -504,25 +564,39 @@ function Hero({
               and specialty care.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Button
-                size="lg"
-                className="bg-teal-600 text-white hover:bg-teal-700"
-                onClick={scrollToJobs}
-              >
-                <Search className="mr-1 h-4 w-4" /> Browse Healthcare Roles
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("professional-onboarding")}>
-                <Users className="mr-1 h-4 w-4" /> Join as a Professional
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-emerald-200 bg-emerald-50/40 text-emerald-700 hover:bg-emerald-100/60"
-                onClick={() => navigate("employer-onboarding")}
-              >
-                <Briefcase className="mr-1 h-4 w-4" /> Post a Role
-              </Button>
+            <div className="mt-7 flex flex-wrap gap-4 items-start">
+              <div className="flex flex-col gap-2">
+                <Button
+                  size="lg"
+                  className="bg-teal-600 text-white hover:bg-teal-700"
+                  onClick={scrollToJobs}
+                >
+                  <Search className="mr-1 h-4 w-4" /> Browse Healthcare Roles
+                </Button>
+              </div>
+              
+              <div className="flex flex-col gap-1.5 items-center sm:items-start">
+                <Button size="lg" variant="outline" onClick={() => navigate("professional-onboarding")}>
+                  <Users className="mr-1 h-4 w-4" /> Join as a Professional
+                </Button>
+                <span className="text-[10px] text-muted-foreground self-center">
+                  Already registered? <a href="/workforce/professional/sign-in" className="text-teal-600 font-semibold hover:underline">Sign in</a>
+                </span>
+              </div>
+              
+              <div className="flex flex-col gap-1.5 items-center sm:items-start">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-emerald-200 bg-emerald-50/40 text-emerald-700 hover:bg-emerald-100/60"
+                  onClick={() => navigate("employer-onboarding")}
+                >
+                  <Briefcase className="mr-1 h-4 w-4" /> Post a Role
+                </Button>
+                <span className="text-[10px] text-muted-foreground self-center">
+                  Already registered? <a href="/workforce/employer/sign-in" className="text-emerald-700 font-semibold hover:underline">Sign in</a>
+                </span>
+              </div>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
@@ -1420,14 +1494,19 @@ function ProfessionalPathwaySection({ onGetStarted }: { onGetStarted: () => void
               <CheckItem key={cap}>{cap}</CheckItem>
             ))}
           </ul>
-          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-            <Button
-              className="bg-teal-600 text-white hover:bg-teal-700"
-              onClick={() => navigate("professional-onboarding")}
-            >
-              Create Your Talent Profile <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-            <Button variant="outline" onClick={scrollToJobs}>
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-1.5 items-start">
+              <Button
+                className="bg-teal-600 text-white hover:bg-teal-700 font-semibold"
+                onClick={() => navigate("professional-onboarding")}
+              >
+                Create Your Talent Profile <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+              <span className="text-[10px] text-muted-foreground pl-1">
+                Already have a profile? <a href="/workforce/professional/sign-in" className="text-teal-600 font-semibold hover:underline">Sign in</a>
+              </span>
+            </div>
+            <Button variant="outline" className="font-semibold" onClick={scrollToJobs}>
               <Search className="mr-1 h-4 w-4" /> Browse Healthcare Roles
             </Button>
           </div>
@@ -1780,14 +1859,19 @@ function EmployerPathwaySection({ onGetStarted }: { onGetStarted: () => void }) 
               <CheckItem key={cap}>{cap}</CheckItem>
             ))}
           </ul>
-          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-            <Button
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => navigate("employer-onboarding")}
-            >
-              Post a Healthcare Role <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-            <Button variant="outline" onClick={() => navigate("employer-onboarding")}>
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-1.5 items-start">
+              <Button
+                className="bg-emerald-600 text-white hover:bg-emerald-700 font-semibold"
+                onClick={() => navigate("employer-onboarding")}
+              >
+                Post a Healthcare Role <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+              <span className="text-[10px] text-muted-foreground pl-1">
+                Already registered? <a href="/workforce/employer/sign-in" className="text-emerald-700 font-semibold hover:underline">Sign in</a>
+              </span>
+            </div>
+            <Button variant="outline" className="font-semibold" onClick={() => navigate("employer-onboarding")}>
               <Plus className="mr-1 h-4 w-4" /> Create Organization Account
             </Button>
           </div>

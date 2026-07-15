@@ -426,6 +426,16 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
                   </button>
                 );
               })}
+
+              <div className="my-3 border-t border-neutral-200/60" />
+
+              <button
+                onClick={() => window.location.href = "/workforce/professional/settings"}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-semibold text-foreground/85 hover:bg-neutral-50 hover:text-foreground transition-all"
+              >
+                <Settings className="h-4.5 w-4.5 shrink-0" />
+                <span>Account Settings</span>
+              </button>
             </nav>
           </div>
         </aside>

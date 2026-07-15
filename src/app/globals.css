@@ -270,7 +270,7 @@
   }
 }
 .novalyte-pulsating-star {
-  animation: novalyte-star-pulsate 2.5s ease-in-out infinite;
+  animation: novalyte-star-pulsate 4s ease-in-out infinite;
   transform-origin: 16px 16px;
 }
 /* Hero ecosystem hub: slow, layered motion that reads as infrastructure rather than a loader. */
@@ -298,6 +298,22 @@
 }
 .novalyte-hub-ring-delayed { animation-delay: 2s; }
 
+/* Treatment verticals: a slow, manual-scrollable discovery rail. */
+@keyframes novalyte-treatment-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.novalyte-marquee-track {
+  animation: novalyte-treatment-marquee 52s linear infinite;
+  will-change: transform;
+}
+.novalyte-marquee:hover .novalyte-marquee-track,
+.novalyte-marquee:focus-within .novalyte-marquee-track {
+  animation-play-state: paused;
+}
+.novalyte-marquee::-webkit-scrollbar { height: 0.45rem; }
+.novalyte-marquee::-webkit-scrollbar-thumb { background: oklch(0.75 0.1 185 / 0.4); border-radius: 999px; }
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .novalyte-pulsating-star,
@@ -309,6 +325,12 @@
   .novalyte-fade-up,
   .novalyte-scale-in {
     animation: none !important;
+  }
+  .novalyte-marquee-track {
+    animation: none !important;
+  }
+  .novalyte-marquee-clone {
+    display: none !important;
   }
   html {
     scroll-behavior: auto;

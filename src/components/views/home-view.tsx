@@ -2,9 +2,8 @@
 
 import { Hero } from "@/components/sections/hero";
 import { TrustStrip, ProblemSection, PillarsSection } from "@/components/sections/home-marketing";
-import { TreatmentVerticals, AudiencePathways } from "@/components/sections/home-journey";
+import { AudiencePathways } from "@/components/sections/home-journey";
 import { CTASection } from "@/components/shared/cta";
-import { navigate } from "@/lib/nav";
 import type { PlatformData } from "@/components/site/app-shell";
 
 export function HomeView({ onGetStarted }: { data: PlatformData; onGetStarted: () => void }) {
@@ -14,7 +13,6 @@ export function HomeView({ onGetStarted }: { data: PlatformData; onGetStarted: (
       <TrustStrip />
       <ProblemSection />
       <PillarsSection />
-      <TreatmentVerticals />
       <AudiencePathways onGetStarted={onGetStarted} />
       <CTASection
         title="The Men's Health Industry Is Growing. Its Infrastructure Should Grow With It."

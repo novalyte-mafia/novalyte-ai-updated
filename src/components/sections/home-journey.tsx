@@ -1,7 +1,6 @@
 "use client";
 
 import { SectionShell, SectionHeading } from "@/components/shared/section";
-import { TREATMENT_VERTICALS } from "@/lib/constants";
 import { navigate } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,35 +25,6 @@ const audienceColors: Record<string, { bg: string; ring: string; text: string; h
   sky: { bg: "bg-sky-50", ring: "ring-sky-100", text: "text-sky-700", hover: "group-hover:border-sky-300" },
   violet: { bg: "bg-violet-50", ring: "ring-violet-100", text: "text-violet-700", hover: "group-hover:border-violet-300" },
 };
-
-export function TreatmentVerticals() {
-  return (
-    <SectionShell id="treatments">
-      <SectionHeading
-        eyebrow="Treatment Verticals"
-        title="Built for the full spectrum of men's health care."
-        description="Novalyte AI supports the treatment categories that define the modern men's health industry."
-      />
-      <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {TREATMENT_VERTICALS.map((t) => (
-          <button
-            key={t.slug}
-            onClick={() => navigate("patients", "treatments")}
-            className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-300 hover:bg-teal-50/40"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 ring-1 ring-teal-100">
-              <Stethoscope className="h-4.5 w-4.5" />
-            </span>
-            <span className="text-sm font-semibold text-foreground">{t.label}</span>
-            <span className="inline-flex items-center gap-1 text-xs text-teal-600 opacity-0 transition group-hover:opacity-100">
-              Learn more <ArrowRight className="h-3 w-3" />
-            </span>
-          </button>
-        ))}
-      </div>
-    </SectionShell>
-  );
-}
 
 export function AudiencePathways({ onGetStarted }: { onGetStarted: () => void }) {
   return (

@@ -102,6 +102,7 @@ export const IMAGES = {
 
   // Patient journey imagery
   patients: {
+    hero: "/images/patients/patient-hero.jpg",
     journey: "/images/hero/hero-1.jpg",
     assessment: "/images/hero/hero-3.jpg",
     consultation: "/images/hero/hero-4.jpg",
@@ -176,6 +177,7 @@ export function getArticleImage(slug: string): string {
  */
 export const ALT_TEXT = {
   heroConsultation: "Healthcare professional reviewing treatment options with a male patient in a modern clinic",
+  patientHero: "Adult male patient reviewing care options with a healthcare professional in a modern men's health clinic",
   heroClinic: "Modern men's health clinic interior with consultation area",
   heroPatient: "Male patient during a consultation at a men's health clinic",
   clinicExterior: "Exterior view of a modern men's health clinic",

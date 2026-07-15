@@ -42,17 +42,22 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                 <li key={item.view}>
                   <button
                     onClick={() => go(item.view)}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "relative rounded-lg px-3.5 py-2 text-sm font-medium transition",
+                      "group relative rounded-lg px-3.5 py-2 text-sm font-semibold tracking-[-0.02em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
                       isActive
                         ? "text-teal-700"
                         : "text-foreground/70 hover:text-foreground",
                     )}
                   >
                     {item.label}
-                    {isActive && (
-                      <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-teal-600" aria-hidden />
-                    )}
+                    <span 
+                      className={cn(
+                        "absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-teal-600 transition-transform duration-200",
+                        isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                      )} 
+                      aria-hidden 
+                    />
                   </button>
                 </li>
               );
@@ -88,13 +93,14 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
               <nav className="flex flex-col gap-1 p-3" aria-label="Mobile">
                 {PRIMARY_NAV.map((item) => {
                   const Icon = item.icon;
-                  const isActive = view === item.view;
+                  const isActive = view === item.view || (item.view === "directory" && view === "clinic-profile");
                   return (
                     <button
                       key={item.view}
                       onClick={() => go(item.view)}
+                      aria-current={isActive ? "page" : undefined}
                       className={cn(
-                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition hover:bg-muted",
+                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
                         isActive && "bg-teal-50 text-teal-700",
                       )}
                     >

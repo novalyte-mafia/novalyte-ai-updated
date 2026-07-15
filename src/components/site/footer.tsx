@@ -2,7 +2,6 @@
 
 import { Logo } from "@/components/site/logo";
 import { navigate, type ViewKey } from "@/lib/nav";
-import { TREATMENT_VERTICALS } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -27,6 +26,15 @@ const FOOTER_LINKS: { title: string; links: { label: string; view: ViewKey }[] }
       { label: "Journal", view: "journal" },
       { label: "Get Started", view: "about" },
       { label: "Contact", view: "about" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "Patient Guides", view: "patients" },
+      { label: "Clinic Resources", view: "clinics" },
+      { label: "Workforce Resources", view: "workforce" },
+      { label: "Journal", view: "journal" },
     ],
   },
   {
@@ -63,8 +71,8 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
   return (
     <footer className="mt-auto border-t border-border bg-muted/30">
       <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Logo />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
               Novalyte AI is the operating system for men's health — connecting patient demand,
@@ -104,24 +112,6 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
               </ul>
             </div>
           ))}
-        </div>
-
-        {/* Treatment verticals */}
-        <div className="mt-12 border-t border-border pt-8">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Treatment Verticals
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {TREATMENT_VERTICALS.map((t) => (
-              <button
-                key={t.slug}
-                onClick={() => navigate("patients", "treatments")}
-                className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground transition hover:border-teal-200 hover:text-teal-700"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Disclaimer + copyright */}
