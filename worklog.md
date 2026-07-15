@@ -772,3 +772,56 @@ Stage Summary:
 - All demonstration data clearly labeled
 - No fabricated functionality claims (future features use "planned" language)
 - Lint clean, server healthy, mobile responsive
+
+---
+Task ID: 22
+Agent: Main (Z.ai Code)
+Task: Workforce role-based onboarding — JoinGateway, professional onboarding, employer onboarding, button routing fixes
+
+Work Log:
+- Added "join", "professional-onboarding", "employer-onboarding" to ViewKey in nav store
+- Built JoinGateway component (src/components/site/join-gateway.tsx): replaces the old generic GetStartedDialog. Shows 4 distinct paths: Healthcare Professional, Healthcare Organization, Patient, Vendor. Each path has its own primary + secondary CTA routing to the correct destination. Includes professional/employer sign-in links.
+- Built Professional Onboarding (src/components/views/professional-onboarding.tsx): 10-step full-screen onboarding flow:
+  1. Account (first/last name, email, password, phone, city/state, terms)
+  2. Professional Identity (headline, current role, years experience, summary, employment status, availability date)
+  3. Resume & Links (resume upload, LinkedIn, portfolio, website, publications, GitHub)
+  4. Employment History (repeatable entries with org, title, type, dates, responsibilities)
+  5. Education (repeatable entries with institution, degree, field, grad date)
+  6. Licenses & Certifications (repeatable credentials with type, name, authority, state, dates, document upload)
+  7. Skills & Specialties (clinical specialty chips, settings, EHR, languages, skills)
+  8. Job Preferences (employment type chips, work arrangement chips, locations, travel, relocate, compensation, schedule, start date)
+  9. Profile Visibility (6 toggle options for discoverability and privacy)
+  10. Review & Publish (summary of all sections)
+  - Full-screen layout with left stage rail (desktop), progress bar, save & exit, back/continue nav
+- Built Employer Onboarding (src/components/views/employer-onboarding.tsx): 6-step full-screen onboarding flow:
+  1. Account Owner (name, title, work email, phone, password)
+  2. Organization Information (legal name, public name, type, website, HQ state, locations, size, specialties, description)
+  3. Branding (logo upload, cover image, brand description, social links)
+  4. Verification (NPI, business registration, address, accreditation, authorized rep confirmation)
+  5. Hiring Needs (9 selectable needs as chips)
+  6. Dashboard Setup (hiring stages, default location, departments, notifications)
+- Wired all new views into AppShell: join page (pathway selector), professional-onboarding, employer-onboarding
+- Replaced GetStartedDialog with JoinGateway in AppShell
+- Updated Header: "Sign In" now routes to "join" view instead of "about"
+- Fixed Workforce button routing:
+  - "Join as a Professional" → navigate("professional-onboarding")
+  - "Create Your Talent Profile" → navigate("professional-onboarding")
+  - "Post a Role" → navigate("employer-onboarding")
+  - "Post a Healthcare Role" → navigate("employer-onboarding")
+  - "Create Organization Account" → navigate("employer-onboarding")
+  - "Browse Healthcare Roles" → scrolls to job board
+- Verified with Agent Browser:
+  - Workforce hero shows correct 3 CTAs
+  - "Join as a Professional" opens professional onboarding (Step 1 of 10 — Account)
+  - "Post a Role" opens employer onboarding (Step 1 of 6 — Account Owner)
+  - "Sign In" opens JoinGateway with 4 distinct paths
+  - JoinGateway shows: Healthcare Professional, Healthcare Organization, Looking for Care, Vendor/Service Provider
+
+Stage Summary:
+- Generic GetStartedDialog completely replaced with role-based JoinGateway
+- Each audience has a distinct onboarding path (no more generic contact form)
+- Professional onboarding: 10-step full-screen flow with all required fields
+- Employer onboarding: 6-step full-screen flow with organization setup
+- All Workforce CTAs route to correct destinations (no more generic forms)
+- Sign In routes to JoinGateway
+- Lint clean, server compiling (note: server may need restart due to memory pressure from large components)

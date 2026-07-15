@@ -66,7 +66,7 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
             variant="ghost"
             size="sm"
             className="hidden sm:inline-flex"
-            onClick={() => go("about")}
+            onClick={() => go("join")}
           >
             Sign In
           </Button>
@@ -118,7 +118,7 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                   >
                     <Store className="mr-1.5 h-4 w-4" /> Marketplace
                   </Button>
-                  <Button variant="outline" onClick={() => go("about")}>Sign In</Button>
+                  <Button variant="outline" onClick={() => go("join")}>Sign In</Button>
                 </div>
               </nav>
             </SheetContent>

@@ -512,14 +512,14 @@ function Hero({
               >
                 <Search className="mr-1 h-4 w-4" /> Browse Healthcare Roles
               </Button>
-              <Button size="lg" variant="outline" onClick={onGetStarted}>
+              <Button size="lg" variant="outline" onClick={() => navigate("professional-onboarding")}>
                 <Users className="mr-1 h-4 w-4" /> Join as a Professional
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-emerald-200 bg-emerald-50/40 text-emerald-700 hover:bg-emerald-100/60"
-                onClick={onGetStarted}
+                onClick={() => navigate("employer-onboarding")}
               >
                 <Briefcase className="mr-1 h-4 w-4" /> Post a Role
               </Button>
@@ -1373,7 +1373,7 @@ function ProfessionalPathwaySection({ onGetStarted }: { onGetStarted: () => void
           <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
             <Button
               className="bg-teal-600 text-white hover:bg-teal-700"
-              onClick={onGetStarted}
+              onClick={() => navigate("professional-onboarding")}
             >
               Create Your Talent Profile <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
@@ -1733,11 +1733,11 @@ function EmployerPathwaySection({ onGetStarted }: { onGetStarted: () => void }) 
           <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
             <Button
               className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={onGetStarted}
+              onClick={() => navigate("employer-onboarding")}
             >
               Post a Healthcare Role <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={onGetStarted}>
+            <Button variant="outline" onClick={() => navigate("employer-onboarding")}>
               <Plus className="mr-1 h-4 w-4" /> Create Organization Account
             </Button>
           </div>
@@ -2059,7 +2059,7 @@ function FinalEmployerCTA({ onGetStarted }: { onGetStarted: () => void }) {
           <Button
             size="lg"
             className="bg-emerald-600 text-white hover:bg-emerald-700"
-            onClick={onGetStarted}
+            onClick={() => navigate("employer-onboarding")}
           >
             <Briefcase className="mr-1 h-4 w-4" /> Post a Role
           </Button>
@@ -2102,7 +2102,7 @@ function FinalProfessionalCTA({ onGetStarted }: { onGetStarted: () => void }) {
           <Button
             size="lg"
             className="bg-teal-600 text-white hover:bg-teal-700"
-            onClick={onGetStarted}
+            onClick={() => navigate("professional-onboarding")}
           >
             Join as a Professional <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
