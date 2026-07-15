@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
 import crypto from "crypto";
 
@@ -197,6 +197,7 @@ async function sendEmailViaResend({
 
 export async function POST(req: Request) {
   try {
+    const supabase = getSupabaseAdmin();
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -226,7 +227,7 @@ export async function POST(req: Request) {
     const userAgent = req.headers.get("user-agent") || "";
 
     // Pure Supabase insert (No Prisma!)
-    const { data: submission, error: dbError } = await supabaseAdmin
+    const { data: submission, error: dbError } = await supabase
       .from("contact_submissions")
       .insert([
         {
@@ -273,7 +274,7 @@ export async function POST(req: Request) {
     const deliveryRecords: any[] = [];
 
     for (const channel of channels) {
-      const { data: delRec, error: delError } = await supabaseAdmin
+      const { data: delRec, error: delError } = await supabase
         .from("contact_notification_deliveries")
         .insert([
           {
@@ -293,7 +294,7 @@ export async function POST(req: Request) {
 
     // Define helper to update delivery status
     const updateDeliveryStatus = async (recordId: string, status: string, errorMsg?: string, messageId?: string) => {
-      await supabaseAdmin
+      await supabase
         .from("contact_notification_deliveries")
         .update({
           status,

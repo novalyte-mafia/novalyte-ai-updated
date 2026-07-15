@@ -18,7 +18,7 @@ import {
   Video, DollarSign, ArrowRight, ShieldCheck, Mail, Phone, MapPin, Loader2,
   Lock, Check, ExternalLink
 } from "lucide-react";
-import { supabaseClient as supabase } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 type TabKey =
   | "overview"
@@ -35,6 +35,7 @@ type TabKey =
   | "notifications";
 
 export function WorkforceDashboardView({ profileId }: { profileId: string }) {
+  const supabase = getSupabaseClient();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");

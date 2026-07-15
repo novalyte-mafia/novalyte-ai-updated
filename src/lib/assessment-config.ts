@@ -373,7 +373,7 @@ export const ASSESSMENTS: Record<string, AssessmentConfig> = {
     slug: "erectile-dysfunction",
     treatmentLabel: "Erectile Dysfunction Care",
     shortLabel: "ED Care",
-    heroImage: "/images/hero/hero-1.jpg",
+    heroImage: "/images/patients/consultation-v2.png",
     heroImageAlt: "Private, discreet consultation between a patient and healthcare provider",
     description: "A discreet, informational assessment to help you explore ED care options with a licensed provider.",
     questions: [

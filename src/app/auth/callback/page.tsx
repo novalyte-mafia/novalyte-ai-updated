@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/site/header";
@@ -10,6 +10,7 @@ import { Footer } from "@/components/site/footer";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 function AuthCallbackComponent() {
+  const supabaseClient = getSupabaseClient();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Verifying your request...");

@@ -558,26 +558,6 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
         </div>
       </section>
 
-      {/* ── 9. FINAL CTA ──────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-600 to-emerald-700 py-12 text-white sm:py-14">
-        <div className="novalyte-dots absolute inset-0 opacity-10" aria-hidden />
-        <div className="relative mx-auto w-full max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">Ready to understand your options?</h2>
-          <p className="mt-3 text-pretty text-sm text-white/90 sm:text-base">
-            Complete a short assessment and receive personalized guidance based on your goals, location, timeline, and care preferences.
-          </p>
-          <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
-            <Button size="lg" className="bg-white text-teal-700 hover:bg-white/90" onClick={startAssessmentIntro}>
-              Start My Assessment <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-            <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10" onClick={() => navigate("directory")}>
-              Browse Clinics
-            </Button>
-          </div>
-          <p className="mt-3 text-xs text-white/80">Takes approximately 2–3 minutes · No treatment commitment required</p>
-        </div>
-      </section>
-
     </div>
   );
 }

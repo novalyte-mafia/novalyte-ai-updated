@@ -140,20 +140,6 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
         </div>
       )}
 
-      {/* Claimed Dashboard Quick Link */}
-      {clinic.claimStatus === "claimed" && (
-        <div className="bg-teal-600 text-white font-medium text-xs sm:text-sm py-2 px-4 text-center flex items-center justify-center gap-2">
-          <ShieldCheck className="h-4.5 w-4.5 text-teal-200" />
-          <span>This clinic profile is verified.</span>
-          <button 
-            onClick={() => navigate("clinic-dashboard", undefined, { id: clinic.id })}
-            className="underline hover:text-teal-100 font-bold ml-1.5 focus:outline-none"
-          >
-            Go to Management Dashboard
-          </button>
-        </div>
-      )}
-
       {/* Cover image */}
       <div className="relative h-48 overflow-hidden border-b border-border sm:h-64 lg:h-80 bg-muted">
         <SmartImage

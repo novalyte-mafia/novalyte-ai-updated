@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Mail, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 
 export default function ProfessionalForgotPassword() {
+  const supabaseClient = getSupabaseClient();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 

@@ -1,16 +1,33 @@
-import { createClient } from "@supabase/supabase-js";
+import "server-only";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-if (typeof window !== "undefined") {
-  throw new Error("supabaseAdmin client cannot be used in the browser");
-}
+let adminClient: SupabaseClient | undefined;
 
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
+export function getSupabaseAdmin(): SupabaseClient {
+  if (typeof window !== "undefined") {
+    throw new Error("The Supabase admin client cannot be used in the browser.");
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    const missingVariables = [
+      !supabaseUrl && "NEXT_PUBLIC_SUPABASE_URL",
+      !serviceRoleKey && "SUPABASE_SERVICE_ROLE_KEY",
+    ].filter(Boolean);
+
+    throw new Error(
+      `Supabase server configuration is missing: ${missingVariables.join(", ")}.`
+    );
+  }
+
+  adminClient ??= createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
-  }
-);
+  });
+
+  return adminClient;
+}

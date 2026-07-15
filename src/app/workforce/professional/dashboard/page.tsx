@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabaseClient } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { WorkforceDashboardView } from "@/components/views/workforce-dashboard-view";
@@ -10,6 +10,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ProfessionalDashboardPage() {
+  const supabaseClient = getSupabaseClient();
   const [session, setSession] = useState<any>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

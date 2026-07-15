@@ -62,7 +62,7 @@ export function SectionShell({
     dark: "bg-foreground text-background",
   };
   return (
-    <section id={id} className={cn("py-12 sm:py-16", tones[tone], className)}>
+    <section id={id} className={cn("scroll-mt-24 py-12 sm:py-16", tones[tone], className)}>
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>
     </section>
   );

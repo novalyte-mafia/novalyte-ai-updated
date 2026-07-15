@@ -43,7 +43,7 @@ export function StickyTabNav({
       <div id="sticky-tab-sentinel" className="h-px w-full" aria-hidden />
       <div
         className={cn(
-          "sticky top-16 z-30 -mx-4 border-y border-border bg-background/90 px-4 backdrop-blur-md transition-shadow sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+          "sticky top-16 z-30 border-y border-border bg-background/90 backdrop-blur-md transition-shadow sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
           stuck && "sticky-nav-shadow",
         )}
       >

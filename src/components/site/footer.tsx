@@ -34,11 +34,11 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
 
   return (
     <footer className="mt-auto border-t border-border bg-muted/30">
-      <div className="mx-auto w-full max-w-7xl px-4 py-9 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
         {/* Main Footer Content */}
-        <div className="flex flex-col gap-8 sm:flex-row sm:justify-between sm:items-start">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between lg:gap-10">
           {/* Brand Area */}
-          <div className="max-w-md space-y-4">
+          <div className="max-w-md space-y-3">
             <Logo />
             <p className="text-sm leading-relaxed text-muted-foreground">
               Novalyte AI is the operating system for men's health — connecting patient demand,
@@ -64,7 +64,7 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
           {/* Legal Section */}
           <div className="shrink-0">
             <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">Legal</h4>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-1.5">
               <li>
                 <button
                   onClick={() => navigate("privacy")}
@@ -94,8 +94,8 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
         </div>
 
         {/* Bottom Area: Disclaimer + Copyright */}
-        <div className="mt-8 border-t border-border pt-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="mt-6 border-t border-border pt-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
             {/* Medical Disclaimer */}
             <div className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed max-w-3xl">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />

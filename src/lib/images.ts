@@ -17,11 +17,11 @@
 
 export const IMAGES = {
   hero: {
-    consultation: "/images/hero/hero-1.jpg",
-    clinicScene: "/images/hero/hero-2.jpg",
-    patientCare: "/images/hero/hero-3.jpg",
-    providerPatient: "/images/hero/hero-4.jpg",
-    ecosystem: "/images/hero/hero-6.jpg",
+    consultation: "/images/patients/consultation-v2.png",
+    clinicScene: "/images/pillars/clinic-directory.jpg",
+    patientCare: "/images/hero/hero-5.png",
+    providerPatient: "/images/patients/consultation-v2.png",
+    ecosystem: "/images/pillars/workforce-hub.jpg",
   },
 
   // Original Novalyte AI pillar photography, generated for the marketing surface.
@@ -35,12 +35,12 @@ export const IMAGES = {
   // Clinic directory + profile images
   clinics: {
     exterior: [
-      "/images/clinics/clinic-1.jpg",
+      "/images/pillars/clinic-directory.jpg",
       "/images/clinics/clinic-2.jpg",
-      "/images/clinics/clinic-3.jpg",
       "/images/clinics/clinic-4.jpg",
-      "/images/clinics/clinic-5.jpg",
-      "/images/clinics/clinic-6.jpg",
+      "/images/pillars/patient-acquisition.jpg",
+      "/images/pillars/workforce-hub.jpg",
+      "/images/pillars/services-marketplace.jpg",
     ],
     interior: [
       "/images/clinics/clinic-2.jpg",
@@ -48,9 +48,9 @@ export const IMAGES = {
       "/images/clinics/clinic-5.jpg",
     ],
     reception: [
-      "/images/clinics/clinic-1.jpg",
-      "/images/clinics/clinic-3.jpg",
-      "/images/clinics/clinic-6.jpg",
+      "/images/pillars/clinic-directory.jpg",
+      "/images/clinics/clinic-2.jpg",
+      "/images/clinics/clinic-4.jpg",
     ],
   },
 
@@ -103,9 +103,9 @@ export const IMAGES = {
   // Patient journey imagery
   patients: {
     hero: "/images/patients/patient-hero.jpg",
-    journey: "/images/hero/hero-1.jpg",
-    assessment: "/images/hero/hero-3.jpg",
-    consultation: "/images/hero/hero-4.jpg",
+    journey: "/images/pillars/patient-acquisition.jpg",
+    assessment: "/images/hero/hero-5.png",
+    consultation: "/images/patients/consultation-v2.png",
     telehealth: "/images/treatments/telehealth-2.jpg",
   },
 
@@ -113,7 +113,7 @@ export const IMAGES = {
   clinicMarketing: {
     team: "/images/professionals/pro-5.jpg",
     operations: "/images/clinics/clinic-2.jpg",
-    intake: "/images/hero/hero-3.jpg",
+    intake: "/images/pillars/patient-acquisition.jpg",
   },
 } as const;
 

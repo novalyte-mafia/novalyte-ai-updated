@@ -134,7 +134,7 @@ export const TREATMENT_CONTENT: Record<string, TreatmentContent> = {
     slug: "erectile-dysfunction",
     label: "Erectile Dysfunction Care",
     shortLabel: "ED Care",
-    heroImage: "/images/hero/hero-1.jpg",
+    heroImage: "/images/patients/consultation-v2.png",
     heroImageAlt: "Discreet private consultation between a mature male patient and a clinician",
     tagline: "Discreet, professional care for erectile concerns",
     overview:
@@ -441,7 +441,7 @@ export const TREATMENT_CONTENT: Record<string, TreatmentContent> = {
     slug: "sexual-wellness",
     label: "Sexual Wellness",
     shortLabel: "Wellness",
-    heroImage: "/images/hero/hero-2.jpg",
+    heroImage: "/images/pillars/workforce-hub.jpg",
     heroImageAlt: "Discreet, confidential provider-patient discussion",
     tagline: "Comprehensive, confidential sexual health care",
     overview:

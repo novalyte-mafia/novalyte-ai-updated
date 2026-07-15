@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "./supabase/admin";
+import { getSupabaseAdmin } from "./supabase/admin";
 
 function parseDates(val: any): any {
   if (val === null || val === undefined) return val;
@@ -30,6 +30,7 @@ class ModelAdapter<T> {
   constructor(private tableName: string) {}
 
   async findMany(options?: { where?: any; orderBy?: any; include?: any; select?: any }) {
+    const supabase = getSupabaseAdmin();
     let selectFields = "*";
     if (options?.select) {
       selectFields = Object.keys(options.select).join(",");
@@ -42,7 +43,7 @@ class ModelAdapter<T> {
       selectFields = `*, ${includes.join(", ")}`;
     }
 
-    let query = supabaseAdmin.from(this.tableName).select(selectFields);
+    let query = supabase.from(this.tableName).select(selectFields);
 
     if (options?.where) {
       for (const [key, val] of Object.entries(options.where)) {
@@ -78,6 +79,7 @@ class ModelAdapter<T> {
   }
 
   async findUnique(options: { where: any; include?: any }) {
+    const supabase = getSupabaseAdmin();
     let selectFields = "*";
     if (this.tableName === "Clinic" && options?.include) {
       const includes = [];
@@ -88,7 +90,7 @@ class ModelAdapter<T> {
       selectFields = `*, ${includes.join(", ")}`;
     }
 
-    let query = supabaseAdmin.from(this.tableName).select(selectFields);
+    let query = supabase.from(this.tableName).select(selectFields);
 
     for (const [key, val] of Object.entries(options.where)) {
       query = query.eq(key, val);
@@ -103,7 +105,8 @@ class ModelAdapter<T> {
   }
 
   async findFirst(options?: { where: any }) {
-    let query = supabaseAdmin.from(this.tableName).select("*");
+    const supabase = getSupabaseAdmin();
+    let query = supabase.from(this.tableName).select("*");
     if (options?.where) {
       for (const [key, val] of Object.entries(options.where)) {
         if (val === null) {
@@ -122,9 +125,10 @@ class ModelAdapter<T> {
   }
 
   async create(options: { data: any }) {
+    const supabase = getSupabaseAdmin();
     const { locations, providers, treatments, reviews, ...primaryData } = options.data;
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from(this.tableName)
       .insert(primaryData)
       .select()
@@ -142,28 +146,28 @@ class ModelAdapter<T> {
 
       if (Array.isArray(locations)) {
         for (const loc of locations) {
-          await supabaseAdmin
+          await supabase
             .from("ClinicLocation")
             .insert({ ...loc, clinicId });
         }
       }
       if (Array.isArray(providers)) {
         for (const prov of providers) {
-          await supabaseAdmin
+          await supabase
             .from("ClinicProvider")
             .insert({ ...prov, clinicId });
         }
       }
       if (Array.isArray(treatments)) {
         for (const treat of treatments) {
-          await supabaseAdmin
+          await supabase
             .from("ClinicTreatment")
             .insert({ ...treat, clinicId });
         }
       }
       if (Array.isArray(reviews)) {
         for (const rev of reviews) {
-          await supabaseAdmin
+          await supabase
             .from("ClinicReview")
             .insert({ ...rev, clinicId });
         }
@@ -174,7 +178,8 @@ class ModelAdapter<T> {
   }
 
   async update(options: { where: any; data: any }) {
-    let query = supabaseAdmin.from(this.tableName).update(options.data);
+    const supabase = getSupabaseAdmin();
+    let query = supabase.from(this.tableName).update(options.data);
     for (const [key, val] of Object.entries(options.where)) {
       query = query.eq(key, val);
     }
@@ -198,7 +203,8 @@ class ModelAdapter<T> {
   }
 
   async count() {
-    const { error, count } = await supabaseAdmin
+    const supabase = getSupabaseAdmin();
+    const { error, count } = await supabase
       .from(this.tableName)
       .select("*", { count: "exact", head: true });
     if (error) {
@@ -209,7 +215,8 @@ class ModelAdapter<T> {
   }
 
   async delete(options: { where: any }) {
-    let query = supabaseAdmin.from(this.tableName).delete();
+    const supabase = getSupabaseAdmin();
+    let query = supabase.from(this.tableName).delete();
     for (const [key, val] of Object.entries(options.where)) {
       query = query.eq(key, val);
     }
@@ -222,7 +229,8 @@ class ModelAdapter<T> {
   }
 
   async deleteMany(options?: { where?: any }) {
-    let query = supabaseAdmin.from(this.tableName).delete();
+    const supabase = getSupabaseAdmin();
+    let query = supabase.from(this.tableName).delete();
     if (options?.where && Object.keys(options.where).length > 0) {
       for (const [key, val] of Object.entries(options.where)) {
         query = query.eq(key, val);

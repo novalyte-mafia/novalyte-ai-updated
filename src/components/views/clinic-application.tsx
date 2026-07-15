@@ -17,16 +17,16 @@ import {
 } from "lucide-react";
 
 const STAGES = [
-  { id: 0, label: "Organization", icon: Building2 },
-  { id: 1, label: "Locations", icon: MapPin },
-  { id: 2, label: "Decision Maker", icon: User },
-  { id: 3, label: "Providers & Credentials", icon: Stethoscope },
-  { id: 4, label: "Treatments", icon: Activity },
-  { id: 5, label: "Patient Operations", icon: TrendingUp },
-  { id: 6, label: "Growth Interests", icon: TrendingUp },
-  { id: 7, label: "Directory Profile", icon: ImageIcon },
-  { id: 8, label: "Verification", icon: ShieldCheck },
-  { id: 9, label: "Review & Submit", icon: FileText },
+  { id: 0, label: "Organization", shortLabel: "Organization", icon: Building2 },
+  { id: 1, label: "Locations", shortLabel: "Locations", icon: MapPin },
+  { id: 2, label: "Decision Maker", shortLabel: "Contact", icon: User },
+  { id: 3, label: "Providers & Credentials", shortLabel: "Providers", icon: Stethoscope },
+  { id: 4, label: "Treatments", shortLabel: "Treatments", icon: Activity },
+  { id: 5, label: "Patient Operations", shortLabel: "Operations", icon: TrendingUp },
+  { id: 6, label: "Growth Interests", shortLabel: "Growth", icon: TrendingUp },
+  { id: 7, label: "Directory Profile", shortLabel: "Profile", icon: ImageIcon },
+  { id: 8, label: "Verification", shortLabel: "Verify", icon: ShieldCheck },
+  { id: 9, label: "Review & Submit", shortLabel: "Review", icon: FileText },
 ];
 
 const ORG_TYPES = ["Independent clinic", "Multi-location clinic group", "Telehealth provider", "Medical group", "Physician-owned practice", "Private-equity-backed group", "Franchise", "Hospital-affiliated clinic", "Management services organization", "Other"];
@@ -198,20 +198,20 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-premium-sm">
+    <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-premium-sm">
       {/* Header with progress */}
-      <div className="border-b border-border p-5 sm:p-6">
-        <div className="flex items-center justify-between">
+      <div className="border-b border-border p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
               Stage {stage + 1} of 10 — {STAGES[stage].label}
             </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">Approximately 8–12 minutes · Draft saved automatically on this device</p>
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Approximately 8–12 minutes · Draft saved automatically on this device</p>
           </div>
           <span className="hidden rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 sm:block">DRAFT</span>
         </div>
         {/* Progress rail */}
-        <div className="mt-4 flex items-center gap-1 overflow-x-auto novalyte-scroll">
+        <div className="novalyte-scroll mt-4 flex items-center gap-1 overflow-x-auto pb-1" aria-label="Clinic application progress">
           {STAGES.map((s, i) => {
             const Icon = s.icon;
             const isComplete = i < stage;
@@ -220,6 +220,9 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
               <button
                 key={s.id}
                 onClick={() => i < stage && setStage(i)}
+                aria-label={`${s.label}${isCurrent ? ", current step" : isComplete ? ", completed" : ""}`}
+                aria-current={isCurrent ? "step" : undefined}
+                title={s.label}
                 className={cn(
                   "flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition",
                   isCurrent ? "bg-teal-50 text-teal-800 ring-1 ring-teal-200" : isComplete ? "text-teal-700 hover:bg-teal-50/50" : "text-muted-foreground/60",
@@ -227,7 +230,7 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
                 disabled={i > stage}
               >
                 {isComplete ? <CheckCircle2 className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
-                <span className="hidden sm:inline">{s.label}</span>
+                <span className="hidden md:inline">{s.shortLabel}</span>
               </button>
             );
           })}
@@ -235,8 +238,8 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
       </div>
 
       {/* Content */}
-      <div className="p-5 sm:p-6">
-        <div className="min-h-[300px]">
+      <div className="p-4 sm:p-5">
+        <div>
           {stage === 0 && <StageOrganization data={data} set={set} />}
           {stage === 1 && <StageLocations data={data} set={set} />}
           {stage === 2 && <StageDecisionMaker data={data} set={set} />}
@@ -250,11 +253,11 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
         </div>
 
         {/* Nav */}
-        <div className="mt-6 flex items-center justify-between border-t pt-5">
-          <Button variant="ghost" onClick={back} disabled={stage === 0}>
+        <div className="mt-5 flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <Button variant="ghost" className="self-start" onClick={back} disabled={stage === 0}>
             <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col-reverse items-start gap-2 sm:flex-row sm:items-center">
             {!canProceed() && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <AlertCircle className="h-3 w-3" /> {stage === 8 ? "Required consents must be checked" : "Required fields missing"}

@@ -9,9 +9,10 @@ import {
   User, MapPin, Briefcase, GraduationCap, Award, Mail, Phone,
   ArrowLeft, ShieldCheck, ExternalLink, Sparkles
 } from "lucide-react";
-import { supabaseClient as supabase } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 export function TalentProfileView({ profileId, onBack }: { profileId: string; onBack: () => void }) {
+  const supabase = getSupabaseClient();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
