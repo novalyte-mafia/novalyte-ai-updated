@@ -306,7 +306,7 @@ export async function POST(req: Request) {
     };
 
     // Get secrets
-    const slackWebhook = process.env.SLACK_CONTACT_WEBHOOK_URL;
+    const slackWebhook = process.env.SLACK_CONTACT_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL;
     const resendApiKey = process.env.RESEND_API_KEY;
     const notificationTo = process.env.CONTACT_NOTIFICATION_TO_EMAIL || "admin@novalyte.io";
     const notificationFrom = process.env.CONTACT_NOTIFICATION_FROM_EMAIL || "accounts@novalyte.io";
