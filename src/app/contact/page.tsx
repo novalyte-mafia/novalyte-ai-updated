@@ -327,7 +327,7 @@ export default function ContactPage() {
         <section className="bg-gradient-to-b from-teal-50/20 via-background to-background py-16 px-4 border-b border-neutral-100">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900 sm:text-5xl">
-              How can Novalyte help?
+              How can Novalyte <span className="text-teal-600">help?</span>
             </h1>
             <p className="mt-4 text-lg text-neutral-600 max-w-2xl mx-auto">
               Tell us who you are and what you need. We’ll route your message to the appropriate Novalyte team immediately.
@@ -413,19 +413,24 @@ export default function ContactPage() {
                               key={identity.id}
                               type="button"
                               onClick={() => selectSenderType(identity.id as SenderType)}
-                              className={`flex items-start text-left p-4 rounded-2xl border transition focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
+                              className={`relative flex items-start text-left p-4 rounded-2xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 w-full h-full ${
                                 isSelected
-                                  ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500"
-                                  : "border-neutral-200 hover:border-teal-500/50 hover:bg-neutral-50/50"
+                                  ? "border-2 border-teal-600 bg-teal-50/20 shadow-premium-md"
+                                  : "border-neutral-200 hover:border-teal-500/50 hover:bg-teal-50/10 hover:shadow-premium-sm"
                               }`}
                             >
-                              <div className={`p-2 rounded-xl shrink-0 ${isSelected ? "bg-teal-600 text-white" : "bg-neutral-100 text-neutral-500"}`}>
+                              <div className={`p-2.5 rounded-xl shrink-0 transition-colors duration-200 ${isSelected ? "bg-teal-600 text-white" : "bg-teal-50/50 text-teal-600"}`}>
                                 <Icon className="h-5 w-5" />
                               </div>
-                              <div className="ml-3">
+                              <div className="ml-3 pr-4">
                                 <p className="text-sm font-bold text-neutral-900">{identity.label}</p>
-                                <p className="text-xs text-neutral-500 leading-normal mt-0.5">{identity.desc}</p>
+                                <p className="text-xs text-neutral-500 leading-normal mt-1">{identity.desc}</p>
                               </div>
+                              {isSelected && (
+                                <span className="absolute top-3 right-3 h-5 w-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm animate-scale-in">
+                                  ✓
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -688,19 +693,11 @@ export default function ContactPage() {
                       </div>
 
                       <div className="flex items-start">
-                        <Phone className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
-                        <div className="ml-3">
-                          <p className="font-bold text-neutral-900">Office Phone</p>
-                          <p className="text-neutral-600">(415) 555-0199</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start">
                         <MapPin className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
                         <div className="ml-3">
                           <p className="font-bold text-neutral-900">Headquarters</p>
                           <p className="text-neutral-600 leading-normal">
-                            Novalyte AI Inc.<br />
+                            415 Mission Street<br />
                             San Francisco, CA
                           </p>
                         </div>
@@ -709,17 +706,18 @@ export default function ContactPage() {
                   </div>
 
                   {/* Privacy & Medical Warning Card */}
-                  <div className="bg-neutral-50 border border-neutral-100 p-6 rounded-3xl space-y-4">
-                    <h4 className="text-sm font-bold text-neutral-900 uppercase tracking-wider">
+                  <div className="bg-white border border-neutral-200/80 p-6 rounded-3xl shadow-premium-sm space-y-4">
+                    <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+                      <ShieldAlert className="h-5 w-5 text-teal-600 shrink-0" />
                       Important Disclaimers
-                    </h4>
+                    </h3>
                     
-                    <div className="space-y-3.5 text-xs text-neutral-600 leading-normal">
+                    <div className="space-y-3.5 text-xs text-neutral-600 leading-relaxed">
                       <p>
                         <strong>Emergency Policy:</strong> Novalyte AI is a healthcare technology platform. We do not provide clinical diagnosis, medical treatment, or emergency response services.
                       </p>
                       <p>
-                        <strong>Data Privacy:</strong> All inquiry submissions are encrypted and processed in compliance with modern data protection standards.
+                        <strong>Data Privacy:</strong> Inquiry submissions are handled according to the Novalyte Privacy Policy and applicable data-protection practices.
                       </p>
                     </div>
                   </div>
