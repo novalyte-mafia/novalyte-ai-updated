@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { SectionShell } from "@/components/shared/section";
 import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
-  PremiumCard, StatCard, CardSkeleton, EmptyState,
+  PremiumCard, CardSkeleton, EmptyState,
   FilterChip, ViewToggle, SaveButton, Breadcrumbs,
 } from "@/components/shared/enterprise";
 import { getClinicImage } from "@/lib/images";
@@ -27,7 +27,7 @@ import {
   Search, MapPin, Video, Building2, Phone, Star, ShieldCheck, Clock,
   ArrowRight, SlidersHorizontal, LayoutGrid, List, Map, X, Heart,
   GitCompare, Stethoscope, CheckCircle2, Navigation, Sparkles, ChevronRight,
-  DollarSign, Check, HelpCircle, ShieldAlert, Award, Languages, Accessibility,
+  DollarSign, Check, HelpCircle, ShieldAlert, Award, Languages, Accessibility, Users,
 } from "lucide-react";
 
 const PAGE_SIZE = 6;
@@ -74,10 +74,14 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   const [pricingStatus, setPricingStatus] = useState("all"); // all | published | partial | consult
   const [insuranceAccepted, setInsuranceAccepted] = useState(false);
   const [hsaFsaAccepted, setHsaFsaAccepted] = useState(false);
+  const [financingAvailable, setFinancingAvailable] = useState(false);
   const [onSiteLab, setOnSiteLab] = useState(false);
   const [acceptingNewPatients, setAcceptingNewPatients] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [claimedStatus, setClaimedStatus] = useState("all"); // all | claimed | unclaimed
+  const [distanceRadius, setDistanceRadius] = useState("all");
+  const [consultationAvailability, setConsultationAvailability] = useState("all");
+  const [language, setLanguage] = useState("all");
 
   // Toolbar & view state
   const [sortBy, setSortBy] = useState("relevance");
@@ -86,6 +90,42 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   const [loading, startTransition] = useTransition();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [guidedOpen, setGuidedOpen] = useState(false);
+
+  // Restore a shareable search when a directory URL is revisited.
+  /* eslint-disable react-hooks/set-state-in-effect -- URL state is an external navigation source. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("view") !== "directory") return;
+    setQuery(params.get("q") ?? "");
+    setLocationQuery(params.get("location") ?? "");
+    setState(params.get("state") ?? "all");
+    setCity(params.get("city") ?? "all");
+    setTreatment(params.get("treatment") ?? "all");
+    setCareFormat(params.get("format") ?? "all");
+    setProviderType(params.get("provider") ?? "all");
+    setDistanceRadius(params.get("distance") ?? "all");
+    setConsultationAvailability(params.get("availability") ?? "all");
+    setLanguage(params.get("language") ?? "all");
+    setSortBy(params.get("sort") ?? "relevance");
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("view", "directory");
+    const values: Record<string, string> = {
+      q: query, location: locationQuery, state, city, treatment, format: careFormat,
+      provider: providerType, distance: distanceRadius, availability: consultationAvailability,
+      language, sort: sortBy,
+    };
+    Object.entries(values).forEach(([key, value]) => {
+      if (!value || value === "all" || value === "relevance") params.delete(key);
+      else params.set(key, value);
+    });
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+  }, [query, locationQuery, state, city, treatment, careFormat, providerType, distanceRadius, consultationAvailability, language, sortBy]);
 
   // Derived filter options from clinics
   const allTreatments = useMemo(() => {
@@ -182,6 +222,10 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       // 9. Payment variables
       if (insuranceAccepted && !c.insuranceAccepted) return false;
       if (hsaFsaAccepted && !c.hsaFsaAccepted) return false;
+      if (financingAvailable) {
+        const searchable = `${c.capabilities ?? ""} ${c.pricingStatus} ${c.overview}`.toLowerCase();
+        if (!searchable.includes("financ") && !c.hsaFsaAccepted) return false;
+      }
 
       // 10. Capabilities
       if (onSiteLab) {
@@ -195,12 +239,33 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       if (verifiedOnly && !c.verified) return false;
       if (claimedStatus !== "all" && c.claimStatus !== claimedStatus) return false;
 
+      // These filters use the directory fields currently available in Supabase.
+      // A radius is only meaningful with an origin; physical locations are required
+      // until geocoded coordinates are added to the directory schema.
+      if (distanceRadius !== "all") {
+        if (!locationQuery && !c.locations?.length) return false;
+        if (locationQuery && !c.locations?.length && !c.telehealth) return false;
+      }
+      if (consultationAvailability !== "all") {
+        const availability = `${c.earliestAvailability ?? ""} ${c.locations?.map((l) => l.earliestAppt ?? "").join(" ")}`.toLowerCase();
+        if (consultationAvailability === "soon" && !/(today|tomorrow|same day|next day|this week|within 7|[1-7] day)/i.test(availability)) return false;
+        if (consultationAvailability === "month" && !availability.trim()) return false;
+      }
+      if (language !== "all") {
+        const languageText = `${c.languages} ${c.providers?.map((p) => p.languages ?? "").join(" ")}`.toLowerCase();
+        if (!languageText.includes(language.toLowerCase())) return false;
+      }
+
       return true;
     });
 
     // Sorting
     if (sortBy === "verified") {
       result = [...result].sort((a, b) => Number(b.verified) - Number(a.verified));
+    } else if (sortBy === "nearest") {
+      result = [...result].sort((a, b) => Number(Boolean(b.locations?.length)) - Number(Boolean(a.locations?.length)));
+    } else if (sortBy === "most-relevant") {
+      result = [...result].sort((a, b) => b.profileCompleteness - a.profileCompleteness);
     } else if (sortBy === "az") {
       result = [...result].sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === "telehealth") {
@@ -217,7 +282,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       });
     }
     return result;
-  }, [clinics, query, locationQuery, state, city, treatment, careFormat, providerType, clinicType, pricingStatus, insuranceAccepted, hsaFsaAccepted, onSiteLab, acceptingNewPatients, verifiedOnly, claimedStatus, sortBy]);
+  }, [clinics, query, locationQuery, state, city, treatment, careFormat, providerType, clinicType, pricingStatus, insuranceAccepted, hsaFsaAccepted, financingAvailable, onSiteLab, acceptingNewPatients, verifiedOnly, claimedStatus, distanceRadius, consultationAvailability, language, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -235,9 +300,13 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   if (pricingStatus !== "all") activeFilters.push({ label: `Pricing: ${pricingStatus}`, clear: () => setPricingStatus("all") });
   if (insuranceAccepted) activeFilters.push({ label: "Accepts Insurance", clear: () => setInsuranceAccepted(false) });
   if (hsaFsaAccepted) activeFilters.push({ label: "Accepts HSA/FSA", clear: () => setHsaFsaAccepted(false) });
+  if (financingAvailable) activeFilters.push({ label: "Financing available", clear: () => setFinancingAvailable(false) });
   if (onSiteLab) activeFilters.push({ label: "On-site Lab/Phlebotomy", clear: () => setOnSiteLab(false) });
   if (acceptingNewPatients) activeFilters.push({ label: "Accepting Patients", clear: () => setAcceptingNewPatients(false) });
   if (verifiedOnly) activeFilters.push({ label: "Verified only", clear: () => setVerifiedOnly(false) });
+  if (distanceRadius !== "all") activeFilters.push({ label: `Within ${distanceRadius} miles`, clear: () => setDistanceRadius("all") });
+  if (consultationAvailability !== "all") activeFilters.push({ label: consultationAvailability === "soon" ? "Consultation within 7 days" : "Consultation within 30 days", clear: () => setConsultationAvailability("all") });
+  if (language !== "all") activeFilters.push({ label: `Language: ${language}`, clear: () => setLanguage("all") });
   if (claimedStatus !== "all") activeFilters.push({ label: `Profile: ${claimedStatus}`, clear: () => setClaimedStatus("all") });
 
   function resetFilters() {
@@ -246,14 +315,10 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       setCareFormat("all"); setProviderType("all"); setClinicType("all"); setPricingStatus("all");
       setInsuranceAccepted(false); setHsaFsaAccepted(false); setOnSiteLab(false);
       setAcceptingNewPatients(false); setVerifiedOnly(false); setClaimedStatus("all");
+      setFinancingAvailable(false); setDistanceRadius("all"); setConsultationAvailability("all"); setLanguage("all");
       setSortBy("relevance"); setPage(1);
     });
   }
-
-  // Quick statistics
-  const verifiedCount = clinics.filter((c) => c.verified).length;
-  const telehealthCount = clinics.filter((c) => c.telehealth).length;
-  const stateCount = new Set(clinics.map((c) => c.state)).size;
 
   const filterContent = (
     <FiltersPanel
@@ -266,13 +331,18 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       pricingStatus={pricingStatus} setPricingStatus={updateFilter(setPricingStatus)}
       insuranceAccepted={insuranceAccepted} setInsuranceAccepted={updateFilter(setInsuranceAccepted)}
       hsaFsaAccepted={hsaFsaAccepted} setHsaFsaAccepted={updateFilter(setHsaFsaAccepted)}
+      financingAvailable={financingAvailable} setFinancingAvailable={updateFilter(setFinancingAvailable)}
       onSiteLab={onSiteLab} setOnSiteLab={updateFilter(setOnSiteLab)}
       acceptingNewPatients={acceptingNewPatients} setAcceptingNewPatients={updateFilter(setAcceptingNewPatients)}
       verifiedOnly={verifiedOnly} setVerifiedOnly={updateFilter(setVerifiedOnly)}
       claimedStatus={claimedStatus} setClaimedStatus={updateFilter(setClaimedStatus)}
+      distanceRadius={distanceRadius} setDistanceRadius={updateFilter(setDistanceRadius)}
+      consultationAvailability={consultationAvailability} setConsultationAvailability={updateFilter(setConsultationAvailability)}
+      language={language} setLanguage={updateFilter(setLanguage)}
       allTreatments={allTreatments}
       allCities={allCities}
       onReset={resetFilters}
+      onApply={() => setMobileFiltersOpen(false)}
     />
   );
 
@@ -290,7 +360,8 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             </div>
             
             <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-              Find the Right Men’s Health Clinic for Your Needs
+              Find the Right Men’s Health{" "}
+              <span className="text-teal-600">Clinic for Your Needs</span>
             </h1>
             <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg max-w-3xl">
               Search and compare men’s health clinics by treatment, location, telehealth availability, provider expertise, pricing information, and clinic capabilities.
@@ -298,7 +369,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
           </div>
 
           {/* Dual Field Search Experience */}
-          <div className="mt-8 grid gap-4 p-4 rounded-2xl border border-border bg-card shadow-premium-md md:grid-cols-[1fr_1fr_auto] md:items-center">
+          <div id="directory-search" className="mt-8 grid gap-4 p-4 rounded-2xl border border-border bg-card shadow-premium-md md:grid-cols-[1fr_1fr_auto] md:items-center">
             {/* Field 1: What Care */}
             <div className="grid gap-1.5">
               <Label htmlFor="search-care" className="text-xs font-medium text-foreground/80">What care are you looking for?</Label>
@@ -332,10 +403,21 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             {/* Actions Block */}
             <div className="flex flex-col gap-2 pt-2 md:pt-5 md:flex-row">
               <Button 
-                onClick={() => setPage(1)} 
+                onClick={() => {
+                  setPage(1);
+                  document.getElementById("directory-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
                 className="bg-teal-600 hover:bg-teal-700 text-white shadow-premium-sm font-semibold h-10 px-5"
               >
                 Search Clinics
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("clinic-application")}
+                className="h-10 border-teal-200 px-5 font-semibold text-teal-700 hover:bg-teal-50"
+              >
+                Apply to List Your Clinic <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
@@ -394,17 +476,10 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             ))}
           </div>
 
-          {/* Directory Stats Strip */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Clinics Listed" value={clinics.length} sub="Men's health directory" icon={Building2} tone="teal" />
-            <StatCard label="Verified Clinics" value={verifiedCount} sub="Rigorous review complete" icon={ShieldCheck} tone="emerald" />
-            <StatCard label="Telehealth Providers" value={telehealthCount} sub="Remote consultations" icon={Video} tone="teal" />
-            <StatCard label="States Active" value={stateCount} sub="Geographic coverage" icon={MapPin} tone="emerald" />
-          </div>
         </div>
       </section>
 
-      <SectionShell className="!pt-8 !pb-16 bg-muted/10">
+      <SectionShell id="directory-results" className="!pt-8 !pb-16 bg-muted/10">
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block">
@@ -425,6 +500,11 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
 
           {/* Results Column */}
           <div className="min-w-0">
+            <div className="mb-3 flex justify-end lg:hidden">
+              <Button variant="outline" size="sm" className="font-semibold" onClick={() => setMobileFiltersOpen(true)}>
+                <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-teal-600" /> More Filters
+              </Button>
+            </div>
             {/* Results Header Toolbar */}
             <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -436,9 +516,11 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="h-8.5 w-[160px] text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="relevance">Most relevant</SelectItem>
+                    <SelectItem value="relevance">Recommended</SelectItem>
+                    <SelectItem value="most-relevant">Most relevant</SelectItem>
+                    <SelectItem value="nearest">Nearest</SelectItem>
                     <SelectItem value="verified">Verified first</SelectItem>
-                    <SelectItem value="telehealth">Telehealth first</SelectItem>
+                    <SelectItem value="telehealth">Telehealth available</SelectItem>
                     <SelectItem value="accepting">Accepting new patients</SelectItem>
                     <SelectItem value="completeness">Most complete profile</SelectItem>
                     <SelectItem value="pricing">Pricing published first</SelectItem>
@@ -544,7 +626,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
                 className="border-teal-600 text-teal-700 hover:bg-teal-50 font-semibold"
                 onClick={() => navigate("clinics")}
               >
-                Claim or Register Clinic <ChevronRight className="h-4 w-4" />
+                Apply to List Your Clinic <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
@@ -581,10 +663,11 @@ function FiltersPanel({
   state, setState, city, setCity, treatment, setTreatment,
   careFormat, setCareFormat, providerType, setProviderType,
   clinicType, setClinicType, pricingStatus, setPricingStatus,
-  insuranceAccepted, setInsuranceAccepted, hsaFsaAccepted, setHsaFsaAccepted,
+  insuranceAccepted, setInsuranceAccepted, hsaFsaAccepted, setHsaFsaAccepted, financingAvailable, setFinancingAvailable,
   onSiteLab, setOnSiteLab, acceptingNewPatients, setAcceptingNewPatients,
   verifiedOnly, setVerifiedOnly, claimedStatus, setClaimedStatus,
-  allTreatments, allCities, onReset,
+  distanceRadius, setDistanceRadius, consultationAvailability, setConsultationAvailability, language, setLanguage,
+  allTreatments, allCities, onReset, onApply,
 }: {
   state: string; setState: (v: string) => void;
   city: string; setCity: (v: string) => void;
@@ -595,12 +678,17 @@ function FiltersPanel({
   pricingStatus: string; setPricingStatus: (v: string) => void;
   insuranceAccepted: boolean; setInsuranceAccepted: (v: boolean) => void;
   hsaFsaAccepted: boolean; setHsaFsaAccepted: (v: boolean) => void;
+  financingAvailable: boolean; setFinancingAvailable: (v: boolean) => void;
   onSiteLab: boolean; setOnSiteLab: (v: boolean) => void;
   acceptingNewPatients: boolean; setAcceptingNewPatients: (v: boolean) => void;
   verifiedOnly: boolean; setVerifiedOnly: (v: boolean) => void;
   claimedStatus: string; setClaimedStatus: (v: string) => void;
+  distanceRadius: string; setDistanceRadius: (v: string) => void;
+  consultationAvailability: string; setConsultationAvailability: (v: string) => void;
+  language: string; setLanguage: (v: string) => void;
   allTreatments: string[]; allCities: string[];
   onReset: () => void;
+  onApply?: () => void;
 }) {
   const [filterSearch, setFilterSearch] = useState("");
 
@@ -684,6 +772,47 @@ function FiltersPanel({
           </Select>
         </div>
 
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold text-foreground/80">Distance radius</Label>
+          <Select value={distanceRadius} onValueChange={setDistanceRadius}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any distance" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any distance</SelectItem>
+              <SelectItem value="10">Within 10 miles</SelectItem>
+              <SelectItem value="25">Within 25 miles</SelectItem>
+              <SelectItem value="50">Within 50 miles</SelectItem>
+              <SelectItem value="100">Within 100 miles</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[10px] text-muted-foreground">Enter a city, state, or ZIP above to use a radius.</p>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold text-foreground/80">Consultation availability</Label>
+          <Select value={consultationAvailability} onValueChange={setConsultationAvailability}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any availability" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any availability</SelectItem>
+              <SelectItem value="soon">Within 7 days</SelectItem>
+              <SelectItem value="month">Within 30 days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label className="text-xs font-semibold text-foreground/80">Language</Label>
+          <Select value={language} onValueChange={setLanguage}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any language" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any language</SelectItem>
+              <SelectItem value="English">English</SelectItem>
+              <SelectItem value="Spanish">Spanish</SelectItem>
+              <SelectItem value="French">French</SelectItem>
+              <SelectItem value="Mandarin">Mandarin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Provider Type */}
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold text-foreground/80">Provider Type</Label>
@@ -743,6 +872,11 @@ function FiltersPanel({
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-teal-600" /> Accepts HSA / FSA</span>
             <Switch checked={hsaFsaAccepted} onCheckedChange={setHsaFsaAccepted} className="scale-75" />
           </label>
+
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-teal-600" /> Financing available</span>
+            <Switch checked={financingAvailable} onCheckedChange={setFinancingAvailable} className="scale-75" />
+          </label>
         </div>
 
         <Separator />
@@ -778,6 +912,10 @@ function FiltersPanel({
             </Select>
           </div>
         </div>
+
+        <Button type="button" className="w-full bg-teal-600 text-white hover:bg-teal-700" onClick={onApply}>
+          Apply Filters
+        </Button>
       </div>
     </div>
   );
@@ -791,7 +929,8 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
   const compareToggle = useCompare((s) => s.toggle);
   const c = colorClasses(clinic.logoColor);
   
-  const specs = useMemo(() => splitCsv(clinic.specialties).slice(0, 4), [clinic.specialties]);
+  const allSpecs = useMemo(() => splitCsv(clinic.specialties), [clinic.specialties]);
+  const specs = allSpecs.slice(0, 4);
   const caps = useMemo(() => splitCsv(clinic.capabilities), [clinic.capabilities]);
   const providers = useMemo(() => splitCsv(clinic.providerTypes), [clinic.providerTypes]);
 
@@ -820,6 +959,11 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
           {s}
         </Badge>
       ))}
+      {allSpecs.length > specs.length && (
+        <Badge variant="outline" className="border-border bg-muted/30 text-[10px] text-muted-foreground">
+          +{allSpecs.length - specs.length} more
+        </Badge>
+      )}
     </div>
   );
 
@@ -874,6 +1018,11 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
                 {clinic.membershipPrice !== null && <span>· ${clinic.membershipPrice}/mo</span>}
               </div>
             </div>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+              <span>{clinic.providers?.length || providers.length || 0} provider{(clinic.providers?.length || providers.length || 0) === 1 ? "" : "s"}</span>
+              <span>{clinic.acceptingNewPatients ? "Accepting new patients" : "Currently closed to new patients"}</span>
+              <span>{clinic.insuranceAccepted ? "Insurance" : "Self-pay"}{clinic.hsaFsaAccepted ? " · HSA/FSA" : ""}</span>
+            </div>
           </div>
           
           {/* Right Action blocks */}
@@ -889,7 +1038,7 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
               </button>
             </div>
             <Button size="sm" variant="outline" className="border-border hover:border-teal-200 font-semibold" onClick={open}>
-              View Profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+              View Clinic Profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -969,6 +1118,18 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
               <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-teal-600" /> Next Appointment</span>
               <span className="font-medium text-foreground">{clinic.earliestAvailability || "Contact Clinic"}</span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1"><Users className="h-3 w-3 text-teal-600" /> Provider team</span>
+              <span className="font-medium text-foreground">{clinic.providers?.length || providers.length || "Contact clinic"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-teal-600" /> New patients</span>
+              <span className="font-medium text-foreground">{clinic.acceptingNewPatients ? "Accepting" : "Contact clinic"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3 text-teal-600" /> Payment</span>
+              <span className="font-medium text-foreground">{clinic.insuranceAccepted ? "Insurance" : "Self-pay"}{clinic.hsaFsaAccepted ? " · HSA/FSA" : ""}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -976,10 +1137,10 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
       {/* Button Actions */}
       <div className="px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex gap-2">
         <Button size="sm" variant="outline" className="flex-1 font-semibold border-border hover:border-teal-200" onClick={open}>
-          View profile
+          View Clinic Profile
         </Button>
         <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={open}>
-          Request consult <ArrowRight className="ml-1 h-3.5 w-3.5" />
+          Request Consultation <ArrowRight className="ml-1 h-3.5 w-3.5" />
         </Button>
       </div>
     </PremiumCard>

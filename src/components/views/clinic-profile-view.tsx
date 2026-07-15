@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import {
-  PremiumCard, Breadcrumbs, SaveButton, StatCard,
+  PremiumCard, Breadcrumbs, SaveButton, EmptyState,
 } from "@/components/shared/enterprise";
 import { StickyTabNav } from "@/components/shared/sticky-tab-nav";
 import { SmartImage, ImageLightbox } from "@/components/shared/smart-image";
@@ -26,7 +26,7 @@ import {
   MapPin, Video, Phone, Mail, Globe, Clock, ShieldCheck, Stethoscope,
   CheckCircle2, Star, ArrowRight, Heart, Navigation, Building2, Users,
   Calendar, DollarSign, FileText, Award, Lock, Sparkles, ChevronRight,
-  Image as ImageIcon, MessageSquare, BookOpen, AlertCircle, ShieldAlert,
+  Image as ImageIcon, MessageSquare, BookOpen, AlertCircle, ShieldAlert, Check,
 } from "lucide-react";
 
 const TABS = [
@@ -38,7 +38,6 @@ const TABS = [
   { id: "telehealth", label: "Telehealth", icon: Video },
   { id: "eligibility", label: "Eligibility", icon: FileText },
   { id: "gallery", label: "Gallery", icon: ImageIcon },
-  { id: "reviews", label: "Reviews", icon: Star },
   { id: "faq", label: "FAQ", icon: MessageSquare },
   { id: "contact", label: "Contact & Booking", icon: Calendar },
   { id: "safety", label: "Safety & Compliance", icon: ShieldCheck },
@@ -96,8 +95,7 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
       if (!res.ok) throw new Error(resData.error || "Claim failed");
       
       toast.success("Profile claimed successfully! Redirecting to management dashboard...");
-      // Update local state to claimed and navigate
-      clinic.claimStatus = "claimed";
+      // The server is the source of truth; the dashboard will render the new claim state.
       navigate("clinic-dashboard", undefined, { id: clinic.id });
     } catch (err: any) {
       toast.error(err.message || "Failed to claim profile. Please try again.");
@@ -220,6 +218,16 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
                 <Button className="bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={() => scrollToTab("contact")}>
                   <Calendar className="mr-1.5 h-4 w-4" /> Request Consultation
                 </Button>
+                {clinic.phone && (
+                  <Button variant="outline" className="font-semibold border-border" asChild>
+                    <a href={`tel:${clinic.phone}`}><Phone className="mr-1.5 h-4 w-4" /> Call Clinic</a>
+                  </Button>
+                )}
+                {clinic.website && (
+                  <Button variant="outline" className="font-semibold border-border" asChild>
+                    <a href={clinic.website} target="_blank" rel="noopener noreferrer"><Globe className="mr-1.5 h-4 w-4" /> Visit Website</a>
+                  </Button>
+                )}
                 <Button variant="outline" className="font-semibold border-border" onClick={() => scrollToTab("treatments")}>
                   <Stethoscope className="mr-1.5 h-4 w-4" /> View Treatments Catalog
                 </Button>
@@ -273,7 +281,6 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
             {activeTab === "telehealth" && <TelehealthTab clinic={clinic} />}
             {activeTab === "eligibility" && <EligibilityTab clinic={clinic} />}
             {activeTab === "gallery" && <GalleryTab clinic={clinic} />}
-            {activeTab === "reviews" && <ReviewsTab clinic={clinic} />}
             {activeTab === "faq" && <FaqTab clinic={clinic} />}
             {activeTab === "contact" && <ContactTab clinic={clinic} />}
             {activeTab === "safety" && <SafetyTab clinic={clinic} />}
@@ -435,12 +442,6 @@ function OverviewTab({ clinic }: { clinic: ClinicT }) {
           </div>
         )}
       </PremiumCard>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Treatments" value={clinic.treatments?.length || splitCsv(clinic.specialties).length} icon={Stethoscope} tone="teal" />
-        <StatCard label="Locations" value={clinic.locations?.length || 1} icon={MapPin} tone="emerald" />
-        <StatCard label="Providers" value={clinic.providers?.length || 2} icon={Users} tone="teal" />
-      </div>
 
       <div>
         <h3 className="mb-3 text-sm font-semibold text-foreground">Clinic Capabilities</h3>

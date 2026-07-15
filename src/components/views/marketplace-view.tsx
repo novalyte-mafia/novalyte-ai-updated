@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
-import { CTASection } from "@/components/shared/cta";
 import {
   PremiumCard,
   EmptyState,
@@ -52,6 +51,7 @@ import { toast } from "sonner";
 import { colorClasses, MARKETPLACE_CATEGORIES } from "@/lib/constants";
 import type { MarketplaceListingT, VendorT } from "@/lib/types";
 import { navigate, useSaved, useCompare } from "@/lib/nav";
+import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import {
   Search,
@@ -64,14 +64,9 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   Quote,
-  FileBarChart,
   Store,
-  LayoutDashboard,
-  Image as ImageIcon,
   Inbox,
   MessageSquare,
-  Wallet,
-  Banknote,
   Users,
   Megaphone,
   CreditCard,
@@ -89,41 +84,60 @@ import {
   Stethoscope,
   Clock,
   X,
-  GitCompare,
+  Boxes
 } from "lucide-react";
 
-/* ───────────────────────────────────────────────────────────────
-   Category icon (stable wrapper — uses switch with literal JSX so the
-   React Compiler treats it as a static element)
-   ─────────────────────────────────────────────────────────────── */
+const PAGE_SIZE = 12;
+
 function CategoryIcon({ category, className }: { category: string; className?: string }) {
   switch (category) {
-    case "Laboratory Services": return <FlaskConical className={className} />;
-    case "Diagnostic Equipment": return <Activity className={className} />;
-    case "Injection Supplies": return <Syringe className={className} />;
-    case "Phlebotomy Supplies": return <Droplet className={className} />;
-    case "Medical Furniture": return <Armchair className={className} />;
-    case "Body-Composition Systems": return <Stethoscope className={className} />;
-    case "Recovery Technology": return <HeartPulse className={className} />;
-    case "Telehealth Tools": return <Video className={className} />;
-    case "Clinic Software": return <Monitor className={className} />;
-    case "Billing Services": return <CreditCard className={className} />;
-    case "Credentialing Services": return <BadgeCheck className={className} />;
-    case "Compliance Support": return <ShieldCheck className={className} />;
-    case "Marketing Services": return <Megaphone className={className} />;
-    case "Staffing Services": return <Users className={className} />;
-    case "Patient Engagement Tools": return <MessageSquare className={className} />;
-    case "Clinic Expansion Services": return <Building2 className={className} />;
-    default: return <Package className={className} />;
+    case "Laboratory Services":
+    case "Laboratory and Diagnostics":
+      return <FlaskConical className={className} />;
+    case "Diagnostic Equipment":
+    case "Medical Equipment":
+      return <Activity className={className} />;
+    case "Injection Supplies":
+    case "Clinical Supplies":
+      return <Syringe className={className} />;
+    case "Phlebotomy Supplies":
+      return <Droplet className={className} />;
+    case "Medical Furniture":
+    case "Exam Room and Facility":
+      return <Armchair className={className} />;
+    case "Body-Composition Systems":
+      return <Stethoscope className={className} />;
+    case "Recovery Technology":
+    case "Wellness and Recovery":
+      return <HeartPulse className={className} />;
+    case "Telehealth Tools":
+    case "Telehealth Technology":
+      return <Video className={className} />;
+    case "Clinic Software":
+    case "Healthcare Software":
+      return <Monitor className={className} />;
+    case "Billing Services":
+    case "Billing and Revenue Cycle":
+      return <CreditCard className={className} />;
+    case "Credentialing Services":
+    case "Credentialing and Compliance":
+      return <BadgeCheck className={className} />;
+    case "Compliance Support":
+      return <ShieldCheck className={className} />;
+    case "Marketing Services":
+    case "Marketing and Patient Growth":
+      return <Megaphone className={className} />;
+    case "Staffing Services":
+    case "Staffing and Workforce Services":
+      return <Users className={className} />;
+    case "Patient Engagement Tools":
+      return <MessageSquare className={className} />;
+    default:
+      return <Package className={className} />;
   }
 }
 
-/* ───────────────────────────────────────────────────────────────
-   Availability + pricing + type helpers
-   ─────────────────────────────────────────────────────────────── */
-type AvailTone = "teal" | "amber" | "sky" | "violet";
-
-function availabilityMeta(av: string): { tone: AvailTone; label: string } {
+function availabilityMeta(av: string): { tone: "teal" | "amber" | "sky" | "violet"; label: string } {
   const a = av.toLowerCase();
   if (a.includes("order")) return { tone: "amber", label: "Made to order" };
   if (a.includes("limit")) return { tone: "violet", label: "Limited" };
@@ -131,73 +145,6 @@ function availabilityMeta(av: string): { tone: AvailTone; label: string } {
   return { tone: "teal", label: "In stock" };
 }
 
-const EQUIPMENT_CATEGORIES = new Set([
-  "Diagnostic Equipment",
-  "Body-Composition Systems",
-  "Recovery Technology",
-  "Medical Furniture",
-  "Telehealth Tools",
-]);
-
-function showsFinancingTag(listing: MarketplaceListingT): boolean {
-  return listing.listingType === "product" && EQUIPMENT_CATEGORIES.has(listing.category);
-}
-
-function vendorIdForName(vendors: VendorT[], name: string): string | undefined {
-  return vendors.find((v) => v.name === name)?.id;
-}
-
-const PRICING_MODELS = [
-  { value: "one-time", label: "One-time" },
-  { value: "subscription", label: "Subscription" },
-  { value: "quote", label: "Quote-based" },
-  { value: "range", label: "Price range" },
-  { value: "per-test", label: "Per-test" },
-  { value: "percentage", label: "Percentage" },
-];
-
-const AVAILABILITY_FILTERS = [
-  { value: "in-stock", label: "In stock" },
-  { value: "made-to-order", label: "Made to order" },
-  { value: "limited", label: "Limited" },
-  { value: "preorder", label: "Pre-order" },
-];
-
-const PAGE_SIZE = 9;
-
-/* ───────────────────────────────────────────────────────────────
-   Hero trust indicators (qualitative only — no fake numbers)
-   ─────────────────────────────────────────────────────────────── */
-const HERO_TRUST = [
-  { icon: ShieldCheck, label: "Verified supplier badges" },
-  { icon: Quote, label: "Quote & bulk-order workflows" },
-  { icon: Banknote, label: "Equipment financing indicators" },
-  { icon: ClipboardCheck, label: "Clinical-claim moderation" },
-];
-
-const VENDOR_PORTAL_FEATURES = [
-  { icon: Store, title: "Create profile", desc: "Establish your vendor identity with company overview, capabilities, and verification." },
-  { icon: Package, title: "Submit products & services", desc: "List equipment, software, services, and subscriptions with structured pricing." },
-  { icon: ImageIcon, title: "Upload media", desc: "Add banners, logos, and category tags so clinics can quickly evaluate fit." },
-  { icon: LayoutDashboard, title: "Manage listings", desc: "Edit pricing, availability, and descriptions across your entire catalog." },
-  { icon: Inbox, title: "Receive inquiries", desc: "Get quote requests and questions routed directly from clinic buyers." },
-  { icon: MessageSquare, title: "Respond to quotes", desc: "Reply with quantities, lead times, financing, and fulfillment details." },
-  { icon: FileBarChart, title: "Track performance", desc: "Monitor listing engagement and inquiries without vanity metrics." },
-  { icon: Wallet, title: "Manage billing", desc: "Subscription and commission terms reviewed during onboarding." },
-];
-
-const SAFETY_REVIEW_TYPES = [
-  { label: "Vendor verification", icon: ShieldCheck },
-  { label: "Product review", icon: Package },
-  { label: "Service review", icon: ClipboardCheck },
-  { label: "Claim review", icon: FileBarChart },
-  { label: "Category approval", icon: BadgeCheck },
-  { label: "Listing approval", icon: CheckCircle2 },
-];
-
-/* ───────────────────────────────────────────────────────────────
-   Main view
-   ─────────────────────────────────────────────────────────────── */
 export function MarketplaceView({
   listings,
   vendors,
@@ -207,16 +154,13 @@ export function MarketplaceView({
   vendors: VendorT[];
   onGetStarted: () => void;
 }) {
-  /* Filter state */
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
-  const [listingType, setListingType] = useState<string>("all");
+  const [procurementType, setProcurementType] = useState<string>("all"); // all | direct | quote
   const [vendorName, setVendorName] = useState<string>("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [pricingModel, setPricingModel] = useState<string>("all");
   const [availability, setAvailability] = useState<string>("all");
 
-  /* UI state */
   const [sort, setSort] = useState("relevant");
   const [view, setView] = useState("grid");
   const [page, setPage] = useState(1);
@@ -224,40 +168,19 @@ export function MarketplaceView({
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [quoteListing, setQuoteListing] = useState<MarketplaceListingT | null>(null);
 
-  /* Derive select options from listings */
-  const uniqueCategories = useMemo(() => {
-    return Array.from(new Set(listings.map((l) => l.category))).sort();
-  }, [listings]);
-  const uniqueListingTypes = useMemo(() => {
-    return Array.from(new Set(listings.map((l) => l.listingType))).sort();
-  }, [listings]);
   const uniqueVendors = useMemo(() => {
     return Array.from(new Set(listings.map((l) => l.vendorName))).sort();
   }, [listings]);
-  const uniquePricingModels = useMemo(() => {
-    const present = new Set(listings.map((l) => l.pricingModel).filter(Boolean));
-    return PRICING_MODELS.filter((m) => present.has(m.value));
-  }, [listings]);
 
-  /* Reset to page 1 + brief loading shimmer whenever filters change.
-     Using the "adjusting state during render" pattern (endorsed by React docs)
-     to avoid cascading setState-in-effect warnings. */
-  const filterKey = `${query}|${category}|${listingType}|${vendorName}|${verifiedOnly}|${pricingModel}|${availability}|${sort}`;
-  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
-  if (lastFilterKey !== filterKey) {
-    setLastFilterKey(filterKey);
+  const filterKey = `${query}|${category}|${procurementType}|${vendorName}|${verifiedOnly}|${availability}|${sort}`;
+  
+  useEffect(() => {
     setPage(1);
     setLoading(true);
-  }
-
-  // Clear the loading shimmer 300ms after filters settle.
-  useEffect(() => {
-    if (!loading) return;
-    const t = setTimeout(() => setLoading(false), 300);
+    const t = setTimeout(() => setLoading(false), 250);
     return () => clearTimeout(t);
-  }, [loading, filterKey]);
+  }, [filterKey]);
 
-  /* Filter + sort */
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = listings.filter((l) => {
@@ -266,27 +189,46 @@ export function MarketplaceView({
         if (!hay.includes(q)) return false;
       }
       if (category !== "all" && l.category !== category) return false;
-      if (listingType !== "all" && l.listingType !== listingType) return false;
+      
+      // Procurement type filters (Direct vs Quote)
+      if (procurementType !== "all") {
+        const isDirect = l.listingType === "product" && l.pricingModel !== "quote";
+        if (procurementType === "direct" && !isDirect) return false;
+        if (procurementType === "quote" && isDirect) return false;
+      }
+
       if (vendorName !== "all" && l.vendorName !== vendorName) return false;
       if (verifiedOnly && !l.verified) return false;
-      if (pricingModel !== "all" && l.pricingModel !== pricingModel) return false;
       if (availability !== "all") {
         const meta = availabilityMeta(l.availability);
-        const expected = AVAILABILITY_FILTERS.find((a) => a.value === availability);
-        if (expected && meta.label.toLowerCase() !== expected.label.toLowerCase()) return false;
+        if (availability === "in-stock" && meta.tone !== "teal") return false;
+        if (availability === "made-to-order" && meta.tone !== "amber") return false;
+        if (availability === "limited" && meta.tone !== "violet") return false;
       }
       return true;
     });
 
     if (sort === "az") {
       out = [...out].sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sort === "za") {
+      out = [...out].sort((a, b) => b.title.localeCompare(a.title));
     } else if (sort === "verified") {
       out = [...out].sort((a, b) => Number(b.verified) - Number(a.verified));
-    } else if (sort === "category") {
-      out = [...out].sort((a, b) => a.category.localeCompare(b.category));
+    } else if (sort === "price-asc") {
+      out = [...out].sort((a, b) => {
+        const pa = parseFloat(a.priceNote?.replace(/[^0-9.]/g, "") || "999999");
+        const pb = parseFloat(b.priceNote?.replace(/[^0-9.]/g, "") || "999999");
+        return pa - pb;
+      });
+    } else if (sort === "price-desc") {
+      out = [...out].sort((a, b) => {
+        const pa = parseFloat(a.priceNote?.replace(/[^0-9.]/g, "") || "0");
+        const pb = parseFloat(b.priceNote?.replace(/[^0-9.]/g, "") || "0");
+        return pb - pa;
+      });
     }
     return out;
-  }, [listings, query, category, listingType, vendorName, verifiedOnly, pricingModel, availability, sort]);
+  }, [listings, query, category, procurementType, vendorName, verifiedOnly, availability, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -294,15 +236,14 @@ export function MarketplaceView({
   function resetFilters() {
     setQuery("");
     setCategory("all");
-    setListingType("all");
+    setProcurementType("all");
     setVendorName("all");
     setVerifiedOnly(false);
-    setPricingModel("all");
     setAvailability("all");
   }
 
   function scrollToCatalog() {
-    document.getElementById("listings")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("listings-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function selectCategory(cat: string) {
@@ -310,23 +251,20 @@ export function MarketplaceView({
     scrollToCatalog();
   }
 
-  /* Applied filter chips */
+  function handleExploreServices() {
+    setProcurementType("quote");
+    setCategory("all");
+    scrollToCatalog();
+  }
+
   const chips: { label: string; onRemove: () => void }[] = [];
   if (query.trim()) chips.push({ label: `“${query.trim()}”`, onRemove: () => setQuery("") });
   if (category !== "all") chips.push({ label: category, onRemove: () => setCategory("all") });
-  if (listingType !== "all") chips.push({ label: listingType, onRemove: () => setListingType("all") });
+  if (procurementType !== "all") chips.push({ label: procurementType === "direct" ? "Direct Purchase" : "Quote Required", onRemove: () => setProcurementType("all") });
   if (vendorName !== "all") chips.push({ label: vendorName, onRemove: () => setVendorName("all") });
-  if (pricingModel !== "all") {
-    const m = PRICING_MODELS.find((p) => p.value === pricingModel);
-    if (m) chips.push({ label: m.label, onRemove: () => setPricingModel("all") });
-  }
-  if (availability !== "all") {
-    const a = AVAILABILITY_FILTERS.find((x) => x.value === availability);
-    if (a) chips.push({ label: a.label, onRemove: () => setAvailability("all") });
-  }
-  if (verifiedOnly) chips.push({ label: "Verified only", onRemove: () => setVerifiedOnly(false) });
+  if (availability !== "all") chips.push({ label: availability.replace("-", " "), onRemove: () => setAvailability("all") });
+  if (verifiedOnly) chips.push({ label: "Verified Only", onRemove: () => setVerifiedOnly(false) });
 
-  /* Verified vendors (directory preview) */
   const verifiedVendors = useMemo(() => vendors.filter((v) => v.verified), [vendors]);
   const listingCountByVendor = useMemo(() => {
     const m: Record<string, number> = {};
@@ -337,55 +275,52 @@ export function MarketplaceView({
   return (
     <>
       {/* ── 1. Hero ────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-16 sm:py-24">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-16 sm:py-20">
         <div className="novalyte-dots novalyte-radial-fade pointer-events-none absolute inset-0 opacity-40" aria-hidden />
         <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeading
-            eyebrow="Healthcare Services Marketplace"
-            title={
-              <>
-                The B2B Commerce Platform for{" "}
-                <span className="text-teal-700">Men&apos;s Health Operations</span>
-              </>
-            }
-            description="Source labs, equipment, supplies, software, billing, credentialing, compliance, marketing, and staffing — specialized for healthcare operations and clinical equipment procurement. Built for clinics buying, vendors selling, and the operational workflows in between."
-          />
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
-              Become a Vendor <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={scrollToCatalog}>
-              <ArrowDown className="mr-1 h-4 w-4" /> Browse Catalog
-            </Button>
+          
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <span className="inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-inset ring-teal-600/10">
+              B2B Commerce Platform
+            </span>
+            
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-tight">
+              Everything Healthcare Teams Need <br />
+              <span className="text-teal-700 bg-clip-text">to Operate, Grow, and Deliver Care</span>
+            </h1>
+
+            <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              Source and procure clinical office supplies, laboratory panels, diagnostic equipment, telehealth technology, revenue software, credentialing, and clinic staffing. Custom quotes and cart options mapped for outpatient, lab, and wellness clinics.
+            </p>
+
+            <div className="pt-2 text-xs text-amber-700 bg-amber-50/50 border border-amber-200/55 p-3 rounded-2xl max-w-xl mx-auto flex items-start gap-2.5">
+              <ShieldAlert className="h-4.5 w-4.5 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-left font-medium leading-relaxed">
+                <strong>Platform Notice:</strong> Novalyte AI coordinates B2B supply room discovery and logistics. We do not sell or list prescription medications or restricted medical products.
+              </p>
+            </div>
+
+            <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
+              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700 font-bold px-7" onClick={scrollToCatalog}>
+                Browse Products
+              </Button>
+              <Button size="lg" variant="outline" className="font-bold border-neutral-300 hover:border-teal-300 hover:text-teal-700 px-7" onClick={handleExploreServices}>
+                Explore Healthcare Services
+              </Button>
+            </div>
           </div>
 
-          {/* Qualitative trust indicators (no fake numbers) */}
-          <div className="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {HERO_TRUST.map((t) => {
-              const Icon = t.icon;
-              return (
-                <PremiumCard key={t.label} className="p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <p className="text-sm font-medium leading-snug text-foreground">{t.label}</p>
-                  </div>
-                </PremiumCard>
-              );
-            })}
-          </div>
         </div>
       </section>
 
       {/* ── 2. Category navigation bar (sticky) ───────────────── */}
       <div className="sticky top-16 z-30 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="novalyte-scroll -mb-px flex items-center gap-1 overflow-x-auto py-2">
+          <div className="novalyte-scroll -mb-px flex items-center gap-1 overflow-x-auto py-2.5">
             <button
               onClick={() => selectCategory("all")}
               className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-bold transition",
                 category === "all"
                   ? "border-teal-600 bg-teal-600 text-white"
                   : "border-border bg-card text-muted-foreground hover:border-teal-300 hover:text-teal-700",
@@ -400,7 +335,7 @@ export function MarketplaceView({
                   key={cat}
                   onClick={() => selectCategory(cat)}
                   className={cn(
-                    "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                    "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition",
                     active
                       ? "border-teal-600 bg-teal-600 text-white"
                       : "border-border bg-card text-muted-foreground hover:border-teal-300 hover:text-teal-700",
@@ -416,42 +351,36 @@ export function MarketplaceView({
       </div>
 
       {/* ── 3. Listings section ───────────────────────────────── */}
-      <SectionShell id="listings" className="!pt-10 !pb-16">
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-          {/* Desktop filter sidebar (sticky) */}
+      <SectionShell id="listings-catalog" className="!pt-10 !pb-16 bg-neutral-50/10">
+        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+          
+          {/* Desktop Filter Panel */}
           <aside className="hidden lg:block">
             <div className="sticky top-32">
               <FiltersPanel
                 query={query}
                 setQuery={setQuery}
-                category={category}
-                setCategory={setCategory}
-                listingType={listingType}
-                setListingType={setListingType}
+                procurementType={procurementType}
+                setProcurementType={setProcurementType}
                 vendorName={vendorName}
                 setVendorName={setVendorName}
                 verifiedOnly={verifiedOnly}
                 setVerifiedOnly={setVerifiedOnly}
-                pricingModel={pricingModel}
-                setPricingModel={setPricingModel}
                 availability={availability}
                 setAvailability={setAvailability}
-                uniqueCategories={uniqueCategories}
-                uniqueListingTypes={uniqueListingTypes}
                 uniqueVendors={uniqueVendors}
-                uniquePricingModels={uniquePricingModels}
                 onReset={resetFilters}
               />
             </div>
           </aside>
 
-          {/* Main column */}
+          {/* Main Listings Grid */}
           <div>
-            {/* Mobile filter trigger */}
-            <div className="mb-4 flex items-center justify-between gap-3 lg:hidden">
+            {/* Mobile Filters and Layout toggles */}
+            <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
               <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="border-neutral-200">
                     <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Filters
                     {chips.length > 0 && (
                       <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1 text-[11px] font-semibold text-white">
@@ -469,26 +398,19 @@ export function MarketplaceView({
                     <FiltersPanel
                       query={query}
                       setQuery={setQuery}
-                      category={category}
-                      setCategory={setCategory}
-                      listingType={listingType}
-                      setListingType={setListingType}
+                      procurementType={procurementType}
+                      setProcurementType={setProcurementType}
                       vendorName={vendorName}
                       setVendorName={setVendorName}
                       verifiedOnly={verifiedOnly}
                       setVerifiedOnly={setVerifiedOnly}
-                      pricingModel={pricingModel}
-                      setPricingModel={setPricingModel}
                       availability={availability}
                       setAvailability={setAvailability}
-                      uniqueCategories={uniqueCategories}
-                      uniqueListingTypes={uniqueListingTypes}
                       uniqueVendors={uniqueVendors}
-                      uniquePricingModels={uniquePricingModels}
                       onReset={resetFilters}
                     />
-                    <Button className="mt-4 w-full bg-teal-600 text-white hover:bg-teal-700" onClick={() => setMobileFiltersOpen(false)}>
-                      Show {filtered.length} result{filtered.length === 1 ? "" : "s"}
+                    <Button className="mt-4 w-full bg-teal-600 text-white hover:bg-teal-700 font-bold" onClick={() => setMobileFiltersOpen(false)}>
+                      Show {filtered.length} results
                     </Button>
                   </div>
                 </SheetContent>
@@ -504,42 +426,42 @@ export function MarketplaceView({
               />
             </div>
 
-            {/* Results header */}
-            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
+            {/* Results counts & chips */}
+            <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-premium-sm sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Showing{" "}
-                  <span className="font-semibold text-foreground">{filtered.length}</span> of{" "}
-                  <span className="font-semibold text-foreground">{listings.length}</span> products
-                  &amp; services
+                  Showing <span className="font-bold text-foreground">{filtered.length}</span> of <span className="font-bold text-foreground">{listings.length}</span> listings
                 </p>
                 {chips.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                     {chips.map((c, i) => (
                       <FilterChip key={i} label={c.label} onRemove={c.onRemove} />
                     ))}
                     <button
                       onClick={resetFilters}
-                      className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition hover:text-rose-600"
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-rose-600"
                     >
-                      <X className="h-3 w-3" /> Clear all
+                      <X className="h-3.5 w-3.5" /> Clear all
                     </button>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-3">
+              {/* Sorting and layouts */}
+              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">Sort</Label>
+                  <Label className="text-xs text-muted-foreground font-semibold">Sort</Label>
                   <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger size="sm" className="w-[160px]">
+                    <SelectTrigger size="sm" className="w-[170px] h-9 border-neutral-200">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="relevant">Most relevant</SelectItem>
+                      <SelectItem value="relevant">Featured / Relevant</SelectItem>
                       <SelectItem value="az">A–Z</SelectItem>
-                      <SelectItem value="verified">Verified first</SelectItem>
-                      <SelectItem value="category">Category</SelectItem>
+                      <SelectItem value="za">Z-A</SelectItem>
+                      <SelectItem value="verified">Verified First</SelectItem>
+                      <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                      <SelectItem value="price-desc">Price: High to Low</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -556,14 +478,12 @@ export function MarketplaceView({
               </div>
             </div>
 
-            {/* Results grid */}
+            {/* Catalog Grid */}
             {loading ? (
               <div
                 className={cn(
                   "grid gap-5",
-                  view === "grid"
-                    ? "sm:grid-cols-2 xl:grid-cols-3"
-                    : "grid-cols-1",
+                  view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
                 )}
               >
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -573,8 +493,8 @@ export function MarketplaceView({
             ) : paged.length === 0 ? (
               <EmptyState
                 icon={Package}
-                title="No listings match your filters"
-                description="Try widening your search or clearing filters to see more products & services."
+                title="No listings found"
+                description="We couldn't find matches for your current catalog filters. Try widening search inputs."
                 action={
                   <Button variant="outline" size="sm" onClick={resetFilters}>
                     Clear filters
@@ -585,9 +505,7 @@ export function MarketplaceView({
               <div
                 className={cn(
                   "novalyte-fade-up grid gap-5",
-                  view === "grid"
-                    ? "sm:grid-cols-2 xl:grid-cols-3"
-                    : "grid-cols-1",
+                  view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
                 )}
               >
                 {paged.map((l) => (
@@ -602,9 +520,9 @@ export function MarketplaceView({
               </div>
             )}
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {!loading && filtered.length > PAGE_SIZE && (
-              <div className="mt-8 flex justify-center">
+              <div className="mt-10 flex justify-center">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
@@ -616,23 +534,8 @@ export function MarketplaceView({
                     </PaginationItem>
                     {Array.from({ length: totalPages }).map((_, i) => {
                       const n = i + 1;
-                      // Compact pagination: show first, last, current ±1, with ellipsis handled by clamping
-                      const show =
-                        n === 1 ||
-                        n === totalPages ||
-                        Math.abs(n - page) <= 1;
-                      if (!show) {
-                        if (n === page - 2 || n === page + 2) {
-                          return (
-                            <PaginationItem key={n}>
-                              <span className="flex h-9 w-9 items-center justify-center text-muted-foreground">
-                                …
-                              </span>
-                            </PaginationItem>
-                          );
-                        }
-                        return null;
-                      }
+                      const show = n === 1 || n === totalPages || Math.abs(n - page) <= 1;
+                      if (!show) return null;
                       return (
                         <PaginationItem key={n}>
                           <PaginationLink
@@ -658,24 +561,25 @@ export function MarketplaceView({
                 </Pagination>
               </div>
             )}
+
           </div>
         </div>
       </SectionShell>
 
-      {/* ── 4. Vendor directory preview ──────────────────────── */}
+      {/* ── 4. Supplier Storefronts Directory ──────────────────── */}
       <SectionShell tone="muted">
         <SectionHeading
-          eyebrow="Vendor Directory"
-          title="Verified suppliers powering men's health operations"
-          description="Each vendor goes through a structured verification process. Browse the full vendor profile to review their catalog, capabilities, and review status."
+          eyebrow="Supplier Directory"
+          title="Verified healthcare suppliers on Novalyte"
+          description="Each partner undergoes structured registration verification. Review catalogs, credentials, policies, and timelines on their storefront profiles."
         />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {verifiedVendors.map((v) => {
             const count = listingCountByVendor[v.name] ?? 0;
             return (
-              <PremiumCard key={v.id} hover className="flex flex-col p-5">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-base font-bold text-white">
+              <PremiumCard key={v.id} hover className="flex flex-col p-6 bg-white">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-base font-extrabold text-white">
                     {v.name.slice(0, 1)}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -683,22 +587,22 @@ export function MarketplaceView({
                       <h3 className="truncate text-base font-semibold text-foreground">{v.name}</h3>
                       <VerificationBadge verified={v.verified} />
                     </div>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                      {v.overview || "Vendor overview available on profile."}
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground leading-normal">
+                      {v.overview || "Fulfillment and licensing logs available."}
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-                  <span className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">{count}</span> active listing
-                    {count === 1 ? "" : "s"}
+                <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-4">
+                  <span className="text-xs text-muted-foreground font-medium">
+                    <span className="font-bold text-foreground">{count}</span> active listing{count === 1 ? "" : "s"}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="font-semibold text-xs border-neutral-200 hover:border-teal-200 hover:text-teal-700"
                     onClick={() => navigate("vendor-profile", undefined, { id: v.id })}
                   >
-                    View vendor profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                    View Storefront <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </div>
               </PremiumCard>
@@ -707,184 +611,316 @@ export function MarketplaceView({
         </div>
       </SectionShell>
 
-      {/* ── 5. Vendor portal preview ─────────────────────────── */}
-      <SectionShell>
-        <SectionHeading
-          eyebrow="Vendor Portal"
-          title="Everything vendors need to sell to men's health clinics"
-          description="A purpose-built commerce workflow for healthcare suppliers — from company profile through inquiry routing and billing."
-        />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {VENDOR_PORTAL_FEATURES.map((f) => {
-            const Icon = f.icon;
-            return (
-              <PremiumCard key={f.title} hover className="p-5">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold text-foreground">{f.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-              </PremiumCard>
-            );
-          })}
-        </div>
-        <div className="mt-8 flex justify-center">
-          <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onGetStarted}>
-            Become a Vendor <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
-        </div>
-      </SectionShell>
-
-      {/* ── 6. Marketplace safety section ─────────────────────── */}
-      <SectionShell tone="default" className="!pt-0">
-        <DisclaimerBanner tone="teal">
-          <div>
-            <p className="font-semibold">Marketplace safety &amp; clinical-claim moderation.</p>
-            <p className="mt-1">
-              Novalyte AI is a commerce facilitator. We do not sell, warranty, or ship products
-              ourselves. Listings that make clinical or outcome claims are subject to moderation
-              before publication. Verification reflects a review of submitted business information —
-              it is not an endorsement of clinical outcomes, product efficacy, or vendor performance.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-              {SAFETY_REVIEW_TYPES.map((r) => {
-                const Icon = r.icon;
-                return (
-                  <div
-                    key={r.label}
-                    className="flex items-center gap-2 rounded-lg border border-teal-200 bg-white/60 px-2.5 py-2 text-xs font-medium text-teal-800"
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" />
-                    {r.label}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </DisclaimerBanner>
-      </SectionShell>
-
-      {/* ── 7. CTA ────────────────────────────────────────────── */}
-      <CTASection
-        title="Reach men's health clinics seeking your solutions"
-        description="List your products and services where clinics are already sourcing labs, equipment, software, and operational tools. Quote workflows, verification, and inquiry routing are built in."
-        primaryLabel="Become a Vendor"
-        onPrimary={onGetStarted}
-        secondaryLabel="Explore Workforce"
-        secondaryView="workforce"
-        tone="dark"
-      />
-
-      {/* Quote dialog */}
-      <QuoteDialog listing={quoteListing} onClose={() => setQuoteListing(null)} />
+      {/* Quote Dialog */}
+      <Dialog open={quoteListing !== null} onOpenChange={(open) => !open && setQuoteListing(null)}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+          {quoteListing && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Quote className="h-4 w-4 text-teal-600" /> Request quote &amp; consult
+                </DialogTitle>
+                <DialogDescription>
+                  {quoteListing.title} · <span className="text-foreground/80">{quoteListing.vendorName}</span>
+                </DialogDescription>
+              </DialogHeader>
+              <QuoteRequestForm listing={quoteListing} onClose={() => setQuoteListing(null)} />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
-/* ───────────────────────────────────────────────────────────────
-   Filters panel (shared between desktop sidebar & mobile sheet)
-   ─────────────────────────────────────────────────────────────── */
-function FiltersPanel(props: {
+// 15-field Quote Request Form
+function QuoteRequestForm({ listing, onClose }: { listing: MarketplaceListingT; onClose: () => void }) {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    org: "",
+    phone: "",
+    facilityType: "clinic",
+    quantity: "",
+    locations: "",
+    budget: "",
+    timeline: "",
+    location: "",
+    requirements: "",
+    contactMethod: "email",
+    notes: "",
+    consent: false,
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.consent) {
+      toast.error("Please acknowledge the platform safeguards.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const notesCombined = `
+Telephone: ${form.phone}
+Facility Type: ${form.facilityType}
+Locations: ${form.locations}
+Budget Range: ${form.budget}
+Desired Timeline: ${form.timeline}
+Service Location: ${form.location}
+Preferred Contact: ${form.contactMethod}
+Requirements: ${form.requirements}
+Additional Notes: ${form.notes}
+      `.trim();
+
+      const res = await fetch("/api/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing.id,
+          requesterName: form.name,
+          requesterEmail: form.email,
+          requesterOrg: form.org,
+          quantity: form.quantity || "1",
+          notes: notesCombined,
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+      setDone(true);
+      toast.success("Quote request submitted successfully!");
+    } catch {
+      toast.error("Failed to submit quote request. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-6 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50">
+          <CheckCircle2 className="h-6 w-6 text-teal-600" />
+        </span>
+        <p className="text-base font-semibold text-foreground">Quote request submitted</p>
+        <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
+          We routed your detailed inquiry to {listing.vendorName}. Expect a response directly to your contact email.
+        </p>
+        <Button variant="outline" size="sm" onClick={onClose} className="mt-2 font-semibold">Close</Button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3.5 pr-1">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Contact Name *</Label>
+          <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your Name" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Work Email *</Label>
+          <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@clinic.com" />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Organization / Clinic *</Label>
+          <Input required value={form.org} onChange={(e) => setForm({ ...form, org: e.target.value })} placeholder="Clinic Name" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Telephone *</Label>
+          <Input required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(555) 012-3456" />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Facility Type *</Label>
+          <select
+            value={form.facilityType}
+            onChange={(e) => setForm({ ...form, facilityType: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+          >
+            <option value="clinic">Outpatient Clinic</option>
+            <option value="practice">Private Practice</option>
+            <option value="wellness">Wellness Center</option>
+            <option value="telehealth">Telehealth Provider</option>
+            <option value="hospital">Hospital / Health System</option>
+          </select>
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Preferred Contact</Label>
+          <select
+            value={form.contactMethod}
+            onChange={(e) => setForm({ ...form, contactMethod: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+          >
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-1">
+          <Label className="text-xs">Est. Quantity *</Label>
+          <Input required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="e.g. 5 units" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Locations Count</Label>
+          <Input value={form.locations} onChange={(e) => setForm({ ...form, locations: e.target.value })} placeholder="e.g. 3 offices" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Budget Range</Label>
+          <Input value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder="e.g. $10k-$20k" />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Desired Timeline</Label>
+          <Input value={form.timeline} onChange={(e) => setForm({ ...form, timeline: e.target.value })} placeholder="e.g. 30 days" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Service/Shipping Location</Label>
+          <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Austin, TX" />
+        </div>
+      </div>
+
+      <div className="grid gap-1">
+        <Label className="text-xs">Project Requirements &amp; Scope</Label>
+        <Textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} placeholder="Specify electrical, structural, integration, or custom staffing requirements..." className="resize-none text-xs" />
+      </div>
+
+      <label className="flex items-start gap-2 text-xs text-muted-foreground leading-snug">
+        <input type="checkbox" required checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} className="mt-0.5 accent-teal-600" />
+        <span>
+          I acknowledge that Novalyte AI facilitates this request and suppliers are responsible for quote terms. We confirm that no prescription medications or restricted medical products are requested.
+        </span>
+      </label>
+
+      <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700 font-bold" disabled={submitting}>
+        {submitting ? "Sending..." : <>Submit Quote Request <ArrowRight className="ml-1 h-4 w-4" /></>}
+      </Button>
+    </form>
+  );
+}
+
+// Side Filters Panel
+function FiltersPanel({
+  query,
+  setQuery,
+  procurementType,
+  setProcurementType,
+  vendorName,
+  setVendorName,
+  verifiedOnly,
+  setVerifiedOnly,
+  availability,
+  setAvailability,
+  uniqueVendors,
+  onReset,
+}: {
   query: string;
   setQuery: (v: string) => void;
-  category: string;
-  setCategory: (v: string) => void;
-  listingType: string;
-  setListingType: (v: string) => void;
+  procurementType: string;
+  setProcurementType: (v: string) => void;
   vendorName: string;
   setVendorName: (v: string) => void;
   verifiedOnly: boolean;
   setVerifiedOnly: (v: boolean) => void;
-  pricingModel: string;
-  setPricingModel: (v: string) => void;
   availability: string;
   setAvailability: (v: string) => void;
-  uniqueCategories: string[];
-  uniqueListingTypes: string[];
   uniqueVendors: string[];
-  uniquePricingModels: { value: string; label: string }[];
   onReset: () => void;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 rounded-2xl border border-neutral-200 bg-white p-5 shadow-premium-sm">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Filters</h3>
-        <Button variant="ghost" size="sm" onClick={props.onReset} className="h-7 text-xs text-muted-foreground">
-          <X className="mr-1 h-3 w-3" /> Reset
-        </Button>
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Filters</h3>
+        <button onClick={onReset} className="text-xs font-bold text-muted-foreground hover:text-rose-600">
+          Reset All
+        </button>
       </div>
 
-      <div className="grid gap-1.5">
-        <Label className="text-xs">Keyword</Label>
+      {/* Query Search */}
+      <div className="space-y-2">
+        <Label htmlFor="search" className="text-xs font-bold text-muted-foreground">Search</Label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search catalog…"
-            value={props.query}
-            onChange={(e) => props.setQuery(e.target.value)}
-            className="pl-9"
+            id="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search items..."
+            className="pl-9 h-9 text-xs border-neutral-200 bg-white"
           />
         </div>
       </div>
 
-      <SelectField label="Category" value={props.category} onChange={props.setCategory}
-        options={[{ value: "all", label: "All categories" }, ...props.uniqueCategories.map((c) => ({ value: c, label: c }))]} />
+      {/* Procurement Type */}
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-muted-foreground">Procurement Type</Label>
+        <select
+          value={procurementType}
+          onChange={(e) => setProcurementType(e.target.value)}
+          className="flex h-9 w-full rounded-md border border-neutral-200 bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+        >
+          <option value="all">All listings</option>
+          <option value="direct">Direct Purchase (Cart)</option>
+          <option value="quote">Quote Required</option>
+        </select>
+      </div>
 
-      <SelectField label="Listing type" value={props.listingType} onChange={props.setListingType}
-        options={[{ value: "all", label: "All types" }, ...props.uniqueListingTypes.map((t) => ({ value: t, label: t }))]} />
-
-      <SelectField label="Vendor" value={props.vendorName} onChange={props.setVendorName}
-        options={[{ value: "all", label: "All vendors" }, ...props.uniqueVendors.map((v) => ({ value: v, label: v }))]} />
-
-      <SelectField label="Pricing model" value={props.pricingModel} onChange={props.setPricingModel}
-        options={[{ value: "all", label: "Any model" }, ...props.uniquePricingModels]} />
-
-      <SelectField label="Availability" value={props.availability} onChange={props.setAvailability}
-        options={[{ value: "all", label: "Any availability" }, ...AVAILABILITY_FILTERS]} />
-
-      <label className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card p-3">
-        <span className="flex items-center gap-2 text-sm text-foreground">
-          <ShieldCheck className="h-4 w-4 text-teal-600" /> Verified suppliers only
-        </span>
-        <Switch checked={props.verifiedOnly} onCheckedChange={props.setVerifiedOnly} />
-      </label>
-    </div>
-  );
-}
-
-function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
+      {/* Supplier */}
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-muted-foreground">Supplier / Vendor</Label>
+        <select
+          value={vendorName}
+          onChange={(e) => setVendorName(e.target.value)}
+          className="flex h-9 w-full rounded-md border border-neutral-200 bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+        >
+          <option value="all">All suppliers</option>
+          {uniqueVendors.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
           ))}
-        </SelectContent>
-      </Select>
+        </select>
+      </div>
+
+      {/* Stock status */}
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-muted-foreground">Availability</Label>
+        <select
+          value={availability}
+          onChange={(e) => setAvailability(e.target.value)}
+          className="flex h-9 w-full rounded-md border border-neutral-200 bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+        >
+          <option value="all">All statuses</option>
+          <option value="in-stock">In Stock</option>
+          <option value="made-to-order">Made to Order</option>
+          <option value="limited">Limited</option>
+        </select>
+      </div>
+
+      {/* Verified Suppliers Toggle */}
+      <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
+        <div className="space-y-0.5">
+          <Label htmlFor="verified-toggle" className="text-xs font-bold text-foreground">Verified Only</Label>
+          <p className="text-[10px] text-muted-foreground">Show audited suppliers.</p>
+        </div>
+        <Switch id="verified-toggle" checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+      </div>
     </div>
   );
 }
 
-/* ───────────────────────────────────────────────────────────────
-   Listing card
-   ─────────────────────────────────────────────────────────────── */
+// Item Card Layout
 function ListingCard({
   listing,
   vendors,
@@ -900,67 +936,90 @@ function ListingCard({
   const toggleSaved = useSaved((s) => s.toggle);
   const compareProducts = useCompare((s) => s.products);
   const toggleCompare = useCompare((s) => s.toggle);
-
   const isSaved = savedProducts.includes(listing.id);
   const isComparing = compareProducts.includes(listing.id);
+  
+  const addItem = useCart((s) => s.addItem);
+
   const c = colorClasses(listing.imageColor);
   const avail = availabilityMeta(listing.availability);
-  const financingEligible = showsFinancingTag(listing);
-  const vendorId = vendorIdForName(vendors, listing.vendorName);
 
-  function goVendor() {
-    if (vendorId) navigate("vendor-profile", undefined, { id: vendorId });
-  }
-  function goProduct() {
-    navigate("product-detail", undefined, { id: listing.id });
-  }
+  // Derive direct purchase capability
+  const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
+
+  const handleAction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isDirectPurchase) {
+      addItem({
+        id: listing.id,
+        title: listing.title,
+        variant: "Standard",
+        price: parseFloat(listing.priceNote?.replace(/[^0-9.]/g, "") || "0"),
+        imageColor: listing.imageColor,
+        category: listing.category,
+        vendorName: listing.vendorName,
+        priceNote: listing.priceNote || "Custom",
+      });
+      toast.success(`"${listing.title}" added to cart.`);
+    } else {
+      onQuote();
+    }
+  };
+
+  const vendorId = useMemo(() => {
+    return vendors.find((v) => v.name === listing.vendorName)?.id;
+  }, [vendors, listing.vendorName]);
 
   if (view === "list") {
     return (
-      <PremiumCard hover className="flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch">
-        <button
-          onClick={goProduct}
-          className={cn(
-            "relative flex h-24 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl sm:h-auto sm:w-40",
-            c.bg,
-          )}
-          aria-label={listing.title}
-        >
-          <CategoryIcon category={listing.category} className="h-8 w-8 text-white/90" />
-        </button>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <button onClick={goVendor} className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-teal-700">
-                {listing.vendorName}
-              </button>
-              <button onClick={goProduct} className="block text-left text-base font-semibold leading-tight text-foreground transition hover:text-teal-700">
-                {listing.title}
-              </button>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
-              <CompareToggle active={isComparing} onClick={() => toggleCompare("product", listing.id)} />
-            </div>
+      <PremiumCard className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white hover:shadow-premium-md transition-shadow">
+        <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl", c.bg)}>
+          <CategoryIcon category={listing.category} className="h-7 w-7 text-white/90" />
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("product-detail", undefined, { id: listing.id })}
+              className="text-left font-bold text-base text-foreground hover:text-teal-700 transition line-clamp-1"
+            >
+              {listing.title}
+            </button>
+            <VerificationBadge verified={listing.verified} />
           </div>
-          <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <p className="text-xs text-muted-foreground">
+            Routed by{" "}
+            <button 
+              onClick={() => vendorId && navigate("vendor-profile", undefined, { id: vendorId })}
+              className="font-semibold text-foreground hover:text-teal-700 hover:underline"
+            >
+              {listing.vendorName}
+            </button>
+          </p>
+          <div className="flex items-center gap-2 mt-1">
             <StatusPill tone="muted">{listing.category}</StatusPill>
-            <StatusPill tone="teal">{listing.listingType}</StatusPill>
             <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
-            {financingEligible && <StatusPill tone="violet"><Banknote className="h-3 w-3" /> Financing available</StatusPill>}
           </div>
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">{listing.priceNote || "Request quote"}</p>
-              <p className="text-xs text-muted-foreground">{listing.pricingModel || "—"}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={goProduct}>Details</Button>
-              <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onQuote}>
-                <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
-              </Button>
-            </div>
+        </div>
+
+        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t border-neutral-50 sm:border-0 pt-3 sm:pt-0 mt-3 sm:mt-0">
+          <div className="text-left sm:text-right">
+            <p className="text-sm font-bold text-foreground">{listing.priceNote || "Request quote"}</p>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{listing.pricingModel || "Quote"}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" className="font-bold text-xs h-8 bg-teal-600 text-white" onClick={handleAction}>
+              {isDirectPurchase ? "Buy Now" : "Request Quote"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 border-neutral-200"
+              onClick={() => toggleCompare("product", listing.id)}
+            >
+              <Boxes className={cn("h-3.5 w-3.5", isComparing ? "text-teal-600" : "text-neutral-500")} />
+            </Button>
           </div>
         </div>
       </PremiumCard>
@@ -968,297 +1027,52 @@ function ListingCard({
   }
 
   return (
-    <PremiumCard hover className="flex flex-col overflow-hidden">
-      {/* Banner */}
-      <div className={cn("relative h-28 w-full", c.bg)}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <CategoryIcon category={listing.category} className="h-9 w-9 text-white/90" />
-        </div>
-        <div className="absolute right-2 top-2 flex items-center gap-1.5">
+    <PremiumCard hover className="flex flex-col bg-white">
+      <div className={cn("relative h-24 w-full flex items-center justify-center", c.bg)}>
+        <CategoryIcon category={listing.category} className="h-8 w-8 text-white/90" />
+        <div className="absolute right-2 top-2">
           <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
-          <CompareToggle active={isComparing} onClick={() => toggleCompare("product", listing.id)} />
-        </div>
-        <div className="absolute left-2 top-2">
-          {listing.verified ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-teal-700 backdrop-blur-sm">
-              <ShieldCheck className="h-3 w-3" /> Verified
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-amber-700 backdrop-blur-sm">
-              <Clock className="h-3 w-3" /> Under review
-            </span>
-          )}
         </div>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center justify-between gap-2">
-          <button
-            onClick={goVendor}
-            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground transition hover:text-teal-700"
-          >
-            {listing.vendorName}
-          </button>
-          <VerificationBadge verified={listing.verified} status={listing.reviewStatus} />
-        </div>
-
         <button
-          onClick={goProduct}
-          className="mt-1 text-left text-base font-semibold leading-snug text-foreground transition hover:text-teal-700"
+          onClick={() => navigate("product-detail", undefined, { id: listing.id })}
+          className="text-left text-sm font-bold leading-snug text-foreground hover:text-teal-700 transition-colors line-clamp-1"
         >
           {listing.title}
         </button>
-
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        
+        <div className="mt-2.5 flex flex-wrap gap-1">
           <StatusPill tone="muted">{listing.category}</StatusPill>
-          <StatusPill tone="teal">{listing.listingType}</StatusPill>
-        </div>
-
-        <p className="mt-2.5 line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
-
-        <div className="mt-3 flex items-end justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold text-foreground">{listing.priceNote || "Request quote"}</p>
-            <p className="text-xs text-muted-foreground">{listing.pricingModel || "—"}</p>
-          </div>
           <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
         </div>
 
-        {financingEligible && (
-          <div className="mt-2.5 inline-flex items-center gap-1.5 self-start rounded-md bg-violet-50 px-2 py-1 text-[11px] font-medium text-violet-700">
-            <Banknote className="h-3 w-3" /> Financing available (platform inquiry)
-          </div>
-        )}
+        <p className="mt-2.5 line-clamp-2 text-xs leading-normal text-muted-foreground">
+          {listing.description}
+        </p>
 
-        <div className="mt-4 flex gap-2 border-t border-border pt-4">
-          <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700" onClick={onQuote}>
-            <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1" onClick={goProduct}>
-            Details
-          </Button>
+        <div className="mt-4 flex items-end justify-between border-t border-neutral-100 pt-3">
+          <div>
+            <p className="text-xs font-bold text-foreground">{listing.priceNote || "Request quote"}</p>
+            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">{listing.pricingModel || "Quote"}</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button size="sm" className="font-bold text-[10px] h-7 px-2.5 bg-teal-600 text-white" onClick={handleAction}>
+              {isDirectPurchase ? "Buy Now" : "Request Quote"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 border-neutral-200"
+              onClick={() => toggleCompare("product", listing.id)}
+            >
+              <Boxes className={cn("h-3.5 w-3.5", isComparing ? "text-teal-600" : "text-neutral-500")} />
+            </Button>
+          </div>
         </div>
       </div>
     </PremiumCard>
   );
 }
-
-function CompareToggle({ active, onClick }: { active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onClick(); }}
-      aria-pressed={active}
-      title={active ? "Remove from compare" : "Add to compare"}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition",
-        active
-          ? "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100"
-          : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700",
-      )}
-    >
-      <GitCompare className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">{active ? "Comparing" : "Compare"}</span>
-    </button>
-  );
-}
-
-/* ───────────────────────────────────────────────────────────────
-   Quote dialog
-   ─────────────────────────────────────────────────────────────── */
-function QuoteDialog({
-  listing,
-  onClose,
-}: {
-  listing: MarketplaceListingT | null;
-  onClose: () => void;
-}) {
-  const [form, setForm] = useState({
-    requesterName: "",
-    requesterEmail: "",
-    requesterOrg: "",
-    quantity: "",
-    notes: "",
-    consent: false,
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-
-  // Reset form whenever a new listing is opened
-  useEffect(() => {
-    if (listing) {
-      setForm({ requesterName: "", requesterEmail: "", requesterOrg: "", quantity: "", notes: "", consent: false });
-      setDone(false);
-      setSubmitting(false);
-    }
-  }, [listing]);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!listing) return;
-    if (!form.consent) {
-      toast.error("Please acknowledge the platform terms before submitting.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listingId: listing.id,
-          requesterName: form.requesterName,
-          requesterEmail: form.requesterEmail,
-          requesterOrg: form.requesterOrg || null,
-          quantity: form.quantity || null,
-          notes: form.notes || null,
-        }),
-      });
-      if (!res.ok) throw new Error("failed");
-      setDone(true);
-      toast.success("Quote request submitted", {
-        description: `${listing.vendorName} will follow up via email.`,
-      });
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function close() {
-    onClose();
-  }
-
-  return (
-    <Dialog open={!!listing} onOpenChange={(v) => { if (!v) close(); }}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
-        {listing && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Quote className="h-4 w-4 text-teal-600" /> Request a quote
-              </DialogTitle>
-              <DialogDescription>
-                {listing.title} · <span className="text-foreground/80">{listing.vendorName}</span>
-              </DialogDescription>
-            </DialogHeader>
-
-            {/* Snapshot */}
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border">
-              <div className="bg-card p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Price</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{listing.priceNote || "Quote-based"}</p>
-              </div>
-              <div className="bg-card p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Pricing model</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{listing.pricingModel || "—"}</p>
-              </div>
-              <div className="bg-card p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Availability</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{availabilityMeta(listing.availability).label}</p>
-              </div>
-              <div className="bg-card p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Type</p>
-                <p className="mt-1 text-sm font-semibold text-foreground">{listing.listingType}</p>
-              </div>
-            </div>
-
-            {!done ? (
-              <form onSubmit={submit} className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Full name" required>
-                    <Input
-                      required
-                      value={form.requesterName}
-                      onChange={(e) => setForm({ ...form, requesterName: e.target.value })}
-                      placeholder="Your name"
-                    />
-                  </Field>
-                  <Field label="Work email" required>
-                    <Input
-                      required
-                      type="email"
-                      value={form.requesterEmail}
-                      onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })}
-                      placeholder="you@clinic.com"
-                    />
-                  </Field>
-                </div>
-                <Field label="Organization / clinic">
-                  <Input
-                    value={form.requesterOrg}
-                    onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })}
-                    placeholder="Clinic or company name"
-                  />
-                </Field>
-                <Field label="Quantity / scope">
-                  <Input
-                    value={form.quantity}
-                    onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                    placeholder="e.g. 10 units, 200 panels/mo"
-                  />
-                </Field>
-                <Field label="Notes for vendor">
-                  <Textarea
-                    rows={3}
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    placeholder="Timeline, deployment context, bulk-pricing or financing interest, specific requirements…"
-                  />
-                </Field>
-                <label className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={form.consent}
-                    onChange={(e) => setForm({ ...form, consent: e.target.checked })}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    I understand Novalyte AI is a technology platform that facilitates commerce
-                    inquiries. Novalyte does not sell, warranty, or fulfill products directly —
-                    quotes and terms come from the vendor. Vendors are independently operated and
-                    verification does not constitute endorsement.
-                  </span>
-                </label>
-                <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={submitting}>
-                  {submitting ? "Sending…" : <>Send quote request <ArrowRight className="ml-1 h-4 w-4" /></>}
-                </Button>
-              </form>
-            ) : (
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50">
-                  <CheckCircle2 className="h-6 w-6 text-teal-600" />
-                </span>
-                <p className="text-base font-semibold text-foreground">Quote request submitted</p>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  We routed your inquiry to <span className="font-medium text-foreground">{listing.vendorName}</span>. Expect a follow-up at the email you provided.
-                </p>
-                <Button variant="outline" size="sm" onClick={close} className="mt-2">Close</Button>
-              </div>
-            )}
-
-            <DisclaimerBanner tone="muted">
-              Novalyte AI facilitates discovery and inquiry routing. We do not sell, ship, or
-              warranty products. Vendor terms, lead times, and pricing are confirmed directly with
-              the vendor.
-            </DisclaimerBanner>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1.5">
-      <Label className="text-xs">
-        {label} {required && <span className="text-rose-500">*</span>}
-      </Label>
-      {children}
-    </div>
-  );
-}
-
-// Re-export for downstream (unused but kept stable for AppShell contract)
-// (no exports — MarketplaceView is the only public symbol)

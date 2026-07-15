@@ -86,18 +86,18 @@ export const IMAGES = {
 
   // Treatment vertical imagery — each category has its own relevant image
   treatments: {
-    "testosterone-replacement-therapy": "/images/treatments/trt-1.jpg",
-    "hormone-optimization": "/images/treatments/trt-2.jpg",
-    "erectile-dysfunction": "/images/hero/hero-1.jpg",
-    "medical-weight-loss": "/images/treatments/weight-1.jpg",
-    "glp-1": "/images/treatments/weight-2.jpg",
-    "peptide-therapy": "/images/marketplace/inject-3.jpg",
-    "hair-restoration": "/images/treatments/hair-1.jpg",
-    "sexual-wellness": "/images/hero/hero-2.jpg",
-    "longevity-medicine": "/images/treatments/preventive-3.jpg",
-    "performance-recovery": "/images/treatments/perf-1.jpg",
-    "preventive-mens-health": "/images/treatments/preventive-2.jpg",
-    "telehealth-services": "/images/treatments/telehealth-new-1.jpg",
+    "testosterone-replacement-therapy": "/images/articles/trt-consultation.jpg",
+    "hormone-optimization": "/images/articles/longevity-consultation.jpg",
+    "erectile-dysfunction": "/images/treatments/ed-1.jpg",
+    "medical-weight-loss": "/images/articles/glp1-consultation.jpg",
+    "glp-1": "/images/treatments/preventive-3.jpg",
+    "peptide-therapy": "/images/pillars/services-marketplace.jpg",
+    "hair-restoration": "/images/treatments/hair-restoration-new.jpg",
+    "sexual-wellness": "/images/articles/trt-consultation.jpg",
+    "longevity-medicine": "/images/articles/longevity-consultation.jpg",
+    "performance-recovery": "/images/treatments/perf-3.jpg",
+    "preventive-mens-health": "/images/treatments/preventive-3.jpg",
+    "telehealth-services": "/images/articles/telehealth-practice.jpg",
   },
 
   // Patient journey imagery

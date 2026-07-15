@@ -11,6 +11,7 @@ import { HomeView } from "@/components/views/home-view";
 import { PatientsView } from "@/components/views/patients-view";
 import { ClinicsView } from "@/components/views/clinics-view";
 import { DirectoryView } from "@/components/views/directory-view";
+import { ClinicApplicationView } from "@/components/views/clinic-application-view";
 import { ClinicProfileView } from "@/components/views/clinic-profile-view";
 import { ClinicDashboardView } from "@/components/views/clinic-dashboard-view";
 import { ProviderProfileView } from "@/components/views/provider-profile-view";
@@ -21,6 +22,8 @@ import { JobDetailView } from "@/components/views/job-detail-view";
 import { MarketplaceView } from "@/components/views/marketplace-view";
 import { ProductDetailView } from "@/components/views/product-detail-view";
 import { VendorProfileView } from "@/components/views/vendor-profile-view";
+import { CartView } from "@/components/views/cart-view";
+import { CheckoutView } from "@/components/views/checkout-view";
 import { TreatmentDetailView } from "@/components/views/treatment-detail-view";
 import { AssessmentExperience } from "@/components/views/assessment-experience";
 import { ASSESSMENTS } from "@/lib/assessment-config";
@@ -96,6 +99,7 @@ export function AppShell({ data }: { data: PlatformData }) {
         {view === "patients" && <PatientsView data={data} onGetStarted={() => setGetStartedOpen(true)} />}
         {view === "clinics" && <ClinicsView data={data} onGetStarted={() => setGetStartedOpen(true)} />}
         {view === "directory" && <DirectoryView clinics={data.clinics} />}
+        {view === "clinic-application" && <ClinicApplicationView />}
         {view === "clinic-profile" && (
           <ClinicProfileView
             clinic={data.clinics.find((c) => c.id === params?.id) ?? data.clinics[0]}
@@ -156,6 +160,8 @@ export function AppShell({ data }: { data: PlatformData }) {
             listings={data.listings.filter((l) => l.vendorName === (data.vendors.find((v) => v.id === params?.id) ?? data.vendors[0])?.name)}
           />
         )}
+        {view === "cart" && <CartView />}
+        {view === "checkout" && <CheckoutView />}
         {view === "treatment-detail" && (
           <TreatmentDetailView
             slug={params?.slug ?? "testosterone-replacement-therapy"}

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { SectionShell } from "@/components/shared/section";
-import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +51,15 @@ const SECONDARY_SLUGS = [
   "preventive-mens-health",
   "telehealth-services",
 ];
+
+const FEATURED_TREATMENT_IMAGES: Record<string, string> = {
+  "testosterone-replacement-therapy": "/images/articles/trt-consultation.jpg",
+  "hormone-optimization": "/images/articles/longevity-consultation.jpg",
+  "medical-weight-loss": "/images/articles/glp1-consultation.jpg",
+  "glp-1": "/images/treatments/preventive-3.jpg",
+  "erectile-dysfunction": "/images/treatments/ed-1.jpg",
+  "hair-restoration": "/images/treatments/hair-restoration-new.jpg",
+};
 
 const PROCESS_STEPS = [
   { icon: Compass, title: "Choose a goal", desc: "Pick a treatment or let us guide you" },
@@ -135,8 +143,8 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
           <div className="relative">
             <div className="relative aspect-[5/4] overflow-hidden rounded-2xl shadow-premium-lg">
               <SmartImage
-                src={IMAGES.hero.consultation}
-                alt={ALT_TEXT.heroConsultation}
+                src={IMAGES.patients.hero}
+                alt={ALT_TEXT.patientHero}
                 fill
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -226,16 +234,22 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
               <p className="mt-2 text-sm text-muted-foreground">Start with the most common men's health treatments.</p>
             </div>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURED_SLUGS.map((slug) => {
+          <div className="novalyte-marquee relative mt-6 overflow-hidden" aria-label="Featured treatment categories">
+            <div className="novalyte-marquee-track flex w-max gap-4">
+            {[...FEATURED_SLUGS, ...FEATURED_SLUGS].map((slug, index) => {
+              const isClone = index >= FEATURED_SLUGS.length;
               const t = TREATMENT_LIST.find((x) => x.slug === slug);
               if (!t) return null;
               const Icon = getTreatmentIcon(slug);
-              const img = IMAGES.treatments[slug as keyof typeof IMAGES.treatments] ?? IMAGES.hero.clinicScene;
+              const img = FEATURED_TREATMENT_IMAGES[slug] ?? IMAGES.treatments[slug as keyof typeof IMAGES.treatments];
               return (
-                <div
-                  key={slug}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-premium-xs transition hover:border-teal-200 hover:shadow-premium-sm"
+                <article
+                  key={`${slug}-${index}`}
+                  aria-hidden={isClone || undefined}
+                  className={cn(
+                    "group flex w-[min(82vw,300px)] shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-premium-xs transition hover:border-teal-200 hover:shadow-premium-sm sm:w-[300px]",
+                    isClone && "novalyte-marquee-clone",
+                  )}
                 >
                   <div className="relative h-36 overflow-hidden">
                     <SmartImage
@@ -257,17 +271,18 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
                     <h3 className="text-base font-semibold text-foreground">{t.label}</h3>
                     <p className="mt-1 line-clamp-2 flex-1 text-sm text-muted-foreground">{t.explanation}</p>
                     <div className="mt-3 flex items-center gap-2">
-                      <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => startAssessment(slug)}>
+                      <Button tabIndex={isClone ? -1 : undefined} size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => startAssessment(slug)}>
                         Start Assessment
                       </Button>
-                      <button onClick={() => navigate("treatment-detail", undefined, { slug })} className="text-xs font-medium text-teal-700 underline-offset-2 hover:underline">
+                      <button tabIndex={isClone ? -1 : undefined} onClick={() => navigate("treatment-detail", undefined, { slug })} className="text-xs font-medium text-teal-700 underline-offset-2 hover:underline">
                         Learn More →
                       </button>
                     </div>
                   </div>
-                </div>
+                </article>
               );
             })}
+            </div>
           </div>
 
           {/* View All Treatments */}
@@ -563,7 +578,6 @@ export function PatientsView({ data, onGetStarted: _onGetStarted }: { data: Plat
         </div>
       </section>
 
-      <MedicalDisclaimer className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8" />
     </div>
   );
 }

@@ -5,8 +5,9 @@ import { Logo } from "@/components/site/logo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useNav, navigate, type ViewKey } from "@/lib/nav";
+import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
-import { Menu, Store, Stethoscope, Briefcase, Building2, Users, BookOpen } from "lucide-react";
+import { Menu, Store, Stethoscope, Briefcase, Building2, Users, BookOpen, ShoppingCart } from "lucide-react";
 
 const PRIMARY_NAV: { label: string; view: ViewKey; icon: React.ElementType }[] = [
   { label: "Patients", view: "patients", icon: Stethoscope },
@@ -18,6 +19,8 @@ const PRIMARY_NAV: { label: string; view: ViewKey; icon: React.ElementType }[] =
 
 export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => void }) {
   const { view } = useNav();
+  const cartItems = useCart((s) => s.items);
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   function go(v: ViewKey, anchor?: string) {
@@ -44,7 +47,7 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                     onClick={() => go(item.view)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "group relative rounded-lg px-3.5 py-2 text-sm font-semibold tracking-[-0.02em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
+                      "group relative rounded-lg px-3.5 py-2 text-[15px] font-semibold tracking-[-0.02em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
                       isActive
                         ? "text-teal-700"
                         : "text-foreground/70 hover:text-foreground",
@@ -75,6 +78,21 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
             <Store className="mr-1.5 h-4 w-4" /> Marketplace
           </Button>
 
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative h-9 w-9 border border-neutral-200 text-neutral-600 hover:text-teal-700 hover:bg-teal-50"
+            onClick={() => go("cart")}
+            aria-label="Shopping Cart"
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
+                {cartCount}
+              </span>
+            )}
+          </Button>
+
           {/* Mobile menu trigger */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -100,7 +118,7 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                       onClick={() => go(item.view)}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
+                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
                         isActive && "bg-teal-50 text-teal-700",
                       )}
                     >
@@ -115,6 +133,14 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
                     onClick={() => go("marketplace")}
                   >
                     <Store className="mr-1.5 h-4 w-4" /> Marketplace
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="border-neutral-200 flex items-center justify-center gap-2"
+                    onClick={() => go("cart")}
+                  >
+                    <ShoppingCart className="h-4 w-4" /> Cart ({cartCount})
                   </Button>
                 </div>
               </nav>

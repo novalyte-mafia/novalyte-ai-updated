@@ -55,22 +55,18 @@ export const PILLARS = [
 ] as const;
 
 export const MARKETPLACE_CATEGORIES = [
-  "Laboratory Services",
-  "Diagnostic Equipment",
-  "Injection Supplies",
-  "Phlebotomy Supplies",
-  "Medical Furniture",
-  "Body-Composition Systems",
-  "Recovery Technology",
-  "Telehealth Tools",
-  "Clinic Software",
-  "Billing Services",
-  "Credentialing Services",
-  "Compliance Support",
-  "Marketing Services",
-  "Staffing Services",
-  "Patient Engagement Tools",
-  "Clinic Expansion Services",
+  "Clinical Supplies",
+  "Laboratory and Diagnostics",
+  "Medical Equipment",
+  "Exam Room and Facility",
+  "Telehealth Technology",
+  "Healthcare Software",
+  "Staffing and Workforce Services",
+  "Billing and Revenue Cycle",
+  "Credentialing and Compliance",
+  "Marketing and Patient Growth",
+  "Wellness and Recovery",
+  "Apparel and Staff Essentials",
 ] as const;
 
 export const PROFESSIONAL_TITLES = [

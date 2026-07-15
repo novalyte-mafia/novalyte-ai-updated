@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,13 +42,31 @@ const COMMERCIAL_MODELS = ["Pay per patient opportunity", "Monthly subscription"
 const BUDGET_RANGES = ["Under $1,000 per month", "$1,000–$2,499", "$2,500–$4,999", "$5,000–$9,999", "$10,000+", "Budget not determined", "Directory listing only"];
 const WORKFORCE_NEEDS = ["Medical director", "Physician", "Nurse practitioner", "Physician assistant", "Registered nurse", "Medical assistant", "Phlebotomist", "Patient coordinator", "Operations manager", "Sales or consultation staff", "Telehealth clinician", "Credentialing support", "Marketing support", "Other"];
 const MARKETPLACE_NEEDS = ["Laboratory partners", "Diagnostic equipment", "Exam furniture", "Blood-draw supplies", "Medical refrigeration", "Telehealth technology", "EHR", "CRM", "Medical waste services", "Credentialing services", "Marketing services", "Clinic furniture", "Recovery equipment", "Hyperbaric equipment", "IV equipment", "Pharmacy relationships", "Payment and financing services", "Other"];
+const DRAFT_KEY = "novalyte-clinic-application-draft-v1";
 
 type FormData = Record<string, string | boolean | string[]>;
 
 export function ClinicApplication({ onComplete }: { onComplete: (applicationId: string) => void }) {
-  const [stage, setStage] = useState(0);
-  const [data, setData] = useState<FormData>({});
+  const [stage, setStage] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem(DRAFT_KEY);
+      const parsed = saved ? JSON.parse(saved) as { stage?: number } : {};
+      return typeof parsed.stage === "number" && parsed.stage >= 0 && parsed.stage <= 9 ? parsed.stage : 0;
+    } catch { return 0; }
+  });
+  const [data, setData] = useState<FormData>(() => {
+    try {
+      const saved = window.localStorage.getItem(DRAFT_KEY);
+      const parsed = saved ? JSON.parse(saved) as { data?: FormData } : {};
+      return parsed.data ?? {};
+    } catch { return {}; }
+  });
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (Object.keys(data).length === 0) return;
+    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ stage, data })); } catch {}
+  }, [data, stage]);
 
   function set(key: string, value: string | boolean | string[]) {
     setData((prev) => ({ ...prev, [key]: value }));
@@ -159,6 +177,7 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
         throw new Error(err.error ?? "Request failed");
       }
       const result = await res.json();
+      try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
       toast.success("Application submitted successfully.");
       onComplete(result.applicationId);
     } catch (e) {
@@ -187,7 +206,7 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
             <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">
               Stage {stage + 1} of 10 — {STAGES[stage].label}
             </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">Approximately 8–12 minutes · Progress saved automatically</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">Approximately 8–12 minutes · Draft saved automatically on this device</p>
           </div>
           <span className="hidden rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 sm:block">DRAFT</span>
         </div>

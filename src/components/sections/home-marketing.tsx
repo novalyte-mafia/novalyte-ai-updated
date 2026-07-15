@@ -91,22 +91,22 @@ export function ProblemSection() {
 
 export function PillarsSection() {
   const pillarImages: Record<string, string> = {
-    acquisition: IMAGES.patients.consultation,
-    directory: IMAGES.clinics.exterior[0],
-    workforce: IMAGES.professionals[4],
-    marketplace: IMAGES.marketplace.lab[0],
+    acquisition: IMAGES.pillars.acquisition,
+    directory: IMAGES.pillars.directory,
+    workforce: IMAGES.pillars.workforce,
+    marketplace: IMAGES.pillars.marketplace,
   };
   const pillarAlts: Record<string, string> = {
-    acquisition: "Adult male patient in healthcare consultation completing digital intake",
-    directory: "Modern men's health clinic reception and consultation environment",
-    workforce: "Healthcare professionals collaborating in a clinical setting",
-    marketplace: "Modern laboratory technology and clinical equipment",
+    acquisition: "Adult male patient completing a digital healthcare assessment on a tablet",
+    directory: "Modern men's health clinic reception with a provider welcoming a patient",
+    workforce: "Healthcare professionals collaborating in a specialized outpatient clinic",
+    marketplace: "Modern laboratory technology and clinical equipment in a clean workspace",
   };
   return (
     <SectionShell id="pillars" tone="muted">
       <SectionHeading
-        eyebrow="The Connected Platform"
-        title="One platform. Four ways it powers the men's health economy."
+        eyebrow="Four Connected Pillars"
+        title="One platform connecting every side of men's health."
         description="Each pillar is a complete product on its own — and exponentially more valuable connected to the ecosystem."
       />
       <div className="mt-10 grid gap-6 md:grid-cols-2">

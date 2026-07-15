@@ -70,16 +70,16 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
 
   return (
     <footer className="mt-auto border-t border-border bg-muted/30">
-      <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))]">
+      <div className="mx-auto w-full max-w-7xl px-4 py-9 sm:px-6 sm:py-10 lg:px-8">
+        <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))] lg:gap-6">
           <div className="sm:col-span-2 lg:col-span-1">
             <Logo />
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
               Novalyte AI is the operating system for men's health — connecting patient demand,
               verified clinics, specialized professionals, and operational services through one
               intelligent healthcare ecosystem.
             </p>
-            <form onSubmit={subscribe} className="mt-5 flex max-w-sm gap-2">
+            <form onSubmit={subscribe} className="mt-4 flex max-w-sm gap-2">
               <Input
                 type="email"
                 required
@@ -98,7 +98,7 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
           {FOOTER_LINKS.map((col) => (
             <div key={col.title}>
               <h4 className="text-sm font-semibold text-foreground">{col.title}</h4>
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-2 space-y-1.5">
                 {col.links.map((l) => (
                   <li key={l.label}>
                     <button
@@ -115,7 +115,7 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
         </div>
 
         {/* Disclaimer + copyright */}
-        <div className="mt-10 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-7 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
             <p className="max-w-3xl">

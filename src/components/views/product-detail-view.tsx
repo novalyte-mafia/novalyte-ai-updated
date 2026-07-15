@@ -6,7 +6,7 @@ import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import {
   PremiumCard,
-  MetaRow,
+  EmptyState,
   SaveButton,
   Breadcrumbs,
   SectionDivider,
@@ -23,35 +23,30 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { colorClasses } from "@/lib/constants";
 import type { MarketplaceListingT, VendorT } from "@/lib/types";
 import { navigate, useSaved, useCompare } from "@/lib/nav";
+import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight,
-  ArrowLeft,
+  Globe,
   CheckCircle2,
   ShieldCheck,
   Clock,
   Quote,
-  Banknote,
-  Truck,
   Package,
-  Boxes,
   Building2,
-  Tag,
-  CheckCheck,
+  Mail,
+  MessageSquare,
+  AlertCircle,
   ChevronRight,
-  LayoutList,
+  Boxes,
   ClipboardCheck,
-  FileBarChart,
+  Store,
+  Inbox,
+  Sparkles,
   FlaskConical,
   Activity,
   Syringe,
@@ -65,89 +60,75 @@ import {
   BadgeCheck,
   Megaphone,
   Users,
-  MessageSquare,
+  MapPin,
+  Truck,
+  HelpCircle,
+  ShieldAlert,
+  ChevronLeft
 } from "lucide-react";
 
-/* ───────────────────────────────────────────────────────────────
-   Category icon — stable wrapper (switch with literal JSX so the React
-   Compiler treats it as a static element)
-   ─────────────────────────────────────────────────────────────── */
 function CategoryIcon({ category, className }: { category: string; className?: string }) {
   switch (category) {
-    case "Laboratory Services": return <FlaskConical className={className} />;
-    case "Diagnostic Equipment": return <Activity className={className} />;
-    case "Injection Supplies": return <Syringe className={className} />;
-    case "Phlebotomy Supplies": return <Droplet className={className} />;
-    case "Medical Furniture": return <Armchair className={className} />;
-    case "Body-Composition Systems": return <Stethoscope className={className} />;
-    case "Recovery Technology": return <HeartPulse className={className} />;
-    case "Telehealth Tools": return <Video className={className} />;
-    case "Clinic Software": return <Monitor className={className} />;
-    case "Billing Services": return <CreditCard className={className} />;
-    case "Credentialing Services": return <BadgeCheck className={className} />;
-    case "Compliance Support": return <ShieldCheck className={className} />;
-    case "Marketing Services": return <Megaphone className={className} />;
-    case "Staffing Services": return <Users className={className} />;
-    case "Patient Engagement Tools": return <MessageSquare className={className} />;
-    case "Clinic Expansion Services": return <Building2 className={className} />;
-    default: return <Package className={className} />;
+    case "Laboratory Services":
+    case "Laboratory and Diagnostics":
+      return <FlaskConical className={className} />;
+    case "Diagnostic Equipment":
+    case "Medical Equipment":
+      return <Activity className={className} />;
+    case "Injection Supplies":
+    case "Clinical Supplies":
+      return <Syringe className={className} />;
+    case "Phlebotomy Supplies":
+      return <Droplet className={className} />;
+    case "Medical Furniture":
+    case "Exam Room and Facility":
+      return <Armchair className={className} />;
+    case "Body-Composition Systems":
+      return <Stethoscope className={className} />;
+    case "Recovery Technology":
+    case "Wellness and Recovery":
+      return <HeartPulse className={className} />;
+    case "Telehealth Tools":
+    case "Telehealth Technology":
+      return <Video className={className} />;
+    case "Clinic Software":
+    case "Healthcare Software":
+      return <Monitor className={className} />;
+    case "Billing Services":
+    case "Billing and Revenue Cycle":
+      return <CreditCard className={className} />;
+    case "Credentialing Services":
+    case "Credentialing and Compliance":
+      return <BadgeCheck className={className} />;
+    case "Compliance Support":
+      return <ShieldCheck className={className} />;
+    case "Marketing Services":
+    case "Marketing and Patient Growth":
+      return <Megaphone className={className} />;
+    case "Staffing Services":
+    case "Staffing and Workforce Services":
+      return <Users className={className} />;
+    case "Patient Engagement Tools":
+      return <MessageSquare className={className} />;
+    default:
+      return <Package className={className} />;
   }
 }
 
 function availabilityMeta(av: string): { tone: "teal" | "amber" | "sky" | "violet"; label: string } {
   const a = av.toLowerCase();
   if (a.includes("order")) return { tone: "amber", label: "Made to order" };
-  if (a.includes("limit")) return { tone: "violet", label: "Limited" };
+  if (a.includes("limit")) return { tone: "violet", label: "Limited availability" };
   if (a.includes("pre") || a.includes("back")) return { tone: "sky", label: "Pre-order" };
   return { tone: "teal", label: "In stock" };
 }
 
-const EQUIPMENT_CATEGORIES = new Set([
-  "Diagnostic Equipment",
-  "Body-Composition Systems",
-  "Recovery Technology",
-  "Medical Furniture",
-  "Telehealth Tools",
-]);
-function showsFinancingTag(l: MarketplaceListingT): boolean {
-  return l.listingType === "product" && EQUIPMENT_CATEGORIES.has(l.category);
-}
-
 const TABS = [
-  { id: "overview", label: "Overview", icon: LayoutList },
-  { id: "specifications", label: "Specifications", icon: ClipboardCheck },
-  { id: "pricing", label: "Pricing & Financing", icon: Banknote },
-  { id: "shipping", label: "Shipping & Fulfillment", icon: Truck },
-  { id: "vendor", label: "Vendor", icon: Building2 },
-  { id: "faqs", label: "FAQs", icon: FileBarChart },
+  { id: "overview", label: "Overview & Specs", icon: ClipboardCheck },
+  { id: "supplier", label: "Supplier Profile", icon: Store },
+  { id: "faqs", label: "FAQs & Guides", icon: HelpCircle },
 ];
 
-const FAQS = [
-  {
-    q: "How does the quote process work?",
-    a: "Submit a quote request with your contact details, organization, and quantity. Novalyte AI routes the inquiry directly to the vendor, who responds with pricing, lead times, and fulfillment options. Novalyte does not sell or fulfill products directly.",
-  },
-  {
-    q: "Can I request bulk pricing?",
-    a: "Yes. Use the quantity field to indicate volume (e.g. 100 units or 200 panels/month) and add a note. Bulk-order terms — including tiered pricing, contracts, and lead times — are confirmed by the vendor during the quote response.",
-  },
-  {
-    q: "Is financing or leasing available for equipment?",
-    a: "For equipment categories (diagnostic, recovery, body-composition, medical furniture, telehealth hardware), the Novalyte platform supports financing and leasing inquiries as part of your quote request. Terms are arranged directly between your organization and the vendor or a financing partner.",
-  },
-  {
-    q: "What does the vendor verification badge mean?",
-    a: "Verification indicates that Novalyte AI has reviewed the vendor's submitted business information. It is not an endorsement of clinical outcomes, product efficacy, or vendor performance. Independent due diligence is recommended before purchase.",
-  },
-  {
-    q: "Are clinical or outcome claims moderated?",
-    a: "Yes. Listings that make clinical, safety, or outcome claims are subject to moderation before publication. Listings may be paused or removed if claims cannot be substantiated or if they conflict with our healthcare-content policy.",
-  },
-];
-
-/* ───────────────────────────────────────────────────────────────
-   Main view
-   ─────────────────────────────────────────────────────────────── */
 export function ProductDetailView({
   listing,
   allListings,
@@ -159,6 +140,7 @@ export function ProductDetailView({
 }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const savedProducts = useSaved((s) => s.products);
   const toggleSaved = useSaved((s) => s.toggle);
@@ -166,43 +148,139 @@ export function ProductDetailView({
   const toggleCompare = useCompare((s) => s.toggle);
   const isSaved = savedProducts.includes(listing.id);
   const isComparing = compareProducts.includes(listing.id);
+  
+  const addItem = useCart((s) => s.addItem);
 
   const c = colorClasses(listing.imageColor);
   const avail = availabilityMeta(listing.availability);
-  const financingEligible = showsFinancingTag(listing);
 
+  // Derive vendor structure
   const vendor = useMemo(
     () => vendors.find((v) => v.name === listing.vendorName) ?? null,
     [vendors, listing.vendorName],
   );
-  const vendorListings = useMemo(
-    () => allListings.filter((l) => l.vendorName === listing.vendorName && l.id !== listing.id),
-    [allListings, listing],
-  );
-  const related = useMemo(() => {
-    const sameCategory = allListings.filter((l) => l.id !== listing.id && l.category === listing.category);
-    const sameVendor = allListings.filter(
-      (l) => l.id !== listing.id && l.vendorName === listing.vendorName && !sameCategory.includes(l),
-    );
-    return [...sameCategory, ...sameVendor].slice(0, 3);
-  }, [allListings, listing]);
 
-  // Reset active tab whenever the listing changes — uses "adjusting state during
-  // render" pattern (endorsed by React docs) to avoid setState-in-effect.
-  const [lastListingId, setLastListingId] = useState(listing.id);
-  if (lastListingId !== listing.id) {
-    setLastListingId(listing.id);
-    setActiveTab("overview");
-  }
+  // Derive direct purchase capability
+  const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
 
-  // Scroll to top on listing change (genuine side effect — OK in useEffect).
+  // Mock variants for direct-purchase products
+  const variants = useMemo(() => {
+    if (!isDirectPurchase) return [];
+    
+    // Parse price base from priceNote (e.g. "$120/case" -> 120)
+    const basePrice = parseFloat(listing.priceNote?.replace(/[^0-9.]/g, "") || "100");
+    
+    return [
+      { id: "standard", name: "Standard Pack", priceMultiplier: 1.0, suffix: "" },
+      { id: "pro", name: "Pro Bundle (Pack of 5)", priceMultiplier: 4.2, suffix: " (Save 16%)" },
+      { id: "bulk", name: "Enterprise Case (Pack of 24)", priceMultiplier: 18.0, suffix: " (Save 25%)" }
+    ].map(v => ({
+      ...v,
+      calculatedPrice: basePrice * v.priceMultiplier
+    }));
+  }, [isDirectPurchase, listing.priceNote]);
+
+  const [selectedVariant, setSelectedVariant] = useState(variants[0]?.id || "standard");
+
+  const currentPrice = useMemo(() => {
+    if (!isDirectPurchase) return 0;
+    const matched = variants.find(v => v.id === selectedVariant);
+    return matched ? matched.calculatedPrice : parseFloat(listing.priceNote?.replace(/[^0-9.]/g, "") || "0");
+  }, [isDirectPurchase, selectedVariant, variants, listing.priceNote]);
+
+  const currentVariantLabel = useMemo(() => {
+    return variants.find(v => v.id === selectedVariant)?.name || "Standard";
+  }, [selectedVariant, variants]);
+
+  // Specifications mock based on categories
+  const specifications = useMemo(() => {
+    const baseSpecs = [
+      { name: "Brand / Manufacturer", value: listing.vendorName },
+      { name: "Category Taxonomy", value: listing.category },
+      { name: "Logistics Category", value: listing.listingType.toUpperCase() },
+      { name: "Verification Status", value: listing.verified ? "Verified Supplier Profile" : "Staged Supplier" }
+    ];
+
+    if (listing.category === "Clinical Supplies" || listing.category === "Apparel and Staff Essentials") {
+      return [
+        ...baseSpecs,
+        { name: "Sterility Class", value: "Class A / Non-sterile variants" },
+        { name: "Package Material", value: "Recycled Clinical Box" },
+        { name: "Compliance Standards", value: "FDA Registered Facility" }
+      ];
+    }
+
+    if (listing.category === "Laboratory and Diagnostics" || listing.category === "Medical Equipment") {
+      return [
+        ...baseSpecs,
+        { name: "Calibration Interval", value: "Annual / Self-Checking" },
+        { name: "Power Source", value: "110V Standard Wall Cord" },
+        { name: "Warranty Duration", value: "1-Year Parts & Labor" }
+      ];
+    }
+
+    return [
+      ...baseSpecs,
+      { name: "Deployment model", value: "SaaS Cloud / Digital Routing" },
+      { name: "System Requirements", value: "Any modern browser" },
+      { name: "Security Standards", value: "HIPAA Compliant Data Hosting" }
+    ];
+  }, [listing]);
+
+  // Deliverables & Scope list (for services/software)
+  const deliverables = useMemo(() => {
+    if (listing.listingType === "product") return [];
+    return [
+      "Dedicated integration project manager matching.",
+      "Custom brand setup on portal configurations.",
+      "Service Level Agreement (SLA) covering data feeds.",
+      "Onboarding coaching sessions for clinical staffs.",
+      "Regulatory compliance audit logs exportable quarterly."
+    ];
+  }, [listing.listingType]);
+
+  // Availability restrictions description
+  const availabilityRestrictions = useMemo(() => {
+    if (listing.listingType === "product") {
+      return "Fulfillment regions cover the continental United States. Standard freight routing applied at checkout.";
+    }
+    return "Service contracts available for providers in all 50 states. Local diagnostic feeds depend on partner lab locations.";
+  }, [listing.listingType]);
+
+  // Implementation / Setup timelines
+  const setupTimeline = useMemo(() => {
+    if (listing.category === "Healthcare Software") return "Immediate provision upon signup approval.";
+    if (listing.category === "Staffing and Workforce Services") return "Matches sourced in 7-14 business days.";
+    if (listing.category === "Credentialing and Compliance") return "Applications completed in 10-30 days.";
+    return "3-5 days dispatch shipping.";
+  }, [listing.category]);
+
+  const handleAddCart = () => {
+    if (isDirectPurchase) {
+      addItem({
+        id: listing.id,
+        title: listing.title,
+        variant: currentVariantLabel,
+        price: currentPrice,
+        imageColor: listing.imageColor,
+        category: listing.category,
+        vendorName: listing.vendorName,
+        priceNote: listing.priceNote || "Custom",
+        quantity: quantity
+      });
+      toast.success(`Added ${quantity} x "${listing.title} (${currentVariantLabel})" to cart!`);
+    } else {
+      setQuoteOpen(true);
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
   }, [listing.id]);
 
   return (
     <div className="bg-background">
-      {/* ── Breadcrumbs ───────────────────────────────────────── */}
+      {/* Breadcrumbs */}
       <div className="border-b border-border bg-background">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <Breadcrumbs
@@ -215,591 +293,496 @@ export function ProductDetailView({
         </div>
       </div>
 
-      {/* ── Hero header (two-column) ─────────────────────────── */}
-      <section className="border-b border-border bg-gradient-to-b from-teal-50/40 to-background py-10 sm:py-14">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.4fr_1fr] lg:px-8">
-          {/* Left: banner + identity */}
-          <div>
-            <div className={cn("flex h-48 w-full items-center justify-center rounded-2xl shadow-premium-sm", c.bg)}>
-              <CategoryIcon category={listing.category} className="h-14 w-14 text-white/90" />
+      {/* Hero detail section */}
+      <section className="border-b border-border bg-gradient-to-b from-teal-50/30 to-background py-10 sm:py-16">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.3fr_1fr] lg:px-8">
+          
+          {/* Left Column: Product Banner & Details */}
+          <div className="space-y-6">
+            <div className={cn("flex h-64 sm:h-80 w-full items-center justify-center rounded-3xl shadow-premium-md", c.bg)}>
+              <CategoryIcon category={listing.category} className="h-16 w-16 text-white/95" />
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <StatusPill tone="muted">{listing.category}</StatusPill>
               <StatusPill tone="teal">{listing.listingType}</StatusPill>
               <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
-              {financingEligible && (
-                <StatusPill tone="violet"><Banknote className="h-3 w-3" /> Financing available</StatusPill>
+              {listing.verified && (
+                <StatusPill tone="emerald">Verified Listing</StatusPill>
               )}
             </div>
 
-            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               {listing.title}
             </h1>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <button
+            <div className="flex items-center gap-4 text-sm">
+              <button 
                 onClick={() => vendor && navigate("vendor-profile", undefined, { id: vendor.id })}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition hover:text-teal-700"
+                className="font-semibold text-foreground hover:text-teal-700 transition flex items-center gap-1"
               >
                 <Building2 className="h-4 w-4 text-muted-foreground" /> {listing.vendorName}
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </button>
-              <VerificationBadge verified={listing.verified} status={listing.reviewStatus} />
             </div>
 
-            <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
-              {listing.description}
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setQuoteOpen(true)}>
-                <Quote className="mr-1 h-4 w-4" /> Request Quote
-              </Button>
-              <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} label={isSaved ? "Saved" : "Save"} />
-              <Button
-                variant="outline"
-                onClick={() => toggleCompare("product", listing.id)}
-                className={cn(isComparing && "border-teal-200 bg-teal-50 text-teal-700")}
-              >
-                <Boxes className="mr-1 h-4 w-4" />
-                {isComparing ? "In compare" : "Compare"}
-              </Button>
+            <div className="text-sm leading-relaxed text-muted-foreground space-y-4">
+              <p>{listing.description}</p>
             </div>
           </div>
 
-          {/* Right: pricing & quote card */}
-          <div id="quote-card">
-            <PremiumCard className="overflow-hidden">
-              <div className="border-b border-border bg-muted/30 p-5">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Pricing</p>
-                <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-                  {listing.priceNote || "Quote-based"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {listing.pricingModel ? `Model: ${listing.pricingModel}` : "Pricing confirmed with vendor"}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
-                  {financingEligible && (
-                    <StatusPill tone="violet"><Banknote className="h-3 w-3" /> Financing eligible</StatusPill>
-                  )}
+          {/* Right Column: Order / Quote Widget */}
+          <div className="space-y-4">
+            <PremiumCard className="p-6 bg-white border-neutral-200/80 space-y-6">
+              
+              {/* Product Pricing and Variant Selector */}
+              {isDirectPurchase ? (
+                <div className="space-y-6">
+                  <div>
+                    <span className="text-2xl font-black text-teal-700">
+                      ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">Estimated Unit Price</span>
+                  </div>
+
+                  <div className="space-y-3.5 pt-4 border-t border-neutral-100">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Variant</Label>
+                    <div className="space-y-2">
+                      {variants.map((v) => (
+                        <label 
+                          key={v.id}
+                          className={cn(
+                            "flex items-center justify-between p-3.5 border rounded-2xl cursor-pointer hover:bg-neutral-50 transition-colors",
+                            selectedVariant === v.id ? "border-teal-600 bg-teal-50/20" : "border-neutral-200"
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <input
+                              type="radio"
+                              name="variant"
+                              checked={selectedVariant === v.id}
+                              onChange={() => setSelectedVariant(v.id)}
+                              className="accent-teal-600"
+                            />
+                            <span className="text-xs font-bold text-foreground">{v.name}</span>
+                          </div>
+                          <span className="text-xs font-bold text-teal-700">
+                            ${v.calculatedPrice.toFixed(2)}{v.suffix}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quantity Selector & Add to Cart */}
+                  <div className="space-y-3.5 pt-4 border-t border-neutral-100">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quantity</Label>
+                    <div className="flex gap-3">
+                      <div className="flex items-center border border-neutral-200 rounded-xl overflow-hidden h-11 bg-white">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                          className="px-4 hover:bg-neutral-50 text-neutral-500 font-bold transition-colors"
+                        >
+                          -
+                        </button>
+                        <span className="w-10 text-center text-sm font-semibold text-foreground">
+                          {quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(q => q + 1)}
+                          className="px-4 hover:bg-neutral-50 text-neutral-500 font-bold transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                      
+                      <Button 
+                        className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 rounded-xl"
+                        onClick={handleAddCart}
+                      >
+                        Add to Cart
+                      </Button>
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                // Services / Quote Request Widget
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-xl font-bold text-foreground">
+                      {listing.priceNote || "Request Quote"}
+                    </span>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">{listing.pricingModel || "Custom"}</p>
+                  </div>
+                  
+                  <div className="space-y-3 pt-4 border-t border-neutral-100">
+                    <div className="flex items-start gap-2 text-xs">
+                      <Clock className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground">Estimated Setup Time</p>
+                        <p className="text-muted-foreground">{setupTimeline}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs pt-2">
+                      <Globe className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground">Availability Scope</p>
+                        <p className="text-muted-foreground">{availabilityRestrictions}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 rounded-xl flex items-center justify-center gap-1.5"
+                    onClick={() => setQuoteOpen(true)}
+                  >
+                    <Quote className="h-4 w-4" /> Request Quote &amp; Consult
+                  </Button>
+                </div>
+              )}
+
+              {/* Utility Panel */}
+              <div className="flex justify-between pt-4 border-t border-neutral-100 text-xs">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn("text-muted-foreground font-semibold hover:text-teal-700")}
+                  onClick={() => toggleSaved("product", listing.id)}
+                >
+                  <SaveButton saved={isSaved} size="xs" className="mr-1" />
+                  {isSaved ? "Saved" : "Save for Later"}
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground font-semibold hover:text-teal-700 flex items-center gap-1"
+                  onClick={() => toggleCompare("product", listing.id)}
+                >
+                  <Boxes className={cn("h-4 w-4", isComparing ? "text-teal-600" : "")} />
+                  Compare
+                </Button>
               </div>
 
-              <div className="p-5">
-                <h3 className="text-sm font-semibold text-foreground">Request a quote</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Sent directly to {listing.vendorName}. Novalyte facilitates the inquiry — terms come from the vendor.
-                </p>
-                <CompactQuoteForm
-                  listing={listing}
-                  onSuccess={() => toast.success("Quote request submitted", {
-                    description: `${listing.vendorName} will follow up via email.`,
-                  })}
-                />
-              </div>
             </PremiumCard>
-
-            <DisclaimerBanner tone="muted" className="mt-3">
-              Novalyte AI does not sell, warranty, or fulfill this product. Pricing, lead times, and
-              terms are confirmed by the vendor during the quote process.
-            </DisclaimerBanner>
           </div>
+
         </div>
       </section>
 
-      {/* ── Sticky tab nav ───────────────────────────────────── */}
+      {/* Spec tabs */}
       <StickyTabNav
         tabs={TABS}
         active={activeTab}
         onChange={setActiveTab}
-        rightSlot={
-          <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setQuoteOpen(true)}>
-            <Quote className="mr-1 h-3.5 w-3.5" /> Request Quote
-          </Button>
-        }
       />
 
-      {/* ── Tab content ──────────────────────────────────────── */}
-      <SectionShell className="!py-10 sm:!py-14">
+      {/* Tab contents */}
+      <SectionShell className="!py-10 bg-neutral-50/10">
         <div className="mx-auto w-full max-w-5xl">
+          
+          {/* Overview & Specs Tab */}
           {activeTab === "overview" && (
-            <div className="novalyte-fade-up space-y-8">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Overview</h2>
-                <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">{listing.description}</p>
-                <p className="mt-3 text-pretty leading-relaxed text-muted-foreground">
-                  This listing is published in the Novalyte marketplace by {listing.vendorName} and
-                  categorized under <span className="font-medium text-foreground">{listing.category}</span>.
-                  Vendors are responsible for the accuracy of their listing details; Novalyte
-                  facilitates discovery and inquiry routing.
-                </p>
-              </div>
-
-              <SectionDivider label="What's included" />
-              <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  "Direct inquiry routing to the vendor",
-                  "Bulk-order and quantity coordination",
-                  financingEligible ? "Financing & leasing inquiry support" : "Structured pricing & terms response",
-                  "Vendor-confirmed lead times",
-                  "Saved-list and compare-tray tooling",
-                  "Verification status transparency",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-2 rounded-xl border border-border bg-card p-3.5 text-sm">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
-                    <span className="text-foreground/80">{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              <SectionDivider label="Use cases for men's health clinics" />
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  { icon: Building2, label: "Clinic operations", desc: "Adopt across intake, lab, or back-office workflows." },
-                  { icon: CheckCheck, label: "Standardization", desc: "Equip multiple locations with consistent sourcing." },
-                  { icon: Boxes, label: "Scale procurement", desc: "Coordinate bulk purchasing for growing networks." },
-                ].map((u) => {
-                  const U = u.icon;
-                  return (
-                    <PremiumCard key={u.label} className="p-4">
-                      <U className="h-5 w-5 text-teal-600" />
-                      <h4 className="mt-2 text-sm font-semibold text-foreground">{u.label}</h4>
-                      <p className="mt-1 text-xs text-muted-foreground">{u.desc}</p>
-                    </PremiumCard>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "specifications" && (
             <div className="novalyte-fade-up space-y-6">
-              <h2 className="text-xl font-semibold text-foreground">Specifications</h2>
-              <MetaRow
-                columns={3}
-                items={[
-                  { label: "Category", value: listing.category, icon: Tag },
-                  { label: "Listing type", value: listing.listingType, icon: Package },
-                  { label: "Pricing model", value: listing.pricingModel || "—", icon: Banknote },
-                  { label: "Price", value: listing.priceNote || "Quote-based", icon: Banknote },
-                  { label: "Availability", value: avail.label, icon: CheckCircle2 },
-                  { label: "Vendor", value: listing.vendorName, icon: Building2 },
-                ]}
-              />
-              <DisclaimerBanner tone="teal">
-                Detailed product specifications — including dimensions, materials, regulatory status,
-                compatibility, and certifications — are confirmed by the vendor during the quote
-                process. Request a quote to receive a structured specification sheet.
-              </DisclaimerBanner>
-            </div>
-          )}
-
-          {activeTab === "pricing" && (
-            <div className="novalyte-fade-up space-y-6">
-              <h2 className="text-xl font-semibold text-foreground">Pricing &amp; financing</h2>
-              <PremiumCard className="p-6">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Listed price</p>
-                <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
-                  {listing.priceNote || "Quote-based"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Pricing model: <span className="font-medium text-foreground">{listing.pricingModel || "Not specified"}</span>
-                </p>
-              </PremiumCard>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <PremiumCard className="p-5">
-                  <Banknote className="h-5 w-5 text-teal-600" />
-                  <h3 className="mt-2 text-sm font-semibold text-foreground">Pricing model</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    {pricingModelExplanation(listing.pricingModel)}
-                  </p>
-                </PremiumCard>
-                <PremiumCard className="p-5">
-                  <Boxes className="h-5 w-5 text-teal-600" />
-                  <h3 className="mt-2 text-sm font-semibold text-foreground">Bulk orders</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    Volume pricing, contract terms, and recurring delivery schedules can be
-                    requested through the quote form. Indicate quantity and deployment timeline in
-                    your inquiry for the most accurate response.
-                  </p>
-                </PremiumCard>
-              </div>
-
-              {financingEligible && (
-                <PremiumCard className="p-5">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-                      <Banknote className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">Financing &amp; leasing inquiry support</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                        This listing is in an equipment category. The Novalyte platform supports
-                        financing and leasing inquiries as part of your quote request. Financing
-                        terms — including down payment, duration, and end-of-term options — are
-                        arranged directly between your organization and the vendor or a financing
-                        partner. This is a platform capability, not a per-listing financing offer.
-                      </p>
-                    </div>
-                  </div>
-                </PremiumCard>
+              
+              {/* Deliverables List (if service) */}
+              {deliverables.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-base font-bold text-foreground">SLA Deliverables &amp; Scope</h3>
+                  <ul className="grid gap-2 sm:grid-cols-2 text-xs text-muted-foreground leading-normal pl-4 list-disc">
+                    {deliverables.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
-              <DisclaimerBanner tone="muted">
-                All pricing is provided by the vendor and subject to change. Novalyte AI does not
-                set, guarantee, or process payments for listings.
-              </DisclaimerBanner>
-            </div>
-          )}
-
-          {activeTab === "shipping" && (
-            <div className="novalyte-fade-up space-y-6">
-              <h2 className="text-xl font-semibold text-foreground">Shipping &amp; fulfillment</h2>
-              <PremiumCard className="p-5">
-                <Truck className="h-5 w-5 text-teal-600" />
-                <h3 className="mt-2 text-sm font-semibold text-foreground">Coordinated directly with the vendor</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Shipping, freight, white-glove delivery, installation, and onboarding are
-                  coordinated directly between your organization and {listing.vendorName}. Novalyte
-                  AI facilitates the initial inquiry — we do not warehouse, ship, or fulfill
-                  products ourselves.
-                </p>
-              </PremiumCard>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <PremiumCard className="p-4">
-                  <Clock className="h-4 w-4 text-teal-600" />
-                  <h4 className="mt-2 text-sm font-semibold text-foreground">Lead times</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Confirmed during quote based on availability and quantity.</p>
-                </PremiumCard>
-                <PremiumCard className="p-4">
-                  <Package className="h-4 w-4 text-teal-600" />
-                  <h4 className="mt-2 text-sm font-semibold text-foreground">Freight &amp; handling</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Equipment freight, hazmat, and cold-chain handled by vendor.</p>
-                </PremiumCard>
-                <PremiumCard className="p-4">
-                  <CheckCheck className="h-4 w-4 text-teal-600" />
-                  <h4 className="mt-2 text-sm font-semibold text-foreground">Onboarding</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Software &amp; service onboarding scheduled directly with vendor.</p>
+              {/* Specifications table */}
+              <div className="space-y-4 pt-4">
+                <h3 className="text-base font-bold text-foreground">Catalog Specifications</h3>
+                <PremiumCard className="p-0 overflow-hidden bg-white">
+                  <table className="min-w-full divide-y divide-neutral-100 text-xs">
+                    <tbody className="divide-y divide-neutral-100">
+                      {specifications.map((spec, idx) => (
+                        <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-neutral-50/30"}>
+                          <td className="px-6 py-3.5 font-semibold text-muted-foreground w-1/3 border-r border-neutral-100">{spec.name}</td>
+                          <td className="px-6 py-3.5 text-foreground font-medium">{spec.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </PremiumCard>
               </div>
+
             </div>
           )}
 
-          {activeTab === "vendor" && (
-            <div className="novalyte-fade-up space-y-6">
-              <h2 className="text-xl font-semibold text-foreground">Vendor</h2>
+          {/* Supplier Tab */}
+          {activeTab === "supplier" && (
+            <div className="novalyte-fade-up space-y-4">
+              <h2 className="text-xl font-bold text-foreground">Supplier Profile</h2>
               {vendor ? (
-                <PremiumCard className="p-6">
-                  <div className="flex items-start gap-4">
-                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-lg font-bold text-white">
+                <PremiumCard className="p-6 bg-white space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-premium-sm", c.bg)}>
                       {vendor.name.slice(0, 1)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold text-foreground">{vendor.name}</h3>
-                        <VerificationBadge verified={vendor.verified} />
-                      </div>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                        {vendor.overview || "Vendor overview available on the full vendor profile."}
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        <span><span className="font-semibold text-foreground">{vendorListings.length + 1}</span> active listing{vendorListings.length === 0 ? "" : "s"} on Novalyte</span>
-                        {vendor.website && (
-                          <a
-                            href={vendor.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-teal-700 transition hover:text-teal-800"
-                          >
-                            Visit website <ArrowRight className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-4"
-                        onClick={() => navigate("vendor-profile", undefined, { id: vendor.id })}
-                      >
-                        View full vendor profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                      </Button>
                     </div>
+                    <div>
+                      <h4 className="font-bold text-base text-foreground flex items-center gap-1.5">
+                        {vendor.name} <VerificationBadge verified={vendor.verified} />
+                      </h4>
+                      <p className="text-xs text-muted-foreground">Verified Healthcare Supplier</p>
+                    </div>
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {vendor.overview || "This supplier provides verified medical materials, tech, or workforce solutions on the Novalyte AI marketplace."}
+                  </p>
+                  <div className="pt-4 border-t border-neutral-100">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="font-semibold"
+                      onClick={() => navigate("vendor-profile", undefined, { id: vendor.id })}
+                    >
+                      Visit Supplier Storefront <ArrowRight className="ml-1 h-4.5 w-4.5" />
+                    </Button>
                   </div>
                 </PremiumCard>
               ) : (
-                <DisclaimerBanner tone="muted">
-                  Vendor information for {listing.vendorName} is not available.
-                </DisclaimerBanner>
+                <p className="text-sm text-muted-foreground">Supplier information not loaded.</p>
               )}
             </div>
           )}
 
+          {/* FAQs Tab */}
           {activeTab === "faqs" && (
-            <div className="novalyte-fade-up space-y-4">
-              <h2 className="text-xl font-semibold text-foreground">Frequently asked questions</h2>
-              <PremiumCard className="p-2">
-                <Accordion type="single" collapsible className="px-3">
-                  {FAQS.map((f, i) => (
-                    <AccordionItem key={i} value={`item-${i}`}>
-                      <AccordionTrigger className="text-left text-sm font-medium text-foreground">
-                        {f.q}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                        {f.a}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+            <div className="novalyte-fade-up space-y-4 text-xs text-muted-foreground leading-relaxed">
+              <h2 className="text-xl font-bold text-foreground">Product FAQs</h2>
+              <PremiumCard className="p-6 bg-white space-y-5">
+                <div>
+                  <h4 className="font-bold text-sm text-foreground mb-1">What is the estimated delivery time?</h4>
+                  <p>Fulfillment dispatch averages 3–5 business days. Expedited routes can be configured at the shipping step in checkout.</p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground mb-1">Does this require clinical verification?</h4>
+                  <p>Yes. Buying medical equipment or clinical supplies requires an active clinic identifier. Compliance reviews are performed prior to shipping.</p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground mb-1">Are volume or bulk discounts available?</h4>
+                  <p>Absolutely. For high-volume purchases, choose the "Pro Bundle" or "Enterprise Case" variants, or request a custom quote directly from the supplier.</p>
+                </div>
               </PremiumCard>
             </div>
           )}
+
         </div>
       </SectionShell>
 
-      {/* ── Related products ─────────────────────────────────── */}
-      {related.length > 0 && (
-        <SectionShell tone="muted" className="!pt-10 !pb-16">
-          <div className="flex items-end justify-between">
-            <SectionHeading
-              eyebrow="Related"
-              title="Related products & services"
-              description="More from this category or this vendor."
-            />
-            <Button variant="outline" size="sm" onClick={() => navigate("marketplace")} className="hidden sm:inline-flex">
-              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to marketplace
-            </Button>
-          </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((r) => {
-              const rc = colorClasses(r.imageColor);
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => navigate("product-detail", undefined, { id: r.id })}
-                  className="group overflow-hidden rounded-2xl border border-border bg-card text-left shadow-premium-sm transition card-premium-hover"
-                >
-                  <div className={cn("flex h-20 w-full items-center justify-center", rc.bg)}>
-                    <CategoryIcon category={r.category} className="h-7 w-7 text-white/90" />
-                  </div>
-                  <div className="p-4 text-left">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {r.vendorName}
-                    </p>
-                    <h4 className="mt-1 text-sm font-semibold leading-snug text-foreground group-hover:text-teal-700">{r.title}</h4>
-                    <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">{r.description}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-foreground">{r.priceNote || "Quote"}</span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-teal-600" />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </SectionShell>
-      )}
-
-      {/* ── Bottom disclaimer ────────────────────────────────── */}
+      {/* Safeguards footer */}
       <SectionShell className="!py-10">
         <div className="mx-auto w-full max-w-5xl space-y-4">
           <DisclaimerBanner tone="amber">
-            <strong className="font-semibold">Not a sale by Novalyte.</strong> Novalyte AI is a
-            technology platform that facilitates commerce inquiries between clinics and vendors.
-            We do not sell, warranty, insure, or fulfill products. Quotes, terms, lead times, and
-            warranties are provided by the vendor. Verification reflects a review of submitted
-            business information and is not an endorsement of clinical outcomes or product
-            efficacy. Perform independent due diligence before purchase.
+            <strong className="font-semibold">B2B Platform Safeguard.</strong> Novalyte AI does not sell, ship, or warranty any marketplace items directly. All transactions are routed directly to qualified third-party suppliers. No prescription medications are sold on this platform.
           </DisclaimerBanner>
           <MedicalDisclaimer />
         </div>
       </SectionShell>
 
-      {/* ── Quote dialog (from sticky nav button) ────────────── */}
-      <QuoteDialog listing={listing} open={quoteOpen} onOpenChange={setQuoteOpen} />
+      {/* Quote request dialog */}
+      <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Quote className="h-4 w-4 text-teal-600" /> Request a quote
+            </DialogTitle>
+            <DialogDescription>
+              {listing.title} · <span className="text-foreground/80">{listing.vendorName}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <QuoteDetailedForm listing={listing} onClose={() => setQuoteOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
 
-/* ───────────────────────────────────────────────────────────────
-   Pricing model explanation
-   ─────────────────────────────────────────────────────────────── */
-function pricingModelExplanation(model: string | null): string {
-  switch ((model ?? "").toLowerCase()) {
-    case "one-time":
-      return "A single upfront price for the product or service. No recurring charges unless add-ons are negotiated separately with the vendor.";
-    case "subscription":
-      return "Recurring billing (monthly or annual) for continued access to the product, software, or service. Pricing tiers may scale with usage, seats, or locations.";
-    case "quote":
-      return "Pricing is configured per inquiry based on quantity, scope, contract length, and customization. Submit a quote request to receive a tailored proposal.";
-    case "range":
-      return "Pricing falls within a published range. Final pricing depends on configuration, quantity, and contract terms confirmed during the quote process.";
-    case "per-test":
-      return "Priced per unit of service (e.g. per lab panel or per draw). Useful for variable-volume clinic workflows; volume tiers may apply.";
-    case "percentage":
-      return "Priced as a percentage of collections, revenue, or transaction volume. Common for billing, RCM, and revenue-share service arrangements.";
-    default:
-      return "Pricing details are confirmed with the vendor during the quote process.";
-  }
-}
-
-/* ───────────────────────────────────────────────────────────────
-   Compact quote form (used inline on the pricing card)
-   ─────────────────────────────────────────────────────────────── */
-function CompactQuoteForm({
-  listing,
-  onSuccess,
-}: {
-  listing: MarketplaceListingT;
-  onSuccess: () => void;
-}) {
+// 15-field Detailed Quote Form
+function QuoteDetailedForm({ listing, onClose }: { listing: MarketplaceListingT; onClose: () => void }) {
   const [form, setForm] = useState({
-    requesterName: "",
-    requesterEmail: "",
-    requesterOrg: "",
+    name: "",
+    email: "",
+    org: "",
+    phone: "",
+    facilityType: "clinic",
     quantity: "",
+    locations: "",
+    budget: "",
+    timeline: "",
+    location: "",
+    requirements: "",
+    contactMethod: "email",
     notes: "",
     consent: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.consent) {
-      toast.error("Please acknowledge the platform terms before submitting.");
+      toast.error("Please acknowledge the platform safeguards.");
       return;
     }
+
     setSubmitting(true);
     try {
+      // Serialize all fields into notes
+      const notesCombined = `
+Telephone: ${form.phone}
+Facility Type: ${form.facilityType}
+Locations: ${form.locations}
+Budget Range: ${form.budget}
+Desired Timeline: ${form.timeline}
+Service Location: ${form.location}
+Preferred Contact: ${form.contactMethod}
+Requirements: ${form.requirements}
+Additional Notes: ${form.notes}
+      `.trim();
+
       const res = await fetch("/api/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           listingId: listing.id,
-          requesterName: form.requesterName,
-          requesterEmail: form.requesterEmail,
-          requesterOrg: form.requesterOrg || null,
-          quantity: form.quantity || null,
-          notes: form.notes || null,
+          requesterName: form.name,
+          requesterEmail: form.email,
+          requesterOrg: form.org,
+          quantity: form.quantity || "1",
+          notes: notesCombined,
         }),
       });
-      if (!res.ok) throw new Error("failed");
+
+      if (!res.ok) throw new Error();
       setDone(true);
-      onSuccess();
+      toast.success("Quote request submitted successfully!");
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      toast.error("Failed to submit quote request. Please try again.");
     } finally {
       setSubmitting(false);
     }
-  }
+  };
 
   if (done) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-teal-200 bg-teal-50/50 p-5 text-center">
-        <CheckCircle2 className="h-7 w-7 text-teal-600" />
-        <p className="text-sm font-semibold text-foreground">Quote request submitted</p>
-        <p className="max-w-xs text-xs text-muted-foreground">
-          We routed your inquiry to {listing.vendorName}. Expect a follow-up at the email you provided.
+      <div className="flex flex-col items-center gap-2 py-6 text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50">
+          <CheckCircle2 className="h-6 w-6 text-teal-600" />
+        </span>
+        <p className="text-base font-semibold text-foreground">Quote request submitted</p>
+        <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
+          We routed your detailed inquiry to {listing.vendorName}. Expect a response directly to your contact email.
         </p>
+        <Button variant="outline" size="sm" onClick={onClose} className="mt-2 font-semibold">Close</Button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="mt-3 space-y-3">
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input
-          required
-          placeholder="Full name *"
-          value={form.requesterName}
-          onChange={(e) => setForm({ ...form, requesterName: e.target.value })}
-        />
-        <Input
-          required
-          type="email"
-          placeholder="Work email *"
-          value={form.requesterEmail}
-          onChange={(e) => setForm({ ...form, requesterEmail: e.target.value })}
-        />
+    <form onSubmit={handleSubmit} className="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Contact Name *</Label>
+          <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your Name" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Work Email *</Label>
+          <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@clinic.com" />
+        </div>
       </div>
-      <Input
-        placeholder="Organization / clinic"
-        value={form.requesterOrg}
-        onChange={(e) => setForm({ ...form, requesterOrg: e.target.value })}
-      />
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input
-          placeholder="Quantity / scope"
-          value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-        />
-        <Textarea
-          rows={2}
-          placeholder="Notes (timeline, requirements)"
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          className="resize-none"
-        />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Organization / Clinic *</Label>
+          <Input required value={form.org} onChange={(e) => setForm({ ...form, org: e.target.value })} placeholder="Clinic Name" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Telephone *</Label>
+          <Input required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(555) 012-3456" />
+        </div>
       </div>
-      <label className="flex items-start gap-2 text-xs text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={form.consent}
-          onChange={(e) => setForm({ ...form, consent: e.target.checked })}
-          className="mt-0.5"
-        />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Facility Type *</Label>
+          <select
+            value={form.facilityType}
+            onChange={(e) => setForm({ ...form, facilityType: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+          >
+            <option value="clinic">Outpatient Clinic</option>
+            <option value="practice">Private Practice</option>
+            <option value="wellness">Wellness Center</option>
+            <option value="telehealth">Telehealth Provider</option>
+            <option value="hospital">Hospital / Health System</option>
+          </select>
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Preferred Contact</Label>
+          <select
+            value={form.contactMethod}
+            onChange={(e) => setForm({ ...form, contactMethod: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+          >
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-1">
+          <Label className="text-xs">Est. Quantity *</Label>
+          <Input required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} placeholder="e.g. 5 units" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Locations Count</Label>
+          <Input value={form.locations} onChange={(e) => setForm({ ...form, locations: e.target.value })} placeholder="e.g. 3 offices" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Budget Range</Label>
+          <Input value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder="e.g. $10k-$20k" />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1">
+          <Label className="text-xs">Desired Timeline</Label>
+          <Input value={form.timeline} onChange={(e) => setForm({ ...form, timeline: e.target.value })} placeholder="e.g. 30 days" />
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs">Service/Shipping Location</Label>
+          <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Austin, TX" />
+        </div>
+      </div>
+
+      <div className="grid gap-1">
+        <Label className="text-xs">Project Requirements &amp; Scope</Label>
+        <Textarea rows={3} value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} placeholder="Specify electrical, structural, integration, or custom staffing requirements..." className="resize-none text-xs" />
+      </div>
+
+      <label className="flex items-start gap-2 text-xs text-muted-foreground leading-snug">
+        <input type="checkbox" required checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} className="mt-0.5 accent-teal-600" />
         <span>
-          I understand Novalyte AI is a technology platform that facilitates inquiries and does not
-          sell, warranty, or fulfill products directly.
+          I acknowledge that Novalyte AI facilitates this request and suppliers are responsible for quote terms. We confirm that no prescription medications or restricted medical products are requested.
         </span>
       </label>
-      <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={submitting}>
-        {submitting ? "Sending…" : <>Send quote request <ArrowRight className="ml-1 h-4 w-4" /></>}
+
+      <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700 font-bold" disabled={submitting}>
+        {submitting ? "Sending..." : <>Submit Quote Request <ArrowRight className="ml-1 h-4 w-4" /></>}
       </Button>
     </form>
-  );
-}
-
-/* ───────────────────────────────────────────────────────────────
-   Quote dialog (used from sticky nav Request Quote button)
-   ─────────────────────────────────────────────────────────────── */
-function QuoteDialog({
-  listing,
-  open,
-  onOpenChange,
-}: {
-  listing: MarketplaceListingT;
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Quote className="h-4 w-4 text-teal-600" /> Request a quote
-          </DialogTitle>
-          <DialogDescription>
-            {listing.title} · <span className="text-foreground/80">{listing.vendorName}</span>
-          </DialogDescription>
-        </DialogHeader>
-        <CompactQuoteForm
-          listing={listing}
-          onSuccess={() => {
-            toast.success("Quote request submitted", {
-              description: `${listing.vendorName} will follow up via email.`,
-            });
-            setTimeout(() => onOpenChange(false), 1200);
-          }}
-        />
-        <DisclaimerBanner tone="muted">
-          Novalyte AI facilitates discovery and inquiry routing. We do not sell, ship, or warranty
-          products. Vendor terms, lead times, and pricing are confirmed directly with the vendor.
-        </DisclaimerBanner>
-      </DialogContent>
-    </Dialog>
   );
 }

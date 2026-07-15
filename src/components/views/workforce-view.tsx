@@ -5,6 +5,7 @@ import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { StatusPill, CheckItem } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
+import { IMAGES } from "@/lib/images";
 import {
   PremiumCard,
   MetaRow,
@@ -627,8 +628,8 @@ function Hero({
           <div className="relative">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-premium-md">
               <SmartImage
-                src="/images/professionals/pro-5.jpg"
-                alt="Healthcare professional preparing for a patient visit"
+                src={IMAGES.pillars.workforce}
+                alt="Healthcare professionals collaborating in a specialized outpatient clinic"
                 width={1200}
                 height={900}
                 priority

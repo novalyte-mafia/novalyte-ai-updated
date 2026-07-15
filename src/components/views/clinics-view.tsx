@@ -17,9 +17,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ROI_TREATMENTS, DEFAULT_INPUTS, calculateRoi, type RoiInputs } from "@/lib/roi-calculator";
 import { CLINIC_FAQS } from "@/lib/clinic-faqs";
 import { navigate } from "@/lib/nav";
-import { US_STATES, TREATMENT_VERTICALS } from "@/lib/constants";
+import { TREATMENT_VERTICALS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import {
   ArrowRight, TrendingUp, Users, Filter, ClipboardList, BarChart3, ShieldCheck,
   Building2, Store, Stethoscope, MapPin, Video, FileText, Activity, Zap,
@@ -134,9 +133,7 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
   const [activeSystem, setActiveSystem] = useState("growth");
   const [activeTreatment, setActiveTreatment] = useState(TREATMENT_VERTICALS[0].slug);
   const [activeClinicType, setActiveClinicType] = useState("independent");
-  const [showApplication, setShowApplication] = useState(false);
   const [submittedApp, setSubmittedApp] = useState<{ id: string; clinicName: string } | null>(null);
-  const [appGate, setAppGate] = useState<{ verified: boolean; clinicName: string } | null>(null);
 
   // ROI calculator state — treatment-specific
   const [roiTreatment, setRoiTreatment] = useState(ROI_TREATMENTS[0].slug);
@@ -946,22 +943,14 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
         </div>
       </section>
 
-      {/* ── 20. APPLICATION ENTRY GATE ─────────────────────────── */}
+      {/* ── 20. CLINIC APPLICATION ─────────────────────────────── */}
       <section id="application" className="border-b border-border py-12 sm:py-14">
         <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
           {submittedApp ? (
             <ApplicationConfirmation
               applicationId={submittedApp.id}
               clinicName={submittedApp.clinicName}
-              onBackToClinics={() => { setSubmittedApp(null); setShowApplication(false); setAppGate(null); }}
-            />
-          ) : appGate?.verified ? (
-            <ClinicApplication onComplete={(appId) => setSubmittedApp({ id: appId, clinicName: appGate.clinicName })} />
-          ) : appGate ? (
-            <ApplicationVerificationScreen
-              clinicName={appGate.clinicName}
-              onVerified={() => setAppGate({ verified: true, clinicName: appGate.clinicName })}
-              onBack={() => setAppGate(null)}
+              onBackToClinics={() => { setSubmittedApp(null); }}
             />
           ) : (
             <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
@@ -972,7 +961,7 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
                 </div>
                 <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Apply for a free clinic directory listing</h2>
                 <p className="mt-3 text-pretty text-sm text-muted-foreground sm:text-base">
-                  Tell us who you are and which clinic you represent. After we verify your basic information, you can continue to the complete clinic application.
+                  Tell us who you are, which clinic you represent, and how patients should experience your care. The complete listing application is available immediately and is reviewed before publication.
                 </p>
                 <div className="mt-5 space-y-2">
                   {[
@@ -990,17 +979,14 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
                   ))}
                 </div>
                 <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4">
-                  <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><Lock className="h-3.5 w-3.5 text-teal-600" /> Verification process</p>
-                  <p className="mt-1 text-xs text-muted-foreground">After submitting basic information, you'll receive an email verification link. Once verified, you can access the complete 10-stage clinic application with save-and-resume functionality.</p>
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground"><ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Review and protection</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Bot protection, server-side validation, and credential review help protect the directory. Email verification may happen after submission when needed for administrative follow-up.</p>
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5 text-teal-600" /> Full application takes approximately 8–12 minutes · Progress saved automatically
                 </div>
               </div>
-              {/* Right: basic entry form */}
-              <ApplicationEntryGate
-                onSubmit={(clinicName) => setAppGate({ verified: false, clinicName })}
-              />
+              <ClinicApplication onComplete={(appId) => setSubmittedApp({ id: appId, clinicName: "Clinic listing" })} />
             </div>
           )}
         </div>
@@ -1138,116 +1124,6 @@ function SystemPreview({ systemId }: { systemId: string }) {
   );
 }
 
-
-/* ── Application Entry Gate (basic form) ─────────────────────── */
-function ApplicationEntryGate({ onSubmit }: { onSubmit: (clinicName: string) => void }) {
-  const [form, setForm] = useState({
-    clinicName: "", firstName: "", lastName: "", title: "", email: "", phone: "", website: "", state: "", authority: false,
-  });
-  const [honeypot, setHoneypot] = useState(""); // bot detection
-  const [submitting, setSubmitting] = useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (honeypot) return; // bot detected
-    setSubmitting(true);
-    // Simulate server-side validation + draft creation
-    await new Promise((r) => setTimeout(r, 800));
-    setSubmitting(false);
-    toast.success("Application started. Check your email to verify and continue.");
-    onSubmit(form.clinicName);
-  }
-
-  const valid = form.clinicName.trim() && form.firstName.trim() && form.lastName.trim() && form.email.trim() && form.phone.trim() && form.state && form.authority;
-
-  return (
-    <PremiumCard className="p-6">
-      <h3 className="text-lg font-semibold text-foreground">Start your clinic application</h3>
-      <p className="mt-1 text-sm text-muted-foreground">Enter your clinic and contact information to create a secure application. After verification, you can continue the full directory and partnership application.</p>
-      <form onSubmit={submit} className="mt-4 space-y-3">
-        {/* Honeypot field (hidden from humans) */}
-        <input type="text" name="company_website" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-        <div className="grid gap-1.5"><Label className="text-xs">Clinic or company name *</Label><Input required value={form.clinicName} onChange={(e) => setForm({ ...form, clinicName: e.target.value })} /></div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5"><Label className="text-xs">First name *</Label><Input required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} autoComplete="given-name" /></div>
-          <div className="grid gap-1.5"><Label className="text-xs">Last name *</Label><Input required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} autoComplete="family-name" /></div>
-        </div>
-        <div className="grid gap-1.5"><Label className="text-xs">Job title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Owner, Medical Director, COO..." /></div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5"><Label className="text-xs">Work email *</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value.trim() })} placeholder="name@clinic.com" autoComplete="email" /></div>
-          <div className="grid gap-1.5"><Label className="text-xs">Direct telephone *</Label><Input type="tel" required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" autoComplete="tel" /></div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5"><Label className="text-xs">Clinic website</Label><Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="example.com" /></div>
-          <div className="grid gap-1.5"><Label className="text-xs">Primary state *</Label><Select value={form.state} onValueChange={(v) => setForm({ ...form, state: v })}><SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></div>
-        </div>
-        <label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" required checked={form.authority} onChange={(e) => setForm({ ...form, authority: e.target.checked })} className="mt-0.5 accent-teal-600" /><span>I confirm that I am authorized to submit information on behalf of this clinic or organization.</span></label>
-        <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" disabled={!valid || submitting}>
-          {submitting ? "Creating secure application..." : <>Continue Securely <ArrowRight className="ml-1 h-4 w-4" /></>}
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">Applying is free. Submission does not guarantee approval or publication.</p>
-        <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1"><Lock className="h-3 w-3 text-teal-600" /> Email verification</span>
-          <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-teal-600" /> Secure link</span>
-          <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-teal-600" /> Save &amp; resume</span>
-          <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3 text-teal-600" /> Bot-protected</span>
-        </div>
-      </form>
-    </PremiumCard>
-  );
-}
-
-/* ── Application Verification Screen ─────────────────────────── */
-function ApplicationVerificationScreen({ clinicName, onVerified, onBack }: { clinicName: string; onVerified: () => void; onBack: () => void }) {
-  const [code, setCode] = useState("");
-  const [verifying, setVerifying] = useState(false);
-
-  function verify() {
-    setVerifying(true);
-    setTimeout(() => {
-      setVerifying(false);
-      toast.success("Email verified. Continuing to full application...");
-      onVerified();
-    }, 800);
-  }
-
-  // Mask a fake email
-  const maskedEmail = "n•••••@•••••.com";
-
-  return (
-    <div className="mx-auto w-full max-w-lg py-8">
-      <div className="rounded-2xl border border-border bg-card p-8 shadow-premium-sm text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal-50 text-teal-600">
-          <Lock className="h-7 w-7" />
-        </span>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Verify your information to continue</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We sent a secure verification link to your work email at <span className="font-mono font-medium text-foreground">{maskedEmail}</span>. Open the link to continue your clinic application for <strong>{clinicName}</strong>.
-        </p>
-
-        <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4 text-left">
-          <p className="text-xs font-semibold text-foreground">Or enter your verification code</p>
-          <div className="mt-2 flex gap-2">
-            <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="6-digit code" maxLength={6} className="text-center font-mono text-lg tracking-widest" inputMode="numeric" />
-            <Button className="bg-teal-600 text-white hover:bg-teal-700" disabled={!code || code.length < 6 || verifying} onClick={verify}>
-              {verifying ? "Verifying..." : "Verify"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-col items-center gap-2 text-xs text-muted-foreground">
-          <button onClick={verify} className="font-medium text-teal-700 hover:underline">Resend verification email</button>
-          <button onClick={onBack} className="font-medium text-muted-foreground hover:text-foreground">Use a different email address</button>
-          <button className="font-medium text-muted-foreground hover:text-foreground">Contact support</button>
-        </div>
-
-        <div className="mt-5 rounded-lg border border-teal-200 bg-teal-50/40 p-3">
-          <p className="text-[11px] text-teal-800">For demo purposes, click "Verify" with any 6-digit code to continue to the full application.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ── ROI Calculator Input Components ─────────────────────────── */
 function SliderInput({ label, value, min, max, step, onChange, suffix }: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void; suffix?: string }) {
