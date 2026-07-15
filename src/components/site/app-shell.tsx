@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { JoinGateway } from "@/components/site/join-gateway";
+import { CookieConsent } from "@/components/site/cookie-consent";
 import { Button } from "@/components/ui/button";
 import { ProfessionalOnboarding } from "@/components/views/professional-onboarding";
 import { EmployerOnboarding } from "@/components/views/employer-onboarding";
@@ -73,7 +74,13 @@ export function AppShell({ data }: { data: PlatformData }) {
       const queryAnchor = searchParams.get("anchor") || undefined;
       
       if (queryView) {
-        useNav.getState().setView(queryView, queryAnchor, queryParams);
+        let finalView = queryView;
+        let finalAnchor = queryAnchor;
+        if (queryView === "cookies") {
+          finalView = "privacy";
+          finalAnchor = "cookies";
+        }
+        useNav.getState().setView(finalView, finalAnchor, queryParams);
       }
     }
   }, []);
@@ -231,6 +238,7 @@ export function AppShell({ data }: { data: PlatformData }) {
       </main>
       <Footer onNewsletter={subscribe} />
       <JoinGateway open={getStartedOpen} onOpenChange={setGetStartedOpen} />
+      <CookieConsent />
       {showClinicTray && <ClinicCompareTray clinics={data.clinics} />}
       {showProductTray && <ProductCompareTray listings={data.listings} />}
     </div>

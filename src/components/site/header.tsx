@@ -7,18 +7,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useNav, navigate, type ViewKey } from "@/lib/nav";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
-import { Menu, Store, Stethoscope, Briefcase, Building2, Users, BookOpen, ShoppingCart } from "lucide-react";
+import { Menu, Store, Stethoscope, Briefcase, Building2, Users, BookOpen, ShoppingCart, Info, MessageSquare } from "lucide-react";
 
-const PRIMARY_NAV: { label: string; view: ViewKey; icon: React.ElementType }[] = [
+const PRIMARY_NAV: { label: string; view: ViewKey; anchor?: string; icon: React.ElementType }[] = [
   { label: "Patients", view: "patients", icon: Stethoscope },
   { label: "Clinics", view: "clinics", icon: Briefcase },
   { label: "Directory", view: "directory", icon: Building2 },
   { label: "Workforce", view: "workforce", icon: Users },
   { label: "Journal", view: "journal", icon: BookOpen },
+  { label: "About", view: "about", icon: Info },
+  { label: "Contact", view: "about", anchor: "contact", icon: MessageSquare },
 ];
 
 export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => void }) {
-  const { view } = useNav();
+  const { view, anchor } = useNav();
   const cartItems = useCart((s) => s.items);
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -42,11 +44,13 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
         <nav className="mx-auto hidden lg:flex" aria-label="Primary">
           <ul className="flex items-center gap-5 lg:gap-7">
             {PRIMARY_NAV.map((item) => {
-              const isActive = view === item.view || (item.view === "directory" && view === "clinic-profile");
+              const isActive = item.anchor
+                ? (view === item.view && anchor === item.anchor)
+                : (view === item.view && (!anchor || anchor !== "contact")) || (item.view === "directory" && view === "clinic-profile");
               return (
-                <li key={item.view}>
+                <li key={item.label}>
                   <button
-                    onClick={() => go(item.view)}
+                    onClick={() => go(item.view, item.anchor)}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
                       "group relative rounded-lg px-2.5 py-2 text-[16px] font-semibold tracking-[-0.02em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
@@ -115,14 +119,16 @@ export function Header({ onGetStarted: _onGetStarted }: { onGetStarted: () => vo
               <nav className="flex flex-col gap-1 p-3" aria-label="Mobile">
                 {PRIMARY_NAV.map((item) => {
                   const Icon = item.icon;
-                  const isActive = view === item.view || (item.view === "directory" && view === "clinic-profile");
+                  const isActive = item.anchor
+                    ? (view === item.view && anchor === item.anchor)
+                    : (view === item.view && (!anchor || anchor !== "contact")) || (item.view === "directory" && view === "clinic-profile");
                   return (
                     <button
-                      key={item.view}
-                      onClick={() => go(item.view)}
+                      key={item.label}
+                      onClick={() => go(item.view, item.anchor)}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2",
                         isActive && "bg-teal-50 text-teal-700",
                       )}
                     >

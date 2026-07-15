@@ -55,6 +55,10 @@ export function navigate(
   anchor?: string,
   params?: { id?: string; slug?: string; clinicId?: string },
 ) {
+  if (view === "cookies") {
+    view = "privacy";
+    anchor = "cookies";
+  }
   if (typeof window !== "undefined" && window.location.pathname !== "/") {
     let url = `/?view=${view}`;
     if (anchor) url += `&anchor=${encodeURIComponent(anchor)}`;

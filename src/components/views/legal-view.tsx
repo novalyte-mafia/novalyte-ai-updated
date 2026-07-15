@@ -5,6 +5,7 @@ import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { Button } from "@/components/ui/button";
 import { navigate } from "@/lib/nav";
 import { ArrowLeft, ArrowUp, FileText } from "lucide-react";
+import { useCookieConsent } from "@/lib/cookie-consent-store";
 
 type LegalViewKey = "privacy" | "terms" | "medical-disclaimer" | "accessibility" | "cookies";
 
@@ -16,7 +17,7 @@ const VIEW_META: Record<LegalViewKey, { title: string; eyebrow: string }> = {
   cookies: { title: "Cookie Policy", eyebrow: "Legal" },
 };
 
-const LAST_UPDATED = "January 15, 2025";
+const LAST_UPDATED = "July 15, 2026";
 
 export function LegalView({ view }: { view: LegalViewKey }) {
   const meta = VIEW_META[view];
@@ -87,7 +88,7 @@ export function LegalView({ view }: { view: LegalViewKey }) {
             <h3 className="text-sm font-semibold text-foreground">Other legal documents</h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {(Object.keys(VIEW_META) as LegalViewKey[])
-                .filter((k) => k !== view)
+                .filter((k) => (k === "privacy" || k === "terms") && k !== view)
                 .map((k) => (
                   <Button
                     key={k}
@@ -254,7 +255,24 @@ function PrivacyContent() {
         effect constitutes acceptance of the revised Policy.
       </P>
 
-      <H2 id="contact">10. Contact</H2>
+      <H2 id="cookies">10. Cookies and Similar Technologies</H2>
+      <P>
+        We use cookies and similar technologies on the Novalyte AI platform. Cookies are small text files placed on your device when you visit a website.
+      </P>
+      <P>
+        We use the following categories of cookies:
+      </P>
+      <UL>
+        <LI><strong>Strictly Necessary Cookies</strong> — required for basic site functionality, security, session state, and system operations. These cannot be disabled.</LI>
+        <LI><strong>Functional Cookies</strong> — remember your selections, theme settings, or helper choices to provide a more personalized experience.</LI>
+        <LI><strong>Analytics Cookies</strong> — help us analyze traffic sources, page load performance, and user behavior to optimize our platform. No third-party tracking or advertising providers are used.</LI>
+        <LI><strong>Marketing Cookies</strong> — monitor the performance of marketing campaigns. We do not sell personal data to third parties or run cross-site tracking ads.</LI>
+      </UL>
+      <P>
+        <strong>Modifying Consent:</strong> You can change your cookie preferences at any time by clicking the <button onClick={() => useCookieConsent.getState().setShowPreferencesModal(true)} className="font-semibold text-teal-600 underline hover:text-teal-700 focus:outline-none">Cookie Preferences</button> button in our site footer. You can also block or clear cookies via your browser settings.
+      </P>
+
+      <H2 id="contact">11. Contact</H2>
       <P>
         For privacy questions or requests, please contact us through the contact form on the About
         page. We will respond consistent with applicable law.
