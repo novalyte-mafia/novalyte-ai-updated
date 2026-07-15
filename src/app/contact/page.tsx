@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Logo } from "@/components/site/logo";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { 
   Loader2, CheckCircle2, User, Building2, Stethoscope, 
   Briefcase, ShoppingBag, ShieldAlert, Globe, FileText, 
-  HelpCircle, ChevronRight, Mail, Phone, MapPin, AlertCircle
+  HelpCircle, ChevronRight, Mail, MapPin, AlertCircle
 } from "lucide-react";
 
 // Types
@@ -192,11 +191,7 @@ export default function ContactPage() {
 
   // Honeypot & Timing
   const [honeypot, setHoneypot] = useState("");
-  const [loadTime, setLoadTime] = useState<number>(0);
-
-  useEffect(() => {
-    setLoadTime(Date.now());
-  }, []);
+  const [loadTime] = useState(() => Date.now());
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -224,6 +219,18 @@ export default function ContactPage() {
     setCharCount(0);
     setConsentAccepted(false);
     setSuccess(false);
+  };
+
+  const subscribeToNewsletter = async (email: string) => {
+    const response = await fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Newsletter subscription failed");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -324,10 +331,10 @@ export default function ContactPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-teal-50/20 via-background to-background py-16 px-4 border-b border-neutral-100">
+        <section className="border-b border-border bg-gradient-to-b from-accent/45 via-background to-background px-4 py-14 sm:py-16">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900 sm:text-5xl">
-              How can Novalyte <span className="text-teal-600">help?</span>
+              How can Novalyte <span className="text-primary">help?</span>
             </h1>
             <p className="mt-4 text-lg text-neutral-600 max-w-2xl mx-auto">
               Tell us who you are and what you need. We’ll route your message to the appropriate Novalyte team immediately.
@@ -336,13 +343,13 @@ export default function ContactPage() {
         </section>
 
         {/* Content Section */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-[1240px] w-full">
             {success ? (
               // Success Screen
               <div className="mx-auto max-w-xl bg-white border border-neutral-200 p-8 rounded-3xl shadow-premium-md text-center space-y-6">
                 <div className="flex justify-center">
-                  <CheckCircle2 className="h-16 w-16 text-emerald-500 animate-pulse" />
+                  <CheckCircle2 className="h-16 w-16 animate-pulse text-primary" />
                 </div>
                 <h2 className="text-2xl font-bold text-neutral-900">Inquiry Received</h2>
                 <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-100 space-y-2 text-left">
@@ -367,7 +374,7 @@ export default function ContactPage() {
 
                 <div className="pt-4 flex gap-3">
                   <Button
-                    className="flex-1 bg-teal-600 hover:bg-teal-700 font-semibold"
+                    className="flex-1 bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
                     onClick={() => { window.location.href = "/"; }}
                   >
                     Return to Home
@@ -383,9 +390,9 @@ export default function ContactPage() {
               </div>
             ) : (
               // Form Layout
-              <div className="grid grid-cols-1 lg:grid-cols-10 gap-8 lg:gap-10">
+              <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(18rem,3fr)] lg:gap-10">
                 {/* Form Main Area (left 7 cols) */}
-                <div className="lg:col-span-7 bg-white border border-neutral-200/80 p-8 rounded-3xl shadow-premium-sm space-y-8">
+                <div className="space-y-8 rounded-3xl border border-border bg-card p-5 shadow-premium-sm sm:p-8">
                   {/* Honeypot field (hidden from users) */}
                   <div className="hidden" aria-hidden="true">
                     <input
@@ -402,7 +409,7 @@ export default function ContactPage() {
                     {/* Identity Select Cards */}
                     <div className="space-y-3">
                       <Label className="text-base font-bold text-neutral-900">
-                        1. Which best describes you? <span className="text-teal-600">*</span>
+                        1. Which best describes you? <span className="text-primary">*</span>
                       </Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         {SENDER_IDENTITIES.map((identity) => {
@@ -413,13 +420,15 @@ export default function ContactPage() {
                               key={identity.id}
                               type="button"
                               onClick={() => selectSenderType(identity.id as SenderType)}
-                              className={`relative flex items-start text-left p-4 rounded-2xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 w-full h-full ${
+                              aria-label={`${identity.label}: ${identity.desc}`}
+                              aria-pressed={isSelected}
+                              className={`relative flex min-h-24 w-full items-start rounded-2xl border p-4 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
                                 isSelected
-                                  ? "border-2 border-teal-600 bg-teal-50/20 shadow-premium-md"
-                                  : "border-neutral-200 hover:border-teal-500/50 hover:bg-teal-50/10 hover:shadow-premium-sm"
+                                  ? "border-2 border-primary bg-accent/55 shadow-premium"
+                                  : "border-border bg-card hover:border-primary/50 hover:bg-accent/35 hover:shadow-premium-sm"
                               }`}
                             >
-                              <div className={`p-2.5 rounded-xl shrink-0 transition-colors duration-200 ${isSelected ? "bg-teal-600 text-white" : "bg-teal-50/50 text-teal-600"}`}>
+                              <div className={`shrink-0 rounded-xl p-2.5 transition-colors duration-200 ${isSelected ? "bg-primary text-primary-foreground" : "bg-accent text-primary"}`}>
                                 <Icon className="h-5 w-5" />
                               </div>
                               <div className="ml-3 pr-4">
@@ -427,7 +436,7 @@ export default function ContactPage() {
                                 <p className="text-xs text-neutral-500 leading-normal mt-1">{identity.desc}</p>
                               </div>
                               {isSelected && (
-                                <span className="absolute top-3 right-3 h-5 w-5 bg-teal-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-sm animate-scale-in">
+                                <span className="animate-scale-in absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm">
                                   ✓
                                 </span>
                               )}
@@ -442,7 +451,7 @@ export default function ContactPage() {
                         {/* Category Dropdown */}
                         <div className="space-y-1.5">
                           <Label htmlFor="inquiryCategory" className="font-bold text-neutral-800">
-                            2. Inquiry Category <span className="text-teal-600">*</span>
+                            2. Inquiry Category <span className="text-primary">*</span>
                           </Label>
                           <select
                             id="inquiryCategory"
@@ -450,7 +459,7 @@ export default function ContactPage() {
                             value={fields.inquiryCategory}
                             onChange={handleInputChange}
                             required
-                            className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            className="h-11 w-full rounded-xl border border-input bg-background px-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             {CATEGORIES_BY_SENDER[fields.senderType].map((category) => (
                               <option key={category} value={category}>
@@ -462,8 +471,8 @@ export default function ContactPage() {
 
                         {/* Patient Warning Notice */}
                         {fields.senderType === "patient" && (
-                          <div className="p-4 bg-teal-50/40 border border-teal-500/20 text-teal-900 rounded-2xl flex gap-3 text-sm">
-                            <AlertCircle className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
+                          <div className="flex gap-3 rounded-2xl border border-primary/20 bg-accent/50 p-4 text-sm text-accent-foreground">
+                            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                             <p className="leading-normal">
                               <strong>Notice:</strong> Please do not submit medical records, emergency information, Social Security numbers, payment-card details, or highly sensitive health information through this form.
                             </p>
@@ -474,27 +483,27 @@ export default function ContactPage() {
                         {fields.senderType === "clinic" && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 border border-neutral-100 rounded-2xl">
                             <div className="space-y-1.5">
-                              <Label htmlFor="organizationName">Clinic Name <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="organizationName">Clinic Name <span className="text-primary">*</span></Label>
                               <Input id="organizationName" name="organizationName" required value={fields.organizationName} onChange={handleInputChange} placeholder="E.g. Oakridge Mens Health" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="organizationWebsite">Clinic Website <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="organizationWebsite">Clinic Website <span className="text-primary">*</span></Label>
                               <Input id="organizationWebsite" name="organizationWebsite" required value={fields.organizationWebsite} onChange={handleInputChange} placeholder="E.g. www.oakridgemens.com" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="jobTitle">Your Role at Clinic <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="jobTitle">Your Role at Clinic <span className="text-primary">*</span></Label>
                               <Input id="jobTitle" name="jobTitle" required value={fields.jobTitle} onChange={handleInputChange} placeholder="E.g. Owner, Practice Manager" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="phone">Clinic Phone <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="phone">Clinic Phone <span className="text-primary">*</span></Label>
                               <Input id="phone" name="phone" required type="tel" value={fields.phone} onChange={handleInputChange} placeholder="E.g. (555) 019-2834" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="city">City <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="city">City <span className="text-primary">*</span></Label>
                               <Input id="city" name="city" required value={fields.city} onChange={handleInputChange} placeholder="E.g. San Francisco" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="state">State <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="state">State <span className="text-primary">*</span></Label>
                               <Input id="state" name="state" required value={fields.state} onChange={handleInputChange} placeholder="E.g. CA" className="bg-white border-neutral-200" />
                             </div>
                             <div className="sm:col-span-2 space-y-1.5">
@@ -508,15 +517,15 @@ export default function ContactPage() {
                         {fields.senderType === "professional" && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 border border-neutral-100 rounded-2xl">
                             <div className="space-y-1.5">
-                              <Label htmlFor="jobTitle">Current Professional Title <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="jobTitle">Current Professional Title <span className="text-primary">*</span></Label>
                               <Input id="jobTitle" name="jobTitle" required value={fields.jobTitle} onChange={handleInputChange} placeholder="E.g. Endocrinologist, Nurse Practitioner" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="organizationName">Medical Specialty <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="organizationName">Medical Specialty <span className="text-primary">*</span></Label>
                               <Input id="organizationName" name="organizationName" required value={fields.organizationName} onChange={handleInputChange} placeholder="E.g. Urology, TRT Therapy" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="state">State of Licensure <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="state">State of Licensure <span className="text-primary">*</span></Label>
                               <Input id="state" name="state" required value={fields.state} onChange={handleInputChange} placeholder="E.g. CA, NY" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5 flex flex-col justify-end pb-3">
@@ -542,15 +551,15 @@ export default function ContactPage() {
                         {fields.senderType === "employer" && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-neutral-50 p-4 border border-neutral-100 rounded-2xl">
                             <div className="space-y-1.5">
-                              <Label htmlFor="organizationName">Organization Name <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="organizationName">Organization Name <span className="text-primary">*</span></Label>
                               <Input id="organizationName" name="organizationName" required value={fields.organizationName} onChange={handleInputChange} placeholder="E.g. Valley Medical Systems" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="organizationWebsite">Organization Website <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="organizationWebsite">Organization Website <span className="text-primary">*</span></Label>
                               <Input id="organizationWebsite" name="organizationWebsite" required value={fields.organizationWebsite} onChange={handleInputChange} placeholder="E.g. www.valleymedical.com" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="jobTitle">Your Hiring Role <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="jobTitle">Your Hiring Role <span className="text-primary">*</span></Label>
                               <Input id="jobTitle" name="jobTitle" required value={fields.jobTitle} onChange={handleInputChange} placeholder="E.g. HR Director, Recruiting Lead" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5 flex flex-col justify-end pb-3">
@@ -566,7 +575,7 @@ export default function ContactPage() {
                               </div>
                             </div>
                             <div className="sm:col-span-2 space-y-1.5">
-                              <Label htmlFor="relevantUrl">Talent Requirement / Hiring Need <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="relevantUrl">Talent Requirement / Hiring Need <span className="text-primary">*</span></Label>
                               <Input id="relevantUrl" name="relevantUrl" required value={fields.relevantUrl} onChange={handleInputChange} placeholder="E.g. Need 2 Full-time TRT physicians in California" className="bg-white border-neutral-200" />
                             </div>
                           </div>
@@ -578,18 +587,18 @@ export default function ContactPage() {
                           
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <Label htmlFor="firstName">First Name <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="firstName">First Name <span className="text-primary">*</span></Label>
                               <Input id="firstName" name="firstName" required value={fields.firstName} onChange={handleInputChange} placeholder="John" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
-                              <Label htmlFor="lastName">Last Name <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="lastName">Last Name <span className="text-primary">*</span></Label>
                               <Input id="lastName" name="lastName" required value={fields.lastName} onChange={handleInputChange} placeholder="Doe" className="bg-white border-neutral-200" />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <Label htmlFor="email">Email Address <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="email">Email Address <span className="text-primary">*</span></Label>
                               <Input id="email" name="email" required type="email" value={fields.email} onChange={handleInputChange} placeholder="john@domain.com" className="bg-white border-neutral-200" />
                             </div>
                             <div className="space-y-1.5">
@@ -599,13 +608,13 @@ export default function ContactPage() {
                           </div>
 
                           <div className="space-y-1.5">
-                            <Label htmlFor="subject">Subject <span className="text-teal-600">*</span></Label>
+                            <Label htmlFor="subject">Subject <span className="text-primary">*</span></Label>
                             <Input id="subject" name="subject" required value={fields.subject} onChange={handleInputChange} placeholder="What is this inquiry about?" className="bg-white border-neutral-200" />
                           </div>
 
                           <div className="space-y-1.5">
                             <div className="flex justify-between">
-                              <Label htmlFor="message">Message <span className="text-teal-600">*</span></Label>
+                              <Label htmlFor="message">Message <span className="text-primary">*</span></Label>
                               <span className={`text-xs ${charCount > 5000 ? "text-rose-500 font-bold" : "text-muted-foreground"}`}>
                                 {charCount}/5,000 characters
                               </span>
@@ -629,7 +638,7 @@ export default function ContactPage() {
                               name="preferredContactMethod"
                               value={fields.preferredContactMethod}
                               onChange={handleInputChange}
-                              className="w-full h-11 px-3.5 rounded-xl border border-neutral-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+                              className="h-11 w-full rounded-xl border border-input bg-background px-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                               <option value="email">Email</option>
                               <option value="phone">Phone</option>
@@ -647,7 +656,7 @@ export default function ContactPage() {
                               className="mt-1"
                             />
                             <Label htmlFor="consentAccepted" className="text-xs text-neutral-600 leading-normal cursor-pointer">
-                              I acknowledge that the submitted information will be used to respond to my inquiry and handled according to the <a href="/privacy" className="text-teal-600 underline font-semibold hover:text-teal-700">Novalyte Privacy Policy</a>. <span className="text-teal-600">*</span>
+                              I acknowledge that the submitted information will be used to respond to my inquiry and handled according to the <a href="/privacy" className="font-semibold text-primary underline hover:text-primary/80">Novalyte Privacy Policy</a>. <span className="text-primary">*</span>
                             </Label>
                           </div>
                         </div>
@@ -656,7 +665,7 @@ export default function ContactPage() {
                         <Button
                           type="submit"
                           disabled={loading || !consentAccepted}
-                          className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-bold text-base rounded-xl transition shadow-premium-sm flex items-center justify-center gap-2"
+                          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-premium-sm transition hover:bg-primary/90"
                         >
                           {loading ? (
                             <>
@@ -676,27 +685,31 @@ export default function ContactPage() {
                 </div>
 
                 {/* Sidebar (right 3 cols) */}
-                <div className="lg:col-span-3 space-y-6">
+                <aside className="space-y-6">
                   {/* Contact Info Card */}
-                  <div className="bg-white border border-neutral-200/80 p-6 rounded-3xl shadow-premium-sm space-y-6">
+                  <div className="space-y-6 rounded-3xl border border-border bg-card p-6 shadow-premium-sm">
                     <h3 className="text-lg font-bold text-neutral-900">Direct Contact</h3>
                     
-                    <div className="space-y-4 text-sm">
-                      <div className="flex items-start">
-                        <Mail className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
-                        <div className="ml-3">
-                          <p className="font-bold text-neutral-900">Email Us</p>
-                          <a href="mailto:support@novalyte.io" className="text-teal-600 hover:underline">
+                    <div className="space-y-5 text-sm">
+                      <div className="flex items-start gap-3.5">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                          <Mail className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <div className="pt-0.5">
+                          <p className="font-bold text-foreground">Email Us</p>
+                          <a href="mailto:support@novalyte.io" className="font-medium text-primary hover:underline">
                             support@novalyte.io
                           </a>
                         </div>
                       </div>
 
-                      <div className="flex items-start">
-                        <MapPin className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
-                        <div className="ml-3">
-                          <p className="font-bold text-neutral-900">Headquarters</p>
-                          <p className="text-neutral-600 leading-normal">
+                      <div className="flex items-start gap-3.5">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                          <MapPin className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <div className="pt-0.5">
+                          <p className="font-bold text-foreground">Headquarters</p>
+                          <p className="leading-relaxed text-muted-foreground">
                             415 Mission Street<br />
                             San Francisco, CA
                           </p>
@@ -706,9 +719,11 @@ export default function ContactPage() {
                   </div>
 
                   {/* Privacy & Medical Warning Card */}
-                  <div className="bg-white border border-neutral-200/80 p-6 rounded-3xl shadow-premium-sm space-y-4">
-                    <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-                      <ShieldAlert className="h-5 w-5 text-teal-600 shrink-0" />
+                  <div className="space-y-4 rounded-3xl border border-border bg-card p-6 shadow-premium-sm">
+                    <h3 aria-label="Important Disclaimers" className="flex items-center gap-3 text-lg font-bold text-foreground">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                        <ShieldAlert className="h-4.5 w-4.5" aria-hidden="true" />
+                      </span>
                       Important Disclaimers
                     </h3>
                     
@@ -721,14 +736,14 @@ export default function ContactPage() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </aside>
               </div>
             )}
           </div>
         </section>
       </main>
 
-      <Footer />
+      <Footer onNewsletter={subscribeToNewsletter} />
     </div>
   );
 }
