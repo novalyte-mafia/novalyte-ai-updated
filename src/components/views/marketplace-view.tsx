@@ -63,6 +63,7 @@ import {
   List,
   SlidersHorizontal,
   ShieldCheck,
+  ShieldAlert,
   Quote,
   Store,
   Inbox,
