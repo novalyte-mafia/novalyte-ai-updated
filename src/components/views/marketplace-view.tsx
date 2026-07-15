@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
+import { SmartImage } from "@/components/shared/smart-image";
+import { IMAGES } from "@/lib/images";
 import {
   PremiumCard,
   EmptyState,
@@ -63,7 +65,6 @@ import {
   List,
   SlidersHorizontal,
   ShieldCheck,
-  ShieldAlert,
   Quote,
   Store,
   Inbox,
@@ -85,10 +86,32 @@ import {
   Stethoscope,
   Clock,
   X,
-  Boxes
+  Boxes,
+  Eye,
+  ShieldAlert,
+  Sparkles
 } from "lucide-react";
 
 const PAGE_SIZE = 12;
+
+function getListingImage(listing: MarketplaceListingT): string {
+  const slug = listing.slug;
+  const cat = listing.category.toLowerCase();
+  
+  if (slug.includes("scrubs") || slug.includes("lab-coat") || slug.includes("clogs") || slug.includes("gown") || slug.includes("badge")) {
+    return "/images/treatments/preventive-3.jpg"; // Clinical apparel visual
+  }
+  if (cat.includes("lab") || cat.includes("diagnost")) {
+    return "/images/marketplace/lab-1.jpg";
+  }
+  if (cat.includes("inject") || cat.includes("supply") || cat.includes("phlebotomy") || cat.includes("clinical-supplies")) {
+    return "/images/marketplace/inject-1.jpg";
+  }
+  if (cat.includes("recovery") || cat.includes("wellness") || cat.includes("equipment")) {
+    return "/images/marketplace/recovery-1.jpg";
+  }
+  return "/images/marketplace/product-1.jpg";
+}
 
 function CategoryIcon({ category, className }: { category: string; className?: string }) {
   switch (category) {
@@ -168,6 +191,7 @@ export function MarketplaceView({
   const [loading, setLoading] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [quoteListing, setQuoteListing] = useState<MarketplaceListingT | null>(null);
+  const [quickViewListing, setQuickViewListing] = useState<MarketplaceListingT | null>(null);
 
   const uniqueVendors = useMemo(() => {
     return Array.from(new Set(listings.map((l) => l.vendorName))).sort();
@@ -247,11 +271,6 @@ export function MarketplaceView({
     document.getElementById("listings-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function selectCategory(cat: string) {
-    setCategory(cat);
-    scrollToCatalog();
-  }
-
   function handleExploreServices() {
     setProcurementType("quote");
     setCategory("all");
@@ -275,92 +294,83 @@ export function MarketplaceView({
 
   return (
     <>
-      {/* ── 1. Hero ────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-teal-50/50 to-background py-16 sm:py-20">
-        <div className="novalyte-dots novalyte-radial-fade pointer-events-none absolute inset-0 opacity-40" aria-hidden />
-        <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-inset ring-teal-600/10">
-              B2B Commerce Platform
-            </span>
+      {/* ── 1. COMPACT HERO WITH TYPOGRAPHY & IMAGERY ──────────── */}
+      <section className="border-b border-border bg-gradient-to-b from-teal-50/40 to-background">
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-12 lg:px-8 lg:py-16">
+          {/* Left Side: Copy + CTAs */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 px-3 py-1 text-xs font-semibold text-teal-700 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 text-teal-600 animate-pulse" /> B2B Health-Tech Commerce Marketplace
+            </div>
             
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-tight">
-              Everything Healthcare Teams Need <br />
-              <span className="text-teal-700 bg-clip-text">to Operate, Grow, and Deliver Care</span>
+            <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[56px]">
+              Healthcare Products, Technology, and Services <br />
+              <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+                Built for Modern Care Teams
+              </span>
             </h1>
 
-            <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Source and procure clinical office supplies, laboratory panels, diagnostic equipment, telehealth technology, revenue software, credentialing, and clinic staffing. Custom quotes and cart options mapped for outpatient, lab, and wellness clinics.
+            <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Discover healthcare supplies, equipment, technology, software, and operational services from specialized suppliers. Purchase everyday essentials directly or request quotes for larger and more configurable solutions.
             </p>
 
-            <div className="pt-2 text-xs text-amber-700 bg-amber-50/50 border border-amber-200/55 p-3 rounded-2xl max-w-xl mx-auto flex items-start gap-2.5">
-              <ShieldAlert className="h-4.5 w-4.5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-left font-medium leading-relaxed">
-                <strong>Platform Notice:</strong> Novalyte AI coordinates B2B supply room discovery and logistics. We do not sell or list prescription medications or restricted medical products.
+            <div className="mt-5 text-[11px] text-amber-800 bg-amber-50/60 border border-amber-200/50 p-3 rounded-xl max-w-lg flex items-start gap-2">
+              <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-left font-medium leading-normal">
+                <strong>Safety Safeguard:</strong> Novalyte AI coordinates discovery and inquiry routing. We do not sell or list prescription medications or restricted medical products.
               </p>
             </div>
 
-            <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
-              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700 font-bold px-7" onClick={scrollToCatalog}>
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700 font-bold" onClick={scrollToCatalog}>
                 Browse Products
               </Button>
-              <Button size="lg" variant="outline" className="font-bold border-neutral-300 hover:border-teal-300 hover:text-teal-700 px-7" onClick={handleExploreServices}>
+              <Button size="lg" variant="outline" className="font-bold border-neutral-300 hover:border-teal-300 hover:text-teal-700" onClick={handleExploreServices}>
                 Explore Healthcare Services
               </Button>
             </div>
           </div>
 
-        </div>
-      </section>
-
-      {/* ── 2. Category navigation bar (sticky) ───────────────── */}
-      <div className="sticky top-16 z-30 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="novalyte-scroll -mb-px flex items-center gap-1 overflow-x-auto py-2.5">
-            <button
-              onClick={() => selectCategory("all")}
-              className={cn(
-                "shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-bold transition",
-                category === "all"
-                  ? "border-teal-600 bg-teal-600 text-white"
-                  : "border-border bg-card text-muted-foreground hover:border-teal-300 hover:text-teal-700",
-              )}
-            >
-              All categories
-            </button>
-            {MARKETPLACE_CATEGORIES.map((cat) => {
-              const active = category === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => selectCategory(cat)}
-                  className={cn(
-                    "flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition",
-                    active
-                      ? "border-teal-600 bg-teal-600 text-white"
-                      : "border-border bg-card text-muted-foreground hover:border-teal-300 hover:text-teal-700",
-                  )}
-                >
-                  <CategoryIcon category={cat} className="h-3.5 w-3.5" />
-                  {cat}
-                </button>
-              );
-            })}
+          {/* Right Side: Visual Asset Composition */}
+          <div className="relative">
+            <div className="relative aspect-[5/4] overflow-hidden rounded-2xl shadow-premium-lg border border-neutral-200/60">
+              <SmartImage
+                src={IMAGES.pillars.marketplace}
+                alt="Novalyte B2B Healthcare Commerce Platform"
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                imgClassName="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/15 to-transparent" aria-hidden />
+            </div>
+            
+            {/* Floating details badge */}
+            <div className="absolute -bottom-4 -left-4 hidden items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-lg sm:flex">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white">
+                <Store className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs font-semibold text-foreground">Verified Suppliers</p>
+                <p className="text-[10px] text-muted-foreground">Audited catalog &amp; SLA support</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ── 3. Listings section ───────────────────────────────── */}
       <SectionShell id="listings-catalog" className="!pt-10 !pb-16 bg-neutral-50/10">
         <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
           
-          {/* Desktop Filter Panel */}
+          {/* Desktop Filter Panel with Category Dropdown */}
           <aside className="hidden lg:block">
             <div className="sticky top-32">
               <FiltersPanel
                 query={query}
                 setQuery={setQuery}
+                category={category}
+                setCategory={setCategory}
                 procurementType={procurementType}
                 setProcurementType={setProcurementType}
                 vendorName={vendorName}
@@ -399,6 +409,8 @@ export function MarketplaceView({
                     <FiltersPanel
                       query={query}
                       setQuery={setQuery}
+                      category={category}
+                      setCategory={setCategory}
                       procurementType={procurementType}
                       setProcurementType={setProcurementType}
                       vendorName={vendorName}
@@ -516,6 +528,7 @@ export function MarketplaceView({
                     vendors={vendors}
                     view={view}
                     onQuote={() => setQuoteListing(l)}
+                    onQuickView={() => setQuickViewListing(l)}
                   />
                 ))}
               </div>
@@ -630,7 +643,125 @@ export function MarketplaceView({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Quick View Dialog */}
+      <Dialog open={quickViewListing !== null} onOpenChange={(open) => !open && setQuickViewListing(null)}>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+          {quickViewListing && (
+            <QuickViewDetails listing={quickViewListing} onClose={() => setQuickViewListing(null)} />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
+  );
+}
+
+// Quick View Content Component
+function QuickViewDetails({ listing, onClose }: { listing: MarketplaceListingT; onClose: () => void }) {
+  const [quantity, setQuantity] = useState(1);
+  const addItem = useCart((s) => s.addItem);
+  const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
+  const avail = availabilityMeta(listing.availability);
+  const img = getListingImage(listing);
+
+  const handleCartAdd = () => {
+    if (isDirectPurchase) {
+      addItem({
+        id: listing.id,
+        title: listing.title,
+        variant: "Standard",
+        price: parseFloat(listing.priceNote?.replace(/[^0-9.]/g, "") || "0"),
+        imageColor: listing.imageColor,
+        category: listing.category,
+        vendorName: listing.vendorName,
+        priceNote: listing.priceNote || "Custom",
+        quantity: quantity,
+      });
+      toast.success(`"${listing.title}" added to cart.`);
+      onClose();
+    }
+  };
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 p-4">
+      {/* Product Image Column */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 flex items-center justify-center">
+        <SmartImage
+          src={img}
+          alt={listing.title}
+          fill
+          imgClassName="object-cover"
+        />
+      </div>
+
+      {/* Info Column */}
+      <div className="flex flex-col justify-between space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <StatusPill tone="muted">{listing.category}</StatusPill>
+            <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+          </div>
+          <h2 className="text-xl font-bold text-foreground leading-tight">{listing.title}</h2>
+          <p className="text-xs text-teal-700 font-semibold">{listing.vendorName}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed pt-1">{listing.description}</p>
+        </div>
+
+        <div className="space-y-4 pt-3 border-t border-neutral-100">
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground">Price Note</span>
+            <span className="text-lg font-extrabold text-foreground">{listing.priceNote || "Quote Required"}</span>
+          </div>
+
+          <div className="flex gap-2">
+            {isDirectPurchase ? (
+              <>
+                <div className="flex items-center border border-neutral-200 rounded-xl overflow-hidden h-9 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="px-3 hover:bg-neutral-50 text-neutral-500 font-bold transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center text-xs font-semibold text-foreground">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="px-3 hover:bg-neutral-50 text-neutral-500 font-bold transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+                <Button className="flex-1 bg-teal-600 text-white font-bold h-9 text-xs rounded-xl" onClick={handleCartAdd}>
+                  Add to Cart
+                </Button>
+              </>
+            ) : (
+              <Button className="flex-1 bg-teal-600 text-white font-bold h-9 text-xs rounded-xl" onClick={() => {
+                onClose();
+                navigate("product-detail", undefined, { id: listing.id });
+              }}>
+                Request Quote &amp; Details
+              </Button>
+            )}
+          </div>
+
+          <div className="pt-2 flex justify-center">
+            <button
+              onClick={() => {
+                onClose();
+                navigate("product-detail", undefined, { id: listing.id });
+              }}
+              className="text-xs font-bold text-teal-700 hover:text-teal-800 transition flex items-center gap-1"
+            >
+              View Full Product Details <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -815,6 +946,8 @@ Additional Notes: ${form.notes}
 function FiltersPanel({
   query,
   setQuery,
+  category,
+  setCategory,
   procurementType,
   setProcurementType,
   vendorName,
@@ -828,6 +961,8 @@ function FiltersPanel({
 }: {
   query: string;
   setQuery: (v: string) => void;
+  category: string;
+  setCategory: (v: string) => void;
   procurementType: string;
   setProcurementType: (v: string) => void;
   vendorName: string;
@@ -861,6 +996,23 @@ function FiltersPanel({
             className="pl-9 h-9 text-xs border-neutral-200 bg-white"
           />
         </div>
+      </div>
+
+      {/* Category selection inside the filters */}
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-muted-foreground">Category</Label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="flex h-9 w-full rounded-md border border-neutral-200 bg-background px-3 py-1.5 text-xs focus-visible:outline-none"
+        >
+          <option value="all">All categories</option>
+          {MARKETPLACE_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Procurement Type */}
@@ -921,17 +1073,19 @@ function FiltersPanel({
   );
 }
 
-// Item Card Layout
+// Item Card Layout - Fully Clickable Card with Quick View option
 function ListingCard({
   listing,
   vendors,
   view,
   onQuote,
+  onQuickView,
 }: {
   listing: MarketplaceListingT;
   vendors: VendorT[];
   view: string;
   onQuote: () => void;
+  onQuickView: () => void;
 }) {
   const savedProducts = useSaved((s) => s.products);
   const toggleSaved = useSaved((s) => s.toggle);
@@ -944,6 +1098,7 @@ function ListingCard({
 
   const c = colorClasses(listing.imageColor);
   const avail = availabilityMeta(listing.availability);
+  const productImg = getListingImage(listing);
 
   // Derive direct purchase capability
   const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
@@ -967,35 +1122,56 @@ function ListingCard({
     }
   };
 
+  const handleQuickViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onQuickView();
+  };
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleSaved("product", listing.id);
+  };
+
+  const handleCompareClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleCompare("product", listing.id);
+  };
+
   const vendorId = useMemo(() => {
     return vendors.find((v) => v.name === listing.vendorName)?.id;
   }, [vendors, listing.vendorName]);
 
+  const handleCardClick = () => {
+    navigate("product-detail", undefined, { id: listing.id });
+  };
+
   if (view === "list") {
     return (
-      <PremiumCard className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white hover:shadow-premium-md transition-shadow">
-        <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-xl", c.bg)}>
-          <CategoryIcon category={listing.category} className="h-7 w-7 text-white/90" />
+      <PremiumCard 
+        onClick={handleCardClick}
+        className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white hover:shadow-premium-md transition-shadow cursor-pointer"
+      >
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-neutral-100 bg-neutral-50 flex items-center justify-center">
+          <SmartImage
+            src={productImg}
+            alt={listing.title}
+            fill
+            imgClassName="object-cover"
+          />
         </div>
 
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate("product-detail", undefined, { id: listing.id })}
-              className="text-left font-bold text-base text-foreground hover:text-teal-700 transition line-clamp-1"
-            >
+            <h3 className="font-bold text-base text-foreground hover:text-teal-700 transition line-clamp-1">
               {listing.title}
-            </button>
+            </h3>
             <VerificationBadge verified={listing.verified} />
           </div>
           <p className="text-xs text-muted-foreground">
             Routed by{" "}
-            <button 
-              onClick={() => vendorId && navigate("vendor-profile", undefined, { id: vendorId })}
-              className="font-semibold text-foreground hover:text-teal-700 hover:underline"
-            >
+            <span className="font-semibold text-foreground">
               {listing.vendorName}
-            </button>
+            </span>
           </p>
           <div className="flex items-center gap-2 mt-1">
             <StatusPill tone="muted">{listing.category}</StatusPill>
@@ -1010,6 +1186,15 @@ function ListingCard({
           </div>
 
           <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 border border-neutral-200 text-neutral-500 hover:text-teal-700 hover:bg-teal-50"
+              onClick={handleQuickViewClick}
+              title="Quick View"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             <Button size="sm" className="font-bold text-xs h-8 bg-teal-600 text-white" onClick={handleAction}>
               {isDirectPurchase ? "Buy Now" : "Request Quote"}
             </Button>
@@ -1017,7 +1202,7 @@ function ListingCard({
               variant="outline"
               size="icon"
               className="h-8 w-8 border-neutral-200"
-              onClick={() => toggleCompare("product", listing.id)}
+              onClick={handleCompareClick}
             >
               <Boxes className={cn("h-3.5 w-3.5", isComparing ? "text-teal-600" : "text-neutral-500")} />
             </Button>
@@ -1028,23 +1213,29 @@ function ListingCard({
   }
 
   return (
-    <PremiumCard hover className="flex flex-col bg-white">
-      <div className={cn("relative h-24 w-full flex items-center justify-center", c.bg)}>
-        <CategoryIcon category={listing.category} className="h-8 w-8 text-white/90" />
-        <div className="absolute right-2 top-2">
-          <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
+    <PremiumCard 
+      onClick={handleCardClick}
+      hover 
+      className="flex flex-col bg-white cursor-pointer hover:shadow-premium-md transition-shadow duration-200"
+    >
+      <div className="relative h-32 w-full overflow-hidden border-b border-neutral-100 bg-neutral-50 flex items-center justify-center">
+        <SmartImage
+          src={productImg}
+          alt={listing.title}
+          fill
+          imgClassName="object-cover"
+        />
+        <div className="absolute right-2 top-2 z-10">
+          <SaveButton saved={isSaved} onToggle={handleSaveClick} size="sm" />
         </div>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        <button
-          onClick={() => navigate("product-detail", undefined, { id: listing.id })}
-          className="text-left text-sm font-bold leading-snug text-foreground hover:text-teal-700 transition-colors line-clamp-1"
-        >
+        <h3 className="font-bold text-sm leading-snug text-foreground hover:text-teal-700 transition-colors line-clamp-1">
           {listing.title}
-        </button>
+        </h3>
         
-        <div className="mt-2.5 flex flex-wrap gap-1">
+        <div className="mt-2 flex flex-wrap gap-1">
           <StatusPill tone="muted">{listing.category}</StatusPill>
           <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
         </div>
@@ -1060,6 +1251,15 @@ function ListingCard({
           </div>
 
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 border border-neutral-200 text-neutral-500 hover:text-teal-700 hover:bg-teal-50"
+              onClick={handleQuickViewClick}
+              title="Quick View"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
             <Button size="sm" className="font-bold text-[10px] h-7 px-2.5 bg-teal-600 text-white" onClick={handleAction}>
               {isDirectPurchase ? "Buy Now" : "Request Quote"}
             </Button>
@@ -1067,7 +1267,7 @@ function ListingCard({
               variant="outline"
               size="icon"
               className="h-7 w-7 border-neutral-200"
-              onClick={() => toggleCompare("product", listing.id)}
+              onClick={handleCompareClick}
             >
               <Boxes className={cn("h-3.5 w-3.5", isComparing ? "text-teal-600" : "text-neutral-500")} />
             </Button>
