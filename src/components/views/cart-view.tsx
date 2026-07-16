@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
 import { useSaved, navigate } from "@/lib/nav";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PremiumCard } from "@/components/shared/enterprise";
@@ -322,7 +323,14 @@ export function CartView() {
 
               <Button 
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 flex items-center justify-center gap-2 rounded-xl"
-                onClick={() => navigate("checkout")}
+                onClick={() => {
+                  posthog.capture("checkout_started", {
+                    item_count: items.length,
+                    subtotal: subtotal,
+                    has_promo: !!appliedPromo,
+                  });
+                  navigate("checkout");
+                }}
               >
                 Proceed to Checkout <ArrowRight className="h-4 w-4" />
               </Button>
