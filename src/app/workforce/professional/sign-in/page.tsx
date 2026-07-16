@@ -10,6 +10,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { toast } from "sonner";
 import { Lock, Mail, Loader2, ArrowRight } from "lucide-react";
+import posthog from "posthog-js";
 
 export default function ProfessionalSignIn() {
   const supabaseClient = getSupabaseClient();
@@ -42,6 +43,11 @@ export default function ProfessionalSignIn() {
       if (error) {
         toast.error(error.message || "Failed to sign in. Please verify your credentials.");
       } else {
+        const { data: sessionData } = await supabaseClient.auth.getSession();
+        if (sessionData?.session?.user?.id) {
+          posthog.identify(sessionData.session.user.id);
+        }
+        posthog.capture("professional_signed_in");
         toast.success("Welcome back! Loading your profile dashboard...");
         window.location.href = "/workforce/professional/dashboard";
       }

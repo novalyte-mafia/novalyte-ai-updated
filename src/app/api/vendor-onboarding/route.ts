@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const schema = z.object({
   companyName: z.string().min(2).max(160),
@@ -20,6 +21,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input", issues: parsed.error.flatten() }, { status: 400 });
     }
     const record = await db.vendorOnboarding.create({ data: parsed.data });
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: record.id,
+      event: "vendor_onboarding_submitted",
+      properties: {
+        category: parsed.data.category ?? null,
+        product_types: parsed.data.productTypes ?? null,
+      },
+    });
+    await posthog.flush();
     return NextResponse.json({ ok: true, id: record.id });
   } catch (e) {
     console.error("vendor onboarding error", e);

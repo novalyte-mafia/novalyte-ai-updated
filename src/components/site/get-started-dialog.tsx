@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { navigate, type ViewKey } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Stethoscope, Briefcase, Users, Store, ArrowRight, CheckCircle2 } from "lucide-react";
+import posthog from "posthog-js";
 
 type Role = "patient" | "clinic" | "professional" | "vendor";
 
@@ -29,6 +30,7 @@ export function GetStartedDialog({ open, onOpenChange }: { open: boolean; onOpen
   function selectRole(r: Role) {
     setRole(r);
     setDone(false);
+    posthog.capture("get_started_role_selected", { role: r });
   }
 
   async function submit(e: React.FormEvent) {
@@ -61,6 +63,7 @@ export function GetStartedDialog({ open, onOpenChange }: { open: boolean; onOpen
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Request failed");
+      posthog.capture("get_started_form_submitted", { role });
       setDone(true);
       toast.success("Thanks — our team will reach out shortly.");
     } catch {

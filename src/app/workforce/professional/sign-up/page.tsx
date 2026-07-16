@@ -10,6 +10,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { toast } from "sonner";
 import { Lock, Mail, Loader2, ArrowRight } from "lucide-react";
+import posthog from "posthog-js";
 
 export default function ProfessionalSignUp() {
   const supabaseClient = getSupabaseClient();
@@ -62,9 +63,12 @@ export default function ProfessionalSignUp() {
       } else {
         // Check if confirmation is required (Supabase settings)
         if (data.session) {
+          posthog.identify(data.session.user.id);
+          posthog.capture("professional_signed_up", { requires_email_verification: false });
           toast.success("Account created successfully! Welcome to Novalyte.");
           window.location.href = "//?view=professional-onboarding";
         } else {
+          posthog.capture("professional_signed_up", { requires_email_verification: true });
           toast.success("Registration successful! Please check your email for verification instructions.");
           setEmail("");
           setPassword("");

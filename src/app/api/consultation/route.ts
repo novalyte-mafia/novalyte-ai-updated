@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const schema = z.object({
   clinicId: z.string().optional().nullable(),
@@ -32,6 +33,17 @@ export async function POST(req: Request) {
         notes: parsed.data.notes ?? null,
       },
     });
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: record.id,
+      event: "consultation_requested",
+      properties: {
+        clinic_id: parsed.data.clinicId ?? null,
+        treatment_interest: parsed.data.treatmentInterest ?? null,
+        has_preferred_time: !!parsed.data.preferredTime,
+      },
+    });
+    await posthog.flush();
     return NextResponse.json({ ok: true, id: record.id });
   } catch (e) {
     console.error("consultation error", e);
