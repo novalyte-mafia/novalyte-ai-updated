@@ -188,6 +188,25 @@ function BlockRenderer({ block }: { block: ArticleBlock }) {
       return <p className="my-4 text-[15px] leading-7 text-foreground/90">{block.text}</p>;
     case "list":
       return <ListBlock items={block.items} ordered={block.ordered} />;
+    case "image":
+      return (
+        <figure className="my-8 overflow-hidden rounded-2xl border border-border bg-card shadow-premium-sm">
+          <div className={cn("relative w-full", block.aspect === "standard" ? "aspect-[4/3]" : "aspect-[16/9]")}>
+            <SmartImage
+              src={block.src}
+              alt={block.alt}
+              fill
+              sizes="(max-width: 1024px) 100vw, 768px"
+              imgClassName="object-cover"
+            />
+          </div>
+          {block.caption && (
+            <figcaption className="border-t border-border bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+              {block.caption}
+            </figcaption>
+          )}
+        </figure>
+      );
     case "callout":
       return <CalloutBlock tone={block.tone} text={block.text} />;
     case "table":
@@ -661,7 +680,8 @@ export function ArticleView({
               />
             </div>
             <figcaption className="border-t border-border bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground/80">Editorial image.</span> {article.heroImageAlt} Development imagery — replace with licensed photography in production.
+              <span className="font-medium text-foreground/80">Editorial image.</span>{" "}
+              {article.heroImageCaption ?? `${article.heroImageAlt} Development imagery — replace with licensed photography in production.`}
             </figcaption>
           </figure>
         </div>
