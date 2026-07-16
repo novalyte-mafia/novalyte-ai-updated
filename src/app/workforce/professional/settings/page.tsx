@@ -11,6 +11,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { toast } from "sonner";
 import { Lock, Mail, Loader2, ArrowLeft, ShieldCheck, LogOut, Check } from "lucide-react";
+import posthog from "posthog-js";
 
 export default function ProfessionalSettings() {
   const supabaseClient = getSupabaseClient();
@@ -120,6 +121,8 @@ export default function ProfessionalSettings() {
 
   async function handleSignOut() {
     try {
+      posthog.capture("professional_signed_out");
+      posthog.reset();
       await supabaseClient.auth.signOut();
       toast.success("Signed out successfully.");
       window.location.href = "/?view=workforce";

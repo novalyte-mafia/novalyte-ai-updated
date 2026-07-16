@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
 import { navigate } from "@/lib/nav";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -125,7 +126,15 @@ export function CheckoutView() {
   };
 
   const handlePlaceOrder = () => {
-    // Place simulated order
+    posthog.capture("marketplace_order_placed", {
+      order_number: orderNumber,
+      item_count: items.length,
+      subtotal: subtotal,
+      total: finalTotal,
+      shipping_method: shippingMethod,
+      payment_method: paymentMethod,
+      org_type: contact.orgType,
+    });
     toast.success("Order placed successfully!", {
       description: `Order number: ${orderNumber}`,
     });

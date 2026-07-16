@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 // Match calculation weights
 const WEIGHTS = {
@@ -212,6 +213,22 @@ export async function POST(req: Request) {
         }
 
         matchesCreated.push(savedMatch);
+
+        if (level === "strong" || level === "exceptional") {
+          const posthog = getPostHogClient();
+          posthog.capture({
+            distinctId: profile.id,
+            event: "workforce_match_generated",
+            properties: {
+              job_id: job.id,
+              profile_id: profile.id,
+              match_score: score,
+              match_level: level,
+              matched_criteria: matched.join(", "),
+            },
+          });
+          await posthog.flush();
+        }
 
         // Notify Slack & Resend Email for High Matches
         if (level === "strong" || level === "exceptional") {

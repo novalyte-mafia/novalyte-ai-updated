@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,6 +18,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         profileCompleteness: 85,
       },
     });
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: id,
+      event: "clinic_profile_claimed",
+      properties: {
+        clinic_id: id,
+        dm_email_provided: !!body.dmEmail,
+      },
+    });
+    await posthog.flush();
 
     return NextResponse.json({ ok: true, clinic: updated });
   } catch (e) {
