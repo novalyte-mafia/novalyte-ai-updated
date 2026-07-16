@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import {
   Users, MapPin, Video, Phone, Mail, Globe, Clock, ShieldCheck,
   Stethoscope, CheckCircle2, Star, ArrowRight, Building2, Calendar,
-  Award, BookOpen, GraduationCap, FileText, ChevronRight, Check,
+  Award, BookOpen, GraduationCap, FileText, ChevronRight, Check, AlertCircle,
 } from "lucide-react";
 
 export function ProviderProfileView({

@@ -2,6 +2,10 @@
 
 import posthog from "posthog-js";
 
+declare global {
+  interface Window { dataLayer: unknown[]; }
+}
+
 const CONSENT_KEY = "novalyte-cookie-consent";
 let posthogInitialized = false;
 
@@ -19,6 +23,7 @@ export function ensurePostHogInitialized(): boolean {
     capture_exceptions: true,
     capture_pageview: "history_change",
     autocapture: true,
+    session_recording: { maskAllInputs: true },
     persistence: "localStorage+cookie",
     debug: process.env.NODE_ENV === "development",
   });
@@ -43,7 +48,10 @@ export function captureAnalyticsEvent(
   event: string,
   properties: Record<string, string | number | boolean | null> = {}
 ): void {
-  if (!hasAnalyticsConsent() || !ensurePostHogInitialized()) return;
+  if (!hasAnalyticsConsent() || typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event, ...properties });
+  if (!ensurePostHogInitialized()) return;
   if (posthog.has_opted_out_capturing()) {
     posthog.set_config({ persistence: "localStorage+cookie" });
     posthog.opt_in_capturing();
@@ -56,5 +64,5 @@ export function identifyAnalyticsUser(
   properties: { email?: string; role?: string }
 ): void {
   if (!hasAnalyticsConsent() || !ensurePostHogInitialized()) return;
-  posthog.identify(userId, properties);
+  posthog.identify(userId, { role: properties.role });
 }

@@ -5,6 +5,7 @@ import { useCart } from "@/lib/cart";
 import { useSaved, navigate } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PremiumCard } from "@/components/shared/enterprise";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { 
