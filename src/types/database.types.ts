@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       Article: {
@@ -855,30 +880,158 @@ export type Database = {
           },
         ]
       }
-      ContactSubmission: {
+      contact_notification_deliveries: {
         Row: {
-          createdAt: string
-          email: string
+          attempt_count: number
+          channel: string
+          contact_submission_id: string
+          created_at: string
+          destination: string | null
           id: string
-          message: string
-          name: string
-          role: string
+          last_error: string | null
+          provider: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
         }
         Insert: {
-          createdAt?: string
-          email: string
+          attempt_count?: number
+          channel: string
+          contact_submission_id: string
+          created_at?: string
+          destination?: string | null
           id?: string
-          message: string
-          name: string
-          role: string
+          last_error?: string | null
+          provider?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status: string
+          updated_at?: string
         }
         Update: {
-          createdAt?: string
-          email?: string
+          attempt_count?: number
+          channel?: string
+          contact_submission_id?: string
+          created_at?: string
+          destination?: string | null
           id?: string
+          last_error?: string | null
+          provider?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_notification_deliveries_contact_submission_id_fkey"
+            columns: ["contact_submission_id"]
+            isOneToOne: false
+            referencedRelation: "contact_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_submissions: {
+        Row: {
+          city: string | null
+          consent_version: string
+          consented_at: string
+          created_at: string
+          email: string
+          first_name: string
+          has_existing_account: boolean | null
+          id: string
+          inquiry_category: string
+          ip_hash: string | null
+          job_title: string | null
+          last_name: string
+          message: string
+          organization_name: string | null
+          organization_website: string | null
+          phone: string | null
+          preferred_contact_method: string | null
+          priority: string
+          reference_number: string
+          relevant_url: string | null
+          routing_team: string
+          sender_type: string
+          source_page: string | null
+          state: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_agent_summary: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          city?: string | null
+          consent_version: string
+          consented_at: string
+          created_at?: string
+          email: string
+          first_name: string
+          has_existing_account?: boolean | null
+          id?: string
+          inquiry_category: string
+          ip_hash?: string | null
+          job_title?: string | null
+          last_name: string
+          message: string
+          organization_name?: string | null
+          organization_website?: string | null
+          phone?: string | null
+          preferred_contact_method?: string | null
+          priority?: string
+          reference_number: string
+          relevant_url?: string | null
+          routing_team: string
+          sender_type: string
+          source_page?: string | null
+          state?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_agent_summary?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          city?: string | null
+          consent_version?: string
+          consented_at?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          has_existing_account?: boolean | null
+          id?: string
+          inquiry_category?: string
+          ip_hash?: string | null
+          job_title?: string | null
+          last_name?: string
           message?: string
-          name?: string
-          role?: string
+          organization_name?: string | null
+          organization_website?: string | null
+          phone?: string | null
+          preferred_contact_method?: string | null
+          priority?: string
+          reference_number?: string
+          relevant_url?: string | null
+          routing_team?: string
+          sender_type?: string
+          source_page?: string | null
+          state?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_agent_summary?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -1461,6 +1614,77 @@ export type Database = {
           },
         ]
       }
+      professional_notification_deliveries: {
+        Row: {
+          attempts: number
+          created_at: string
+          delivery_status: string
+          event_key: string
+          id: string
+          last_error: string | null
+          profile_id: string | null
+          sent_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          delivery_status?: string
+          event_key: string
+          id?: string
+          last_error?: string | null
+          profile_id?: string | null
+          sent_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          delivery_status?: string
+          event_key?: string
+          id?: string
+          last_error?: string | null
+          profile_id?: string | null
+          sent_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_notification_deliveries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_professional_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_onboarding_drafts: {
+        Row: {
+          created_at: string
+          current_step: number
+          data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       professional_preferences: {
         Row: {
           createdAt: string
@@ -1620,6 +1844,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          createdAt: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string
+          updatedAt: string
+        }
+        Insert: {
+          createdAt?: string
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: string
+          updatedAt?: string
+        }
+        Update: {
+          createdAt?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string
+          updatedAt?: string
+        }
+        Relationships: []
+      }
       QuoteRequest: {
         Row: {
           createdAt: string
@@ -1660,6 +1914,42 @@ export type Database = {
             columns: ["listingId"]
             isOneToOne: false
             referencedRelation: "MarketplaceListing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_jobs: {
+        Row: {
+          createdAt: string
+          id: string
+          jobId: string
+          profileId: string
+        }
+        Insert: {
+          createdAt?: string
+          id?: string
+          jobId: string
+          profileId: string
+        }
+        Update: {
+          createdAt?: string
+          id?: string
+          jobId?: string
+          profileId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_jobs_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "JobPosting"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_jobs_profileId_fkey"
+            columns: ["profileId"]
+            isOneToOne: false
+            referencedRelation: "workforce_professional_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1816,6 +2106,7 @@ export type Database = {
           state_or_location: string | null
           telehealth_availability: boolean | null
           updated_at: string
+          user_id: string | null
           visibility_settings: Json | null
           work_arrangement: string | null
         }
@@ -1841,6 +2132,7 @@ export type Database = {
           state_or_location?: string | null
           telehealth_availability?: boolean | null
           updated_at?: string
+          user_id?: string | null
           visibility_settings?: Json | null
           work_arrangement?: string | null
         }
@@ -1866,6 +2158,7 @@ export type Database = {
           state_or_location?: string | null
           telehealth_availability?: boolean | null
           updated_at?: string
+          user_id?: string | null
           visibility_settings?: Json | null
           work_arrangement?: string | null
         }
@@ -1882,14 +2175,18 @@ export type Database = {
           experience: number | null
           id: string
           name: string
+          onboarding_completed_at: string | null
           phone: string | null
           pronouns: string | null
           relocate: boolean | null
+          review_status: string
           specialty: string | null
           state: string
           status: string | null
           title: string
           updatedAt: string
+          userId: string | null
+          visibility_status: string
         }
         Insert: {
           availability?: string | null
@@ -1901,14 +2198,18 @@ export type Database = {
           experience?: number | null
           id?: string
           name: string
+          onboarding_completed_at?: string | null
           phone?: string | null
           pronouns?: string | null
           relocate?: boolean | null
+          review_status?: string
           specialty?: string | null
           state: string
           status?: string | null
           title: string
           updatedAt?: string
+          userId?: string | null
+          visibility_status?: string
         }
         Update: {
           availability?: string | null
@@ -1920,14 +2221,18 @@ export type Database = {
           experience?: number | null
           id?: string
           name?: string
+          onboarding_completed_at?: string | null
           phone?: string | null
           pronouns?: string | null
           relocate?: boolean | null
+          review_status?: string
           specialty?: string | null
           state?: string
           status?: string | null
           title?: string
           updatedAt?: string
+          userId?: string | null
+          visibility_status?: string
         }
         Relationships: []
       }
@@ -1936,7 +2241,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_professional_notification: {
+        Args: { p_event_key: string; p_profile_id: string; p_user_id: string }
+        Returns: {
+          attempts: number
+          id: string
+        }[]
+      }
+      is_profile_owner: { Args: { p_profile_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -2065,6 +2377,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

@@ -265,7 +265,7 @@ function PrivacyContent() {
       <UL>
         <LI><strong>Strictly Necessary Cookies</strong> — required for basic site functionality, security, session state, and system operations. These cannot be disabled.</LI>
         <LI><strong>Functional Cookies</strong> — remember your selections, theme settings, or helper choices to provide a more personalized experience.</LI>
-        <LI><strong>Analytics Cookies</strong> — help us analyze traffic sources, page load performance, and user behavior to optimize our platform. No third-party tracking or advertising providers are used.</LI>
+        <LI><strong>Analytics Cookies</strong> — with your consent, PostHog, Google Analytics, and Vercel Analytics help us understand traffic sources, page performance, and product usage. These services are not loaded for analytics until you enable analytics cookies.</LI>
         <LI><strong>Marketing Cookies</strong> — monitor the performance of marketing campaigns. We do not sell personal data to third parties or run cross-site tracking ads.</LI>
       </UL>
       <P>
@@ -274,8 +274,8 @@ function PrivacyContent() {
 
       <H2 id="contact">11. Contact</H2>
       <P>
-        For privacy questions or requests, please contact us through the contact form on the About
-        page. We will respond consistent with applicable law.
+        For privacy questions or requests, please contact us through the dedicated Contact page. We
+        will respond consistent with applicable law.
       </P>
     </>
   );
@@ -540,7 +540,7 @@ function AccessibilityContent() {
       <H2 id="feedback">4. Feedback and Requests</H2>
       <P>
         If you encounter an accessibility barrier or have a suggestion, please contact us through
-        the contact form on the About page. Include a description of the issue, the page or feature
+        the Contact page. Include a description of the issue, the page or feature
         involved, and the assistive technology you are using. We aim to acknowledge accessibility
         feedback promptly and to work toward reasonable resolutions.
       </P>
@@ -549,7 +549,7 @@ function AccessibilityContent() {
       <P>
         Where reasonable, we will provide alternative means of access to information or features
         for users who experience barriers. Requests for accommodation can be submitted through the
-        contact form on the About page.
+        Contact page.
       </P>
 
       <H2 id="third-party">6. Third-Party Content</H2>
@@ -650,7 +650,7 @@ function CookiesContent() {
 
       <H2 id="contact">7. Contact</H2>
       <P>
-        For questions about cookies, please contact us through the contact form on the About page.
+        For questions about cookies, please contact us through the dedicated Contact page.
       </P>
     </>
   );

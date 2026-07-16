@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { ARTICLES } from "@/lib/article-content";
 
-const SITE_URL = "https://novalyte.ai";
+const SITE_URL = "https://novalyte.io";
 
 /**
  * Next.js sitemap.
@@ -41,8 +41,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/#marketplace`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE_URL}/#workforce`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE_URL}/#patients`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE_URL}/#clinics`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE_URL}/#about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/clinics`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
   ];
 
   // Journal article routes

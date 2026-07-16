@@ -10,7 +10,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { toast } from "sonner";
 import { Lock, Mail, Loader2, ArrowRight } from "lucide-react";
-import posthog from "posthog-js";
+import { captureAnalyticsEvent, identifyAnalyticsUser } from "@/lib/analytics-client";
 
 export default function ProfessionalSignUp() {
   const supabaseClient = getSupabaseClient();
@@ -19,12 +19,12 @@ export default function ProfessionalSignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If already logged in, redirect to dashboard
+  // Returning users always pass through the centralized status gateway.
   useEffect(() => {
     async function checkSession() {
       const { data } = await supabaseClient.auth.getSession();
       if (data?.session) {
-        window.location.href = "/workforce/professional/dashboard";
+        window.location.replace("/workforce/professional");
       }
     }
     checkSession();
@@ -39,8 +39,8 @@ export default function ProfessionalSignUp() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      toast.error("Password must be at least 8 characters and include a letter and a number.");
       return;
     }
 
@@ -61,18 +61,20 @@ export default function ProfessionalSignUp() {
       if (error) {
         toast.error(error.message || "Failed to create account. Please try again.");
       } else {
+        if (data.user) {
+          identifyAnalyticsUser(data.user.id, { email: data.user.email, role: "professional" });
+          captureAnalyticsEvent("professional_account_created", {
+            confirmation_required: !data.session,
+          });
+        }
         // Check if confirmation is required (Supabase settings)
         if (data.session) {
-          posthog.identify(data.session.user.id);
-          posthog.capture("professional_signed_up", { requires_email_verification: false });
-          toast.success("Account created successfully! Welcome to Novalyte.");
-          window.location.href = "//?view=professional-onboarding";
+          toast.success("Account created successfully.");
+          window.location.replace("/workforce/professional");
         } else {
-          posthog.capture("professional_signed_up", { requires_email_verification: true });
-          toast.success("Registration successful! Please check your email for verification instructions.");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
+          toast.success("Check your email to confirm your Novalyte account.");
+          window.localStorage.setItem("novalyte-professional-verification-email", email.trim().toLowerCase());
+          window.location.assign(`/workforce/professional/verification-pending`);
         }
       }
     } catch (err) {
@@ -128,7 +130,7 @@ export default function ProfessionalSignUp() {
                   name="password"
                   type="password"
                   required
-                  placeholder="•••••••• (Min. 6 characters)"
+                  placeholder="At least 8 characters, including a letter and number"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 bg-white border-neutral-200"

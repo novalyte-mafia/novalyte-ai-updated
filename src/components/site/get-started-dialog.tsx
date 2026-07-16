@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { navigate, type ViewKey } from "@/lib/nav";
 import { cn } from "@/lib/utils";
+import { goToProfessionalAccess } from "@/lib/professional-client";
+import { captureAnalyticsEvent } from "@/lib/analytics-client";
 import { Stethoscope, Briefcase, Users, Store, ArrowRight, CheckCircle2 } from "lucide-react";
-import posthog from "posthog-js";
 
 type Role = "patient" | "clinic" | "professional" | "vendor";
 
@@ -28,29 +29,35 @@ export function GetStartedDialog({ open, onOpenChange }: { open: boolean; onOpen
   const [form, setForm] = useState({ name: "", email: "", company: "", message: "" });
 
   function selectRole(r: Role) {
+    if (r === "professional") {
+      onOpenChange(false);
+      goToProfessionalAccess("get_started_dialog");
+      return;
+    }
     setRole(r);
     setDone(false);
-    posthog.capture("get_started_role_selected", { role: r });
+    captureAnalyticsEvent("get_started_role_selected", { role: r });
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!role) return;
+    if (role === "professional") {
+      onOpenChange(false);
+      goToProfessionalAccess("get_started_dialog_form");
+      return;
+    }
     setSubmitting(true);
     try {
       const endpoint =
         role === "clinic"
           ? "/api/clinic-onboarding"
-          : role === "professional"
-          ? "/api/professional-onboarding"
           : role === "vendor"
           ? "/api/vendor-onboarding"
           : "/api/contact";
       let payload: Record<string, string>;
       if (role === "clinic") {
         payload = { clinicName: form.company, contactName: form.name, email: form.email, goals: form.message };
-      } else if (role === "professional") {
-        payload = { name: form.name, email: form.email, title: form.company, preferences: form.message };
       } else if (role === "vendor") {
         payload = { companyName: form.company, contactName: form.name, email: form.email, notes: form.message };
       } else {
@@ -63,7 +70,7 @@ export function GetStartedDialog({ open, onOpenChange }: { open: boolean; onOpen
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Request failed");
-      posthog.capture("get_started_form_submitted", { role });
+      captureAnalyticsEvent("get_started_form_submitted", { role });
       setDone(true);
       toast.success("Thanks — our team will reach out shortly.");
     } catch {

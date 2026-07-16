@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const schema = z.object({
   treatmentType: z.string().max(160).optional().nullable(),
@@ -72,8 +72,7 @@ export async function POST(req: Request) {
         sourcePage: d.sourcePage ?? null,
       },
     });
-    const posthog = getPostHogClient();
-    posthog.capture({
+    await captureServerEvent({
       distinctId: record.id,
       event: "assessment_submitted",
       properties: {
@@ -85,7 +84,6 @@ export async function POST(req: Request) {
         source_page: d.sourcePage ?? null,
       },
     });
-    await posthog.flush();
     return NextResponse.json({ ok: true, id: record.id });
   } catch (e) {
     console.error("assessment error", e);

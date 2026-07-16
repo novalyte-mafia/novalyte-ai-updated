@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { AnalyticsManager } from "@/components/site/analytics-manager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://novalyte.ai"),
+  metadataBase: new URL("https://novalyte.io"),
   title: "Novalyte AI — The Operating System for Men's Health",
   description:
     "Novalyte AI connects patient demand, verified clinics, specialized healthcare professionals, equipment suppliers, and operational services through one intelligent healthcare ecosystem.",
@@ -59,6 +60,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         {children}
+        <AnalyticsManager />
         <Toaster />
         <SonnerToaster richColors position="top-right" />
       </body>

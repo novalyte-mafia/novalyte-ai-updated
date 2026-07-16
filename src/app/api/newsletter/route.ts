@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const schema = z.object({ email: z.string().email().max(160) });
 
@@ -17,12 +17,10 @@ export async function POST(req: Request) {
       update: {},
       create: { email: parsed.data.email },
     });
-    const posthog = getPostHogClient();
-    posthog.capture({
+    await captureServerEvent({
       distinctId: record.id,
       event: "newsletter_signup",
     });
-    await posthog.flush();
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("newsletter error", e);

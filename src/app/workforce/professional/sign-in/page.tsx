@@ -10,7 +10,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { toast } from "sonner";
 import { Lock, Mail, Loader2, ArrowRight } from "lucide-react";
-import posthog from "posthog-js";
+import { captureAnalyticsEvent, identifyAnalyticsUser } from "@/lib/analytics-client";
 
 export default function ProfessionalSignIn() {
   const supabaseClient = getSupabaseClient();
@@ -18,12 +18,12 @@ export default function ProfessionalSignIn() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If already logged in, redirect to dashboard
+  // Returning users always pass through the centralized status gateway.
   useEffect(() => {
     async function checkSession() {
       const { data } = await supabaseClient.auth.getSession();
       if (data?.session) {
-        window.location.href = "/workforce/professional/dashboard";
+        window.location.replace("/workforce/professional");
       }
     }
     checkSession();
@@ -35,7 +35,7 @@ export default function ProfessionalSignIn() {
     setLoading(true);
 
     try {
-      const { error } = await supabaseClient.auth.signInWithPassword({
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password,
       });
@@ -43,13 +43,12 @@ export default function ProfessionalSignIn() {
       if (error) {
         toast.error(error.message || "Failed to sign in. Please verify your credentials.");
       } else {
-        const { data: sessionData } = await supabaseClient.auth.getSession();
-        if (sessionData?.session?.user?.id) {
-          posthog.identify(sessionData.session.user.id);
+        if (data.user) {
+          identifyAnalyticsUser(data.user.id, { email: data.user.email, role: "professional" });
+          captureAnalyticsEvent("professional_signed_in");
         }
-        posthog.capture("professional_signed_in");
-        toast.success("Welcome back! Loading your profile dashboard...");
-        window.location.href = "/workforce/professional/dashboard";
+        toast.success("Welcome back! Checking your profile status...");
+        window.location.assign("/workforce/professional");
       }
     } catch (err) {
       toast.error("An unexpected error occurred. Please try again.");
@@ -111,6 +110,7 @@ export default function ProfessionalSignIn() {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   placeholder="••••••••"
                   value={password}

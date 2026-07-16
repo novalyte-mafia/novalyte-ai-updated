@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const schema = z.object({
   clinicName: z.string().min(2).max(160),
@@ -23,8 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input", issues: parsed.error.flatten() }, { status: 400 });
     }
     const record = await db.clinicOnboarding.create({ data: parsed.data });
-    const posthog = getPostHogClient();
-    posthog.capture({
+    await captureServerEvent({
       distinctId: record.id,
       event: "clinic_onboarding_submitted",
       properties: {
@@ -33,7 +32,6 @@ export async function POST(req: Request) {
         current_volume: parsed.data.currentVolume ?? null,
       },
     });
-    await posthog.flush();
     return NextResponse.json({ ok: true, id: record.id });
   } catch (e) {
     console.error("clinic onboarding error", e);

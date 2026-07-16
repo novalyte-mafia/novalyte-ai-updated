@@ -55,6 +55,7 @@ import {
 } from "@/lib/constants";
 import type { ProfessionalT, JobPostingT } from "@/lib/types";
 import { navigate, useSaved } from "@/lib/nav";
+import { goToProfessionalAccess } from "@/lib/professional-client";
 import { cn } from "@/lib/utils";
 import {
   Users,
@@ -577,7 +578,7 @@ function Hero({
               </div>
               
               <div className="flex flex-col gap-1.5 items-center sm:items-start">
-                <Button size="lg" variant="outline" onClick={() => navigate("professional-onboarding")}>
+                <Button size="lg" variant="outline" onClick={() => goToProfessionalAccess("workforce_hero")}>
                   <Users className="mr-1 h-4 w-4" /> Join as a Professional
                 </Button>
                 <span className="text-[10px] text-muted-foreground self-center">
@@ -1499,7 +1500,7 @@ function ProfessionalPathwaySection({ onGetStarted }: { onGetStarted: () => void
             <div className="flex flex-col gap-1.5 items-start">
               <Button
                 className="bg-teal-600 text-white hover:bg-teal-700 font-semibold"
-                onClick={() => navigate("professional-onboarding")}
+                onClick={() => goToProfessionalAccess("workforce_professional_section")}
               >
                 Create Your Talent Profile <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -2237,7 +2238,7 @@ function FinalProfessionalCTA({ onGetStarted }: { onGetStarted: () => void }) {
           <Button
             size="lg"
             className="bg-teal-600 text-white hover:bg-teal-700"
-            onClick={() => navigate("professional-onboarding")}
+            onClick={() => goToProfessionalAccess("workforce_final_cta")}
           >
             Join as a Professional <ArrowRight className="ml-1 h-4 w-4" />
           </Button>

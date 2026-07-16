@@ -6,14 +6,15 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { WorkforceDashboardView } from "@/components/views/workforce-dashboard-view";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Clock3 } from "lucide-react";
 import { toast } from "sonner";
-import posthog from "posthog-js";
+import { fetchProfessionalStatus } from "@/lib/professional-client";
 
 export default function ProfessionalDashboardPage() {
   const supabaseClient = getSupabaseClient();
   const [session, setSession] = useState<any>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<"pending_review" | "approved" | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<string | null>(null);
 
@@ -31,23 +32,17 @@ export default function ProfessionalDashboardPage() {
         }
 
         setSession(activeSession);
-        posthog.identify(activeSession.user.id);
 
-        // Fetch corresponding professional profile
-        const { data: profile, error: profileErr } = await supabaseClient
-          .from("workforce_professional_profiles")
-          .select("id")
-          .eq("userId", activeSession.user.id)
-          .single();
-
-        if (profileErr || !profile) {
-          // Authenticated but no profile yet -> redirect to onboarding SPA view
-          toast.info("Please complete your professional onboarding to access the dashboard.");
-          window.location.href = "/?view=professional-onboarding";
+        const status = await fetchProfessionalStatus(activeSession.access_token);
+        if (status.status !== "pending_review" && status.status !== "approved") {
+          if (status.status === "onboarding_not_started" || status.status === "onboarding_in_progress") {
+            toast.info("Please complete your professional onboarding to access the dashboard.");
+          }
+          window.location.replace(status.redirectTo);
           return;
         }
-
-        setProfileId(profile.id);
+        setProfileId(status.profileId);
+        setReviewStatus(status.status);
       } catch (err) {
         setErrorState("An error occurred loading your dashboard. Please try again.");
       } finally {
@@ -92,6 +87,14 @@ export default function ProfessionalDashboardPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <Header onGetStarted={() => {}} />
       <main className="flex-1">
+        {reviewStatus === "pending_review" && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">
+            <div className="mx-auto flex max-w-7xl items-center gap-2 text-sm">
+              <Clock3 className="h-4 w-4 shrink-0" />
+              <span><strong>Profile submitted.</strong> Novalyte is reviewing your professional information. Email verification does not imply profile approval.</span>
+            </div>
+          </div>
+        )}
         {profileId && <WorkforceDashboardView profileId={profileId} />}
       </main>
       <Footer onNewsletter={async () => {}} />

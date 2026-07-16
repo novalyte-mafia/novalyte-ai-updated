@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { navigate } from "@/lib/nav";
+import { goToProfessionalAccess } from "@/lib/professional-client";
 import {
   Stethoscope, Building2, Heart, Store, ArrowRight, CheckCircle2, Users, Briefcase,
 } from "lucide-react";
@@ -28,7 +29,7 @@ const PATHS: {
     icon: Stethoscope,
     primaryCta: "Create Professional Profile",
     secondaryCta: "Browse Jobs First",
-    primaryAction: () => navigate("professional-onboarding"),
+    primaryAction: () => goToProfessionalAccess("join_gateway"),
     secondaryAction: () => navigate("workforce"),
   },
   {

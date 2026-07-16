@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { JoinGateway } from "@/components/site/join-gateway";
-import { CookieConsent } from "@/components/site/cookie-consent";
 import { Button } from "@/components/ui/button";
 import { ProfessionalOnboarding } from "@/components/views/professional-onboarding";
 import { EmployerOnboarding } from "@/components/views/employer-onboarding";
@@ -35,6 +34,7 @@ import { AboutView } from "@/components/views/about-view";
 import { LegalView } from "@/components/views/legal-view";
 import { useNav, useCompare, navigate, type ViewKey } from "@/lib/nav";
 import { ARTICLES, getArticleBySlug } from "@/lib/article-content";
+import { goToProfessionalAccess } from "@/lib/professional-client";
 import { ClinicCompareTray, ProductCompareTray } from "@/components/views/compare-trays";
 import type {
   ClinicT,
@@ -214,7 +214,7 @@ export function AppShell({ data }: { data: PlatformData }) {
                   <h3 className="text-base font-semibold text-foreground">{p.label}</h3>
                   <p className="mt-1.5 text-sm text-muted-foreground">{p.desc}</p>
                   <div className="mt-4 flex gap-2">
-                    <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate(p.primaryView as ViewKey)}>{p.primary}</Button>
+                    <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => p.primaryView === "professional-onboarding" ? goToProfessionalAccess("join_page") : navigate(p.primaryView as ViewKey)}>{p.primary}</Button>
                     {p.secondaryView && <Button size="sm" variant="outline" onClick={() => navigate(p.secondaryView as ViewKey)}>{p.secondary}</Button>}
                   </div>
                 </div>
@@ -238,7 +238,6 @@ export function AppShell({ data }: { data: PlatformData }) {
       </main>
       <Footer onNewsletter={subscribe} />
       <JoinGateway open={getStartedOpen} onOpenChange={setGetStartedOpen} />
-      <CookieConsent />
       {showClinicTray && <ClinicCompareTray clinics={data.clinics} />}
       {showProductTray && <ProductCompareTray listings={data.listings} />}
     </div>

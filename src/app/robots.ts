@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://novalyte.ai";
+const SITE_URL = "https://novalyte.io";
 
 /**
  * robots.txt configuration.

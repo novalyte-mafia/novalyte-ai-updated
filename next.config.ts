@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+const posthogAssetsHost = process.env.NEXT_PUBLIC_POSTHOG_ASSETS_HOST;
+
 const nextConfig: NextConfig = {
   output: "standalone",
   /* config options here */
@@ -9,18 +12,19 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   allowedDevOrigins: ["*.space-z.ai", "*.z.ai"],
   async rewrites() {
+    if (!posthogHost || !posthogAssetsHost) return [];
     return [
       {
         source: "/ingest/static/:path*",
-        destination: "https://us-assets.i.posthog.com/static/:path*",
+        destination: `${posthogAssetsHost}/static/:path*`,
       },
       {
         source: "/ingest/array/:path*",
-        destination: "https://us-assets.i.posthog.com/array/:path*",
+        destination: `${posthogAssetsHost}/array/:path*`,
       },
       {
         source: "/ingest/:path*",
-        destination: "https://us.i.posthog.com/:path*",
+        destination: `${posthogHost}/:path*`,
       },
     ];
   },

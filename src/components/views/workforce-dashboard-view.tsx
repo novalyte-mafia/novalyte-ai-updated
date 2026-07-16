@@ -163,7 +163,10 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
       toast.loading("Matching your profile against clinic positions...", { id: "matching" });
       const res = await fetch("/api/workforce/match", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}`,
+        },
         body: JSON.stringify({ profileId })
       });
       const data = await res.json();
@@ -205,11 +208,11 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
     try {
       const { error } = await supabase
         .from("workforce_professional_profiles")
-        .update({ status: val })
+        .update({ visibility_status: val })
         .eq("id", profileId);
 
       if (error) throw error;
-      setProfile((prev: any) => ({ ...prev, status: val }));
+      setProfile((prev: any) => ({ ...prev, visibility_status: val }));
       toast.success(`Profile visibility updated to ${val.replace("_", " ")}`);
     } catch {
       toast.error("Failed to update visibility settings.");
@@ -504,14 +507,13 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
                       <p className="mt-1 text-xs text-muted-foreground font-medium">Control who can discover your professional profile credentials.</p>
                     </div>
                     <div className="mt-4">
-                      <Select value={profile?.status} onValueChange={updateVisibility}>
+                      <Select value={profile?.visibility_status ?? "private"} onValueChange={updateVisibility}>
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="profile_published">Public Searchable</SelectItem>
-                          <SelectItem value="profile_draft">Verified Employers Only</SelectItem>
-                          <SelectItem value="profile_paused">Hidden (Job Search Paused)</SelectItem>
+                          <SelectItem value="discoverable">Discoverable after approval</SelectItem>
+                          <SelectItem value="private">Private</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -32,9 +32,9 @@ function AuthCallbackComponent() {
             window.location.href = "/workforce/professional/reset-password";
           }, 2000);
         } else {
-          setMessage("Email confirmed successfully! Redirecting to your dashboard...");
+          setMessage("Email confirmed successfully! Preparing your professional profile...");
           setTimeout(() => {
-            window.location.href = "/workforce/professional/dashboard";
+            window.location.href = "/workforce/professional";
           }, 2000);
         }
         return;
@@ -46,7 +46,7 @@ function AuthCallbackComponent() {
 
       // 2. Otherwise handle code exchange directly (for standard PKCE / email confirmation)
       const code = searchParams.get("code");
-      const next = searchParams.get("next") || "/workforce/professional/dashboard";
+      const next = searchParams.get("next") || "/workforce/professional";
       const error = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
 
@@ -77,9 +77,9 @@ function AuthCallbackComponent() {
               }, 2000);
             } else {
               setType("signup");
-              setMessage("Email confirmed successfully! Redirecting to your dashboard...");
+              setMessage("Email confirmed successfully! Preparing your professional profile...");
               setTimeout(() => {
-                window.location.href = "/workforce/professional/dashboard";
+                window.location.href = "/workforce/professional";
               }, 2000);
             }
           }
@@ -92,9 +92,9 @@ function AuthCallbackComponent() {
         const { data } = await supabaseClient.auth.getSession();
         if (data?.session) {
           setStatus("success");
-          setMessage("You are already signed in. Redirecting to your dashboard...");
+          setMessage("You are already signed in. Checking your professional profile...");
           setTimeout(() => {
-            window.location.href = "/workforce/professional/dashboard";
+            window.location.href = "/workforce/professional";
           }, 2000);
         } else {
           setStatus("error");
@@ -172,7 +172,7 @@ function AuthCallbackComponent() {
         </div>
       </main>
 
-      <Footer />
+      <Footer onNewsletter={async () => {}} />
     </div>
   );
 }
@@ -185,7 +185,7 @@ export default function AuthCallbackPage() {
         <main className="flex-1 flex items-center justify-center bg-gradient-to-b from-teal-50/20 via-background to-background">
           <Loader2 className="h-8 w-8 text-teal-600 animate-spin" />
         </main>
-        <Footer />
+        <Footer onNewsletter={async () => {}} />
       </div>
     }>
       <AuthCallbackComponent />

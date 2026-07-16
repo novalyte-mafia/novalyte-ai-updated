@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useCookieConsent, type CookiePreferences } from "@/lib/cookie-consent-store";
 import { navigate } from "@/lib/nav";
+import { captureAnalyticsEvent } from "@/lib/analytics-client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -28,11 +29,6 @@ export function CookieConsent() {
     setShowPreferencesModal,
   } = useCookieConsent();
 
-  // Temporary state for the modal options
-  const [funcEnabled, setFuncEnabled] = useState(false);
-  const [analEnabled, setAnalEnabled] = useState(false);
-  const [markEnabled, setMarkEnabled] = useState(false);
-
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = window.localStorage.getItem(COOKIE_STORAGE_KEY);
@@ -52,15 +48,6 @@ export function CookieConsent() {
     }
   }, [setPreferences, setShowBanner]);
 
-  // Sync state when preferences change or modal opens
-  useEffect(() => {
-    if (showPreferencesModal) {
-      setFuncEnabled(preferences?.functional ?? false);
-      setAnalEnabled(preferences?.analytics ?? false);
-      setMarkEnabled(preferences?.marketing ?? false);
-    }
-  }, [showPreferencesModal, preferences]);
-
   function saveConsent(updated: Omit<CookiePreferences, "version" | "updatedAt">) {
     const record: CookiePreferences = {
       version: CURRENT_VERSION,
@@ -69,6 +56,9 @@ export function CookieConsent() {
     };
     window.localStorage.setItem(COOKIE_STORAGE_KEY, JSON.stringify(record));
     setPreferences(record);
+    if (record.analytics && !preferences?.analytics) {
+      captureAnalyticsEvent("analytics_consent_granted");
+    }
     setShowBanner(false);
     setShowPreferencesModal(false);
   }
@@ -88,15 +78,6 @@ export function CookieConsent() {
       functional: false,
       analytics: false,
       marketing: false,
-    });
-  }
-
-  function handleSavePreferences() {
-    saveConsent({
-      necessary: true,
-      functional: funcEnabled,
-      analytics: analEnabled,
-      marketing: markEnabled,
     });
   }
 
@@ -152,7 +133,32 @@ export function CookieConsent() {
       )}
 
       {/* Preferences Dialog */}
-      <Dialog open={showPreferencesModal} onOpenChange={setShowPreferencesModal}>
+      {showPreferencesModal && (
+        <PreferencesDialog
+          preferences={preferences}
+          onClose={() => setShowPreferencesModal(false)}
+          onSave={saveConsent}
+        />
+      )}
+    </>
+  );
+}
+
+function PreferencesDialog({
+  preferences,
+  onClose,
+  onSave,
+}: {
+  preferences: CookiePreferences | null;
+  onClose: () => void;
+  onSave: (preferences: Omit<CookiePreferences, "version" | "updatedAt">) => void;
+}) {
+  const [funcEnabled, setFuncEnabled] = useState(preferences?.functional ?? false);
+  const [analEnabled, setAnalEnabled] = useState(preferences?.analytics ?? false);
+  const [markEnabled, setMarkEnabled] = useState(preferences?.marketing ?? false);
+
+  return (
+      <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Cookie Preferences</DialogTitle>
@@ -229,20 +235,26 @@ export function CookieConsent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowPreferencesModal(false)}
+              onClick={onClose}
             >
               Cancel
             </Button>
             <Button
               className="bg-teal-600 text-white hover:bg-teal-700"
               size="sm"
-              onClick={handleSavePreferences}
+              onClick={() =>
+                onSave({
+                  necessary: true,
+                  functional: funcEnabled,
+                  analytics: analEnabled,
+                  marketing: markEnabled,
+                })
+              }
             >
               Save Choices
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
   );
 }

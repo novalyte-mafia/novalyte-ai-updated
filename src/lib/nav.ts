@@ -76,6 +76,7 @@ export function navigate(
 
   useNav.getState().setView(view, anchor, params);
   if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("novalyte:navigation", { detail: { view } }));
     window.scrollTo({ top: 0, behavior: anchor ? "smooth" : "auto" });
   }
 }

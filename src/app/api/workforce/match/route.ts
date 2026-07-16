@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getAuthenticatedProfessionalUser, professionalAuthErrorResponse } from "@/lib/professional-access";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 // Match calculation weights
 const WEIGHTS = {
@@ -16,11 +18,28 @@ const WEIGHTS = {
 
 export async function POST(req: Request) {
   try {
+    const user = await getAuthenticatedProfessionalUser(req);
+    if (!user.email_confirmed_at) {
+      return NextResponse.json({ success: false, error: "Email confirmation is required." }, { status: 403 });
+    }
     const payload = await req.json().catch(() => ({}));
     const { profileId, jobId } = payload;
+    if (typeof profileId !== "string" || !profileId) {
+      return NextResponse.json({ success: false, error: "A professional profile is required." }, { status: 400 });
+    }
+
+    const { data: ownedProfile, error: ownershipError } = await getSupabaseAdmin()
+      .from("workforce_professional_profiles")
+      .select("id")
+      .eq("id", profileId)
+      .eq("userId", user.id)
+      .maybeSingle();
+    if (ownershipError) throw ownershipError;
+    if (!ownedProfile) {
+      return NextResponse.json({ success: false, error: "You do not have access to this profile." }, { status: 403 });
+    }
 
     // Fetch jobs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let jobs: any[] = [];
     if (jobId) {
       const job = await db.jobPosting.findUnique({ where: { id: jobId } });
@@ -30,16 +49,12 @@ export async function POST(req: Request) {
     }
 
     // Fetch professional profiles
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let profiles: any[] = [];
     if (profileId) {
       const prof = await db.workforceProfessionalProfile.findUnique({ where: { id: profileId } });
       if (prof) profiles.push(prof);
-    } else {
-      profiles = await db.workforceProfessionalProfile.findMany({});
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const matchesCreated: any[] = [];
 
     for (const profile of profiles) {
@@ -269,6 +284,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, count: matchesCreated.length, matches: matchesCreated });
   } catch (error: any) {
+    const authResponse = professionalAuthErrorResponse(error);
+    if (authResponse) return authResponse;
     console.error("Failed to run matching:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

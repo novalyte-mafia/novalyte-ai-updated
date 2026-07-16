@@ -1,14 +1,24 @@
+import "server-only";
+
 import { PostHog } from "posthog-node";
 
-let posthogClient: PostHog | null = null;
+type ServerEvent = {
+  distinctId: string;
+  event: string;
+  properties?: Record<string, string | number | boolean | null>;
+};
 
-export function getPostHogClient(): PostHog {
-  if (!posthogClient) {
-    posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      flushAt: 1,
-      flushInterval: 0,
-    });
+export async function captureServerEvent(event: ServerEvent): Promise<void> {
+  const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+  const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+  if (!projectToken || !host) return;
+
+  const client = new PostHog(projectToken, { host, flushAt: 1, flushInterval: 0 });
+  try {
+    client.capture(event);
+    await client.shutdown();
+  } catch (error) {
+    console.error("PostHog server event failed", error);
+    await client.shutdown().catch(() => undefined);
   }
-  return posthogClient;
 }

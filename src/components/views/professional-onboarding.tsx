@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,14 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Logo } from "@/components/site/logo";
-import { navigate } from "@/lib/nav";
+import { fetchProfessionalStatus, getProfessionalAccessToken } from "@/lib/professional-client";
+import { captureAnalyticsEvent } from "@/lib/analytics-client";
 import { US_STATES } from "@/lib/constants";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Upload, Linkedin, Globe, X,
   Plus, Trash2, Lock, User, FileText, GraduationCap, Award, Sparkles,
-  Settings, Eye, ShieldCheck, Briefcase, Building2,
+  Settings, Eye, ShieldCheck, Briefcase, Building2, Loader2,
 } from "lucide-react";
 
 const PRO_STEPS = [
@@ -34,6 +35,8 @@ const PRO_STEPS = [
 export function ProfessionalOnboarding() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Record<string, unknown>>({});
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const total = PRO_STEPS.length;
   const progress = ((step + 1) / total) * 100;
@@ -42,10 +45,57 @@ export function ProfessionalOnboarding() {
     setData((prev) => ({ ...prev, [key]: value }));
   }
 
+  useEffect(() => {
+    let active = true;
+    async function loadDraft() {
+      try {
+        const token = await getProfessionalAccessToken();
+        if (!token) return window.location.replace("/workforce/professional/sign-up");
+        const status = await fetchProfessionalStatus(token);
+        if (status.status === "auth_unverified") return window.location.replace(status.redirectTo);
+        if (status.status !== "onboarding_not_started" && status.status !== "onboarding_in_progress") {
+          return window.location.replace(status.redirectTo);
+        }
+        const response = await fetch("/api/professional-onboarding", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error("Unable to load onboarding progress.");
+        const draft = await response.json();
+        if (active) {
+          captureAnalyticsEvent("professional_onboarding_opened", {
+            mode: status.status === "onboarding_in_progress" ? "resume" : "start",
+            step: draft.currentStep ?? 0,
+          });
+          setAccessToken(token);
+          setStep(draft.currentStep ?? 0);
+          setData(draft.data ?? {});
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("We could not load your onboarding progress. Please sign in again.");
+        window.location.replace("/workforce/professional/sign-in");
+      }
+    }
+    loadDraft();
+    return () => { active = false; };
+  }, []);
+
+  async function saveDraft(nextStep = step) {
+    if (!accessToken) throw new Error("Your session has expired.");
+    const response = await fetch("/api/professional-onboarding", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ currentStep: nextStep, data }),
+    });
+    if (!response.ok) throw new Error("Unable to save onboarding progress.");
+  }
+
   async function next() {
     // Validate required fields
     if (step === 0) {
-      if (!data.firstName || !data.lastName || !data.email || !data.password || !data.phone || !data.state) {
+      if (!data.firstName || !data.lastName || !data.phone || !data.state) {
         toast.error("Please fill in all required fields to continue.");
         return;
       }
@@ -58,7 +108,17 @@ export function ProfessionalOnboarding() {
     }
 
     if (step < total - 1) {
-      setStep(step + 1);
+      try {
+        await saveDraft(step + 1);
+        captureAnalyticsEvent("professional_onboarding_step_completed", {
+          step: step + 1,
+          step_name: PRO_STEPS[step]?.label ?? "unknown",
+        });
+        setStep(step + 1);
+      } catch (error) {
+        console.error(error);
+        toast.error("Your progress could not be saved. Please try again.");
+      }
     } else {
       if (submitting) return;
       setSubmitting(true);
@@ -66,20 +126,22 @@ export function ProfessionalOnboarding() {
         const payload = {
           firstName: data.firstName,
           lastName: data.lastName,
-          email: data.email,
           phone: data.phone,
           professionalTitle: data.headline,
-          bio: data.bio ?? "",
-          stateOrLocation: `${data.city ?? ""}, ${data.state ?? ""}`.trim().replace(/^,\s*/, ""),
-          resumeUrl: data.linkedin ? `LinkedIn: ${data.linkedin}` : "Resume Uploaded",
+          bio: data.summary ?? "",
+          city: data.city ?? "",
+          state: data.state,
+          yearsExperience: data.yearsExp ?? "",
           linkedinUrl: data.linkedin ?? "",
+          websiteUrl: data.website ?? "",
+          portfolioUrl: data.portfolio ?? "",
           employmentHistory: Array.isArray(data.employmentHistory) ? data.employmentHistory : [],
           education: Array.isArray(data.education) ? data.education : [],
           licenses: Array.isArray(data.credentials) ? data.credentials : [],
           specialties: Array.isArray(data.specialties) ? data.specialties : [],
           employmentPreference: Array.isArray(data.empTypes) ? data.empTypes : [],
-          workArrangement: data.workArrangement ?? "",
-          relocationPreference: !!data.relocate,
+          workArrangements: Array.isArray(data.workArrangements) ? data.workArrangements : [],
+          relocationPreference: data.relocate ?? false,
           telehealthAvailability: !!data.telehealth,
           visibilitySettings: {
             discoverable: data.discoverable ?? true,
@@ -93,7 +155,7 @@ export function ProfessionalOnboarding() {
 
         const res = await fetch("/api/professional-onboarding", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
           body: JSON.stringify(payload),
         });
 
@@ -102,8 +164,11 @@ export function ProfessionalOnboarding() {
           throw new Error("Failed to save professional profile");
         }
 
-        toast.success("Professional profile created. Welcome to Novalyte Workforce.");
-        navigate("workforce-dashboard", undefined, { id: resData.profileId });
+        if (resData.notificationDelivery?.status === "failed") {
+          console.error("Profile completed but Slack notification failed", resData.notificationDelivery.error);
+        }
+        toast.success("Professional profile submitted for review.");
+        window.location.assign("/workforce/professional/dashboard");
       } catch (err) {
         console.error(err);
         toast.error("Failed to submit professional application. Please try again.");
@@ -114,18 +179,33 @@ export function ProfessionalOnboarding() {
   }
 
   function back() {
-    if (step === 0) navigate("join");
+    if (step === 0) window.location.assign("/workforce/professional");
     else setStep(step - 1);
+  }
+
+  async function saveAndExit() {
+    try {
+      await saveDraft();
+      toast.success("Progress saved.");
+      window.location.assign("/workforce/professional");
+    } catch (error) {
+      console.error(error);
+      toast.error("Your progress could not be saved.");
+    }
+  }
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center gap-3 bg-background"><Loader2 className="h-7 w-7 animate-spin text-teal-600" /><span className="text-sm text-muted-foreground">Loading your saved onboarding…</span></div>;
   }
 
   return (
     <div className="fixed inset-0 z-[70] bg-background">
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <button onClick={() => navigate("join")} aria-label="Exit"><Logo size="sm" /></button>
+        <button onClick={saveAndExit} aria-label="Save and exit"><Logo size="sm" /></button>
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-muted-foreground">Step {step + 1} of {total}</span>
-          <button onClick={() => navigate("join")} className="text-xs text-muted-foreground hover:text-foreground">Save & Exit</button>
+          <button onClick={saveAndExit} className="text-xs text-muted-foreground hover:text-foreground">Save & Exit</button>
         </div>
       </div>
       {/* Progress */}
@@ -207,20 +287,17 @@ function ChipToggle({ active, onClick, children }: { active: boolean; onClick: (
 function StepAccount({ data, set }: { data: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
   return (
     <div className="space-y-4 novalyte-fade-up">
-      <div><h2 className="text-2xl font-semibold text-foreground">Create your account</h2><p className="mt-1 text-sm text-muted-foreground">Start by setting up your login credentials.</p></div>
+      <div><h2 className="text-2xl font-semibold text-foreground">Contact information</h2><p className="mt-1 text-sm text-muted-foreground">Your confirmed account is securely linked to this profile.</p></div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="First name" required><Input value={(data.firstName as string) ?? ""} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" /></Field>
         <Field label="Last name" required><Input value={(data.lastName as string) ?? ""} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" /></Field>
       </div>
-      <Field label="Email address" required><Input type="email" value={(data.email as string) ?? ""} onChange={(e) => set("email", e.target.value.trim())} placeholder="you@example.com" autoComplete="email" /></Field>
+      <Field label="Confirmed email address" required><Input type="email" value={(data.email as string) ?? ""} readOnly disabled /></Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Password" required><Input type="password" value={(data.password as string) ?? ""} onChange={(e) => set("password", e.target.value)} autoComplete="new-password" /></Field>
         <Field label="Phone number" required><Input type="tel" value={(data.phone as string) ?? ""} onChange={(e) => set("phone", e.target.value)} placeholder="(555) 123-4567" autoComplete="tel" /></Field>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
         <Field label="City"><Input value={(data.city as string) ?? ""} onChange={(e) => set("city", e.target.value)} /></Field>
-        <Field label="State" required><Select value={(data.state as string) ?? ""} onValueChange={(v) => set("state", v)}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></Field>
       </div>
+      <Field label="State" required><Select value={(data.state as string) ?? ""} onValueChange={(v) => set("state", v)}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></Field>
       <label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" required className="mt-0.5 accent-teal-600" /><span>I agree to the Novalyte AI Terms of Service and Privacy Policy.</span></label>
     </div>
   );
@@ -341,7 +418,7 @@ function StepEducation({ data, set }: { data: Record<string, unknown>; set: (k: 
 /* ── Step 6: Licenses & Certifications ──────────────────────── */
 function StepLicenses({ data, set }: { data: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
   const creds = (data.credentials as Array<Record<string, string>>) ?? [];
-  function addCred() { set("credentials", [...creds, { type: "", name: "", authority: "", state: "", issueDate: "", expiryDate: "" }]); }
+  function addCred() { set("credentials", [...creds, { type: "", name: "", number: "", authority: "", state: "", issueDate: "", expiryDate: "" }]); }
   function updateCred(i: number, field: string, value: string) { const next = [...creds]; next[i] = { ...next[i], [field]: value }; set("credentials", next); }
   function removeCred(i: number) { set("credentials", creds.filter((_, idx) => idx !== i)); }
   return (
@@ -357,6 +434,7 @@ function StepLicenses({ data, set }: { data: Record<string, unknown>; set: (k: s
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Credential type"><Select value={cred.type} onValueChange={(v) => updateCred(i, "type", v)}><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger><SelectContent>{["RN", "NP", "PA-C", "MD", "DO", "LPN", "CMA", "BLS", "ACLS", "PALS", "ARRT", "CPR", "Board certification", "Other"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></Field>
                 <Field label="License/certification name"><Input value={cred.name} onChange={(e) => updateCred(i, "name", e.target.value)} /></Field>
+                <Field label="Credential number"><Input value={cred.number} onChange={(e) => updateCred(i, "number", e.target.value)} autoComplete="off" /></Field>
                 <Field label="Issuing authority"><Input value={cred.authority} onChange={(e) => updateCred(i, "authority", e.target.value)} /></Field>
                 <Field label="Issuing state"><Select value={cred.state} onValueChange={(v) => updateCred(i, "state", v)}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></Field>
                 <Field label="Issue date"><Input type="date" value={cred.issueDate} onChange={(e) => updateCred(i, "issueDate", e.target.value)} /></Field>

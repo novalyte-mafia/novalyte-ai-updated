@@ -1,0 +1,53 @@
+project_id = "iuuhcnwqozjrehmgpcqo"
+
+[auth]
+enabled = true
+site_url = "https://novalyte.io"
+additional_redirect_urls = [
+  "https://novalyte.io/auth/callback",
+  "http://localhost:3000/auth/callback",
+  "http://127.0.0.1:3000/auth/callback"
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 8
+password_requirements = "letters_digits"
+
+[auth.rate_limit]
+email_sent = 30
+sign_in_sign_ups = 30
+token_refresh = 150
+token_verifications = 30
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "60s"
+otp_length = 8
+otp_expiry = 3600
+
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 587
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "accounts@novalyte.io"
+sender_name = "Novalyte AI"
+
+[auth.email.template.confirmation]
+subject = "Confirm your Novalyte professional account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Novalyte password"
+content_path = "./supabase/templates/recovery.html"

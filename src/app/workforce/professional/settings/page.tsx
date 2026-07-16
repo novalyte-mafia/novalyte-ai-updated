@@ -11,6 +11,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { toast } from "sonner";
 import { Lock, Mail, Loader2, ArrowLeft, ShieldCheck, LogOut, Check } from "lucide-react";
+import { fetchProfessionalStatus } from "@/lib/professional-client";
 
 export default function ProfessionalSettings() {
   const supabaseClient = getSupabaseClient();
@@ -38,6 +39,12 @@ export default function ProfessionalSettings() {
 
         setSession(activeSession);
 
+        const status = await fetchProfessionalStatus(activeSession.access_token);
+        if (status.status !== "pending_review" && status.status !== "approved") {
+          window.location.replace(status.redirectTo);
+          return;
+        }
+
         // Fetch corresponding profile
         const { data: prof, error: profileErr } = await supabaseClient
           .from("workforce_professional_profiles")
@@ -46,8 +53,8 @@ export default function ProfessionalSettings() {
           .single();
 
         if (profileErr || !prof) {
-          toast.error("Professional profile not found. Please onboarding first.");
-          window.location.href = "/?view=professional-onboarding";
+          toast.error("Professional profile not found.");
+          window.location.href = "/workforce/professional";
           return;
         }
 
@@ -65,17 +72,17 @@ export default function ProfessionalSettings() {
   async function handleToggleVisibility(checked: boolean) {
     if (!profile) return;
     setSavingVisibility(true);
-    const newStatus = checked ? "active" : "inactive";
+    const newStatus = checked ? "discoverable" : "private";
 
     try {
       const { error } = await supabaseClient
         .from("workforce_professional_profiles")
-        .update({ status: newStatus })
+        .update({ visibility_status: newStatus })
         .eq("id", profile.id);
 
       if (error) throw error;
-      setProfile((prev: any) => ({ ...prev, status: newStatus }));
-      toast.success(`Profile visibility set to ${newStatus === "active" ? "public" : "private"}.`);
+      setProfile((prev: any) => ({ ...prev, visibility_status: newStatus }));
+      toast.success(`Profile visibility set to ${newStatus === "discoverable" ? "discoverable" : "private"}.`);
     } catch (err) {
       toast.error("Failed to update visibility status.");
     } finally {
@@ -92,8 +99,8 @@ export default function ProfessionalSettings() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      toast.error("Password must be at least 8 characters and include a letter and a number.");
       return;
     }
 
@@ -163,7 +170,7 @@ export default function ProfessionalSettings() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-foreground">
-                  {profile?.status === "active" ? "Public Profile Active" : "Private Profile Active"}
+                  {profile?.visibility_status === "discoverable" ? "Discoverable Profile" : "Private Profile"}
                 </p>
                 <p className="text-xs text-muted-foreground max-w-xl">
                   When active, verified clinics can discover your license types, history, and request clinical placement matches. When inactive, you will not appear in employer search results.
@@ -172,7 +179,7 @@ export default function ProfessionalSettings() {
               <div className="flex items-center gap-2">
                 {savingVisibility && <Loader2 className="h-4 w-4 animate-spin text-teal-600" />}
                 <Switch
-                  checked={profile?.status === "active"}
+                  checked={profile?.visibility_status === "discoverable"}
                   onCheckedChange={handleToggleVisibility}
                   disabled={savingVisibility}
                 />
