@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
 import crypto from "crypto";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 // Validation Schema
 const schema = z.object({
@@ -458,6 +459,21 @@ export async function POST(req: Request) {
       }
     }
 
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: submission.id,
+      event: "contact_submitted",
+      properties: {
+        sender_type: val.senderType,
+        inquiry_category: val.inquiryCategory,
+        routing_team: routing.team,
+        priority: routing.priority,
+        utm_source: val.utm_source ?? null,
+        utm_medium: val.utm_medium ?? null,
+        utm_campaign: val.utm_campaign ?? null,
+      },
+    });
+    await posthog.flush();
     return NextResponse.json({ ok: true, referenceNumber, submissionId: submission.id });
 
   } catch (e: any) {

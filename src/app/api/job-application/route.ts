@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const schema = z.object({
   jobPostingId: z.string().min(2),
@@ -26,6 +27,16 @@ export async function POST(req: Request) {
         coverNote: parsed.data.coverNote ?? null,
       },
     });
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: record.id,
+      event: "job_application_submitted",
+      properties: {
+        job_posting_id: parsed.data.jobPostingId,
+        has_cover_note: !!parsed.data.coverNote,
+      },
+    });
+    await posthog.flush();
     return NextResponse.json({ ok: true, id: record.id });
   } catch (e) {
     console.error("job application error", e);

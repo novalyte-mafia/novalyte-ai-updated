@@ -8,6 +8,7 @@ import { WorkforceDashboardView } from "@/components/views/workforce-dashboard-v
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 
 export default function ProfessionalDashboardPage() {
   const supabaseClient = getSupabaseClient();
@@ -30,6 +31,7 @@ export default function ProfessionalDashboardPage() {
         }
 
         setSession(activeSession);
+        posthog.identify(activeSession.user.id);
 
         // Fetch corresponding professional profile
         const { data: profile, error: profileErr } = await supabaseClient

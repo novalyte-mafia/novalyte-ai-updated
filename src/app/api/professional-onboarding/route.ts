@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 const schema = z.object({
   firstName: z.string().min(1).max(120).optional().nullable(),
@@ -185,6 +186,20 @@ export async function POST(req: Request) {
       }
     } catch {}
 
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: profProfile.id,
+      event: "professional_onboarding_completed",
+      properties: {
+        specialty: d.specialties?.[0] ?? null,
+        state_or_location: d.stateOrLocation ?? null,
+        employment_preference: d.employmentPreference ?? null,
+        work_arrangement: d.workArrangement ?? null,
+        telehealth_availability: d.telehealthAvailability ?? false,
+        relocation_preference: d.relocationPreference ?? false,
+      },
+    });
+    await posthog.flush();
     return NextResponse.json({ ok: true, id: record.id, profileId: profProfile.id });
   } catch (e) {
     console.error("professional onboarding error", e);

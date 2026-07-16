@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 function genAppId(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -187,6 +188,19 @@ export async function POST(req: Request) {
       },
     });
 
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: record.applicationId,
+      event: "clinic_application_submitted",
+      properties: {
+        org_type: d.orgType ?? null,
+        ownership_type: d.ownershipType ?? null,
+        location_count: d.locationCount ?? null,
+        referral_source: d.referralSource ?? null,
+        budget_range: d.budgetRange ?? null,
+      },
+    });
+    await posthog.flush();
     return NextResponse.json({ ok: true, applicationId: record.applicationId, id: record.id });
   } catch (e) {
     console.error("clinic application error", e);
