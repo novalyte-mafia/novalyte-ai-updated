@@ -1226,7 +1226,7 @@ function ListingCard({
           imgClassName="object-cover"
         />
         <div className="absolute right-2 top-2 z-10">
-          <SaveButton saved={isSaved} onToggle={handleSaveClick} size="sm" />
+          <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
         </div>
       </div>
 

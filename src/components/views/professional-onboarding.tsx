@@ -67,6 +67,9 @@ export function ProfessionalOnboarding() {
             mode: status.status === "onboarding_in_progress" ? "resume" : "start",
             step: draft.currentStep ?? 0,
           });
+          if (status.status === "onboarding_not_started") {
+            captureAnalyticsEvent("professional_profile_started");
+          }
           setAccessToken(token);
           setStep(draft.currentStep ?? 0);
           setData(draft.data ?? {});
@@ -96,12 +99,20 @@ export function ProfessionalOnboarding() {
     // Validate required fields
     if (step === 0) {
       if (!data.firstName || !data.lastName || !data.phone || !data.state) {
+        captureAnalyticsEvent("form_error", {
+          form_type: "professional_profile",
+          stage_number: step + 1,
+        });
         toast.error("Please fill in all required fields to continue.");
         return;
       }
     }
     if (step === 1) {
       if (!data.headline) {
+        captureAnalyticsEvent("form_error", {
+          form_type: "professional_profile",
+          stage_number: step + 1,
+        });
         toast.error("Please enter your professional headline/title.");
         return;
       }
@@ -167,10 +178,15 @@ export function ProfessionalOnboarding() {
         if (resData.notificationDelivery?.status === "failed") {
           console.error("Profile completed but Slack notification failed", resData.notificationDelivery.error);
         }
+        captureAnalyticsEvent("professional_profile_completed");
         toast.success("Professional profile submitted for review.");
         window.location.assign("/workforce/professional/dashboard");
       } catch (err) {
         console.error(err);
+        captureAnalyticsEvent("form_error", {
+          form_type: "professional_profile",
+          stage_number: step + 1,
+        });
         toast.error("Failed to submit professional application. Please try again.");
       } finally {
         setSubmitting(false);

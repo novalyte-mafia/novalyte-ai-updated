@@ -1,0 +1,1 @@
+-- Applied remotely (dashboard/history sync). No-op local placeholder.

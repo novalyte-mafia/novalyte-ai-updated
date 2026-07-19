@@ -21,6 +21,7 @@ export default function ProfessionalSignUp() {
 
   // Returning users always pass through the centralized status gateway.
   useEffect(() => {
+    captureAnalyticsEvent("professional_registration_started");
     async function checkSession() {
       const { data } = await supabaseClient.auth.getSession();
       if (data?.session) {
@@ -53,16 +54,20 @@ export default function ProfessionalSignUp() {
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            role: "professional", // User metadata role
+            // Intent only — authorization uses protected app_metadata.account_types.
+            account_intent: "professional",
           },
         },
       });
 
       if (error) {
+        captureAnalyticsEvent("form_error", {
+          form_type: "professional_registration",
+        });
         toast.error(error.message || "Failed to create account. Please try again.");
       } else {
         if (data.user) {
-          identifyAnalyticsUser(data.user.id, { email: data.user.email, role: "professional" });
+          identifyAnalyticsUser(data.user.id, { role: "professional" });
           captureAnalyticsEvent("professional_account_created", {
             confirmation_required: !data.session,
           });
@@ -78,6 +83,9 @@ export default function ProfessionalSignUp() {
         }
       }
     } catch (err) {
+      captureAnalyticsEvent("form_error", {
+        form_type: "professional_registration",
+      });
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);

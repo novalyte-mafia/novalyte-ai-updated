@@ -67,13 +67,16 @@ export function AssessmentEngine({
     if (a == null) return false;
     if (typeof a === "string") return a.length > 0;
     if (Array.isArray(a)) return a.length > 0;
-    if (question.type === "contact") {
-      const c = a as { name?: string; email?: string; phone?: string; zip?: string; state?: string };
-      return !!(c.name && c.email && c.phone && c.zip && c.state);
-    }
     if (question.type === "consent") {
       const c = a as { consentContact?: boolean };
       return !!c.consentContact;
+    }
+    if (
+      question.type === "contact-name" ||
+      question.type === "contact-email" ||
+      question.type === "contact-location"
+    ) {
+      return typeof a === "object" && Object.values(a).some((value) => Boolean(value));
     }
     return false;
   }
@@ -88,8 +91,12 @@ export function AssessmentEngine({
     const matched = clinics
       .filter((c) => {
         const specs = splitCsv(c.specialties);
-        const specMatch = specs.some((s) => s.toLowerCase().includes(config.treatmentLabel.toLowerCase().split(" ")[0])) ||
-          config.treatmentLabel.toLowerCase().includes(s.toLowerCase().split(" ")[0]);
+        const treatmentToken = config.treatmentLabel.toLowerCase().split(" ")[0] ?? "";
+        const specMatch =
+          specs.some((s) => s.toLowerCase().includes(treatmentToken)) ||
+          specs.some((s) =>
+            config.treatmentLabel.toLowerCase().includes(s.toLowerCase().split(" ")[0] ?? ""),
+          );
         const stateMatch = !contact?.state || c.state === contact.state;
         const teleMatch = careFormat !== "in-person" || c.telehealth;
         return (specMatch || stateMatch) && teleMatch;
@@ -348,61 +355,104 @@ function QuestionRenderer({
     );
   }
 
-  if (question.type === "contact") {
-    const v = (value as { name?: string; email?: string; phone?: string; zip?: string; state?: string; preferredContact?: string; bestTime?: string }) ?? {};
-    const update = (field: string, val: string) => onChange({ ...v, [field]: val });
+  if (question.type === "contact-name") {
+    const v = (value as { firstName?: string; lastName?: string }) ?? {};
     return (
       <div>
         <h3 className="text-lg font-semibold text-foreground">{question.title}</h3>
         {question.desc && <p className="mt-1.5 text-sm text-muted-foreground">{question.desc}</p>}
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-teal-200 bg-teal-50/40 p-3 text-xs text-muted-foreground">
-          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-600" />
-          <span>We use this information to save your progress, prepare your results, and help connect you with relevant clinics. Submitting your information does not require you to book treatment.</span>
-        </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label className="text-xs">Full name *</Label>
-            <Input value={v.name ?? ""} onChange={(e) => update("name", e.target.value)} placeholder="First and last name" />
+            <Label className="text-xs">First name *</Label>
+            <Input
+              value={v.firstName ?? ""}
+              onChange={(e) => onChange({ ...v, firstName: e.target.value })}
+              placeholder="First name"
+              autoComplete="given-name"
+            />
           </div>
           <div className="grid gap-1.5">
+            <Label className="text-xs">Last name *</Label>
+            <Input
+              value={v.lastName ?? ""}
+              onChange={(e) => onChange({ ...v, lastName: e.target.value })}
+              placeholder="Last name"
+              autoComplete="family-name"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (question.type === "contact-email") {
+    const v = (value as { email?: string; phone?: string }) ?? {};
+    return (
+      <div>
+        <h3 className="text-lg font-semibold text-foreground">{question.title}</h3>
+        {question.desc && <p className="mt-1.5 text-sm text-muted-foreground">{question.desc}</p>}
+        <div className="mt-4 grid gap-3">
+          <div className="grid gap-1.5">
             <Label className="text-xs">Email *</Label>
-            <Input type="email" value={v.email ?? ""} onChange={(e) => update("email", e.target.value.trim())} placeholder="you@example.com" />
+            <Input
+              type="email"
+              value={v.email ?? ""}
+              onChange={(e) => onChange({ ...v, email: e.target.value.trim() })}
+              placeholder="you@example.com"
+              autoComplete="email"
+            />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">Mobile phone *</Label>
-            <Input type="tel" value={v.phone ?? ""} onChange={(e) => update("phone", e.target.value)} placeholder="(555) 123-4567" />
+            <Input
+              type="tel"
+              value={v.phone ?? ""}
+              onChange={(e) => onChange({ ...v, phone: e.target.value })}
+              placeholder="(555) 123-4567"
+              autoComplete="tel"
+            />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (question.type === "contact-location") {
+    const v = (value as { zip?: string; state?: string }) ?? {};
+    return (
+      <div>
+        <h3 className="text-lg font-semibold text-foreground">{question.title}</h3>
+        {question.desc && <p className="mt-1.5 text-sm text-muted-foreground">{question.desc}</p>}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label className="text-xs">ZIP code *</Label>
-            <Input value={v.zip ?? ""} onChange={(e) => update("zip", e.target.value)} placeholder="78701" maxLength={10} />
+            <Input
+              value={v.zip ?? ""}
+              onChange={(e) =>
+                onChange({
+                  ...v,
+                  zip: e.target.value.replace(/[^0-9]/g, "").slice(0, 5),
+                })
+              }
+              placeholder="78701"
+              autoComplete="postal-code"
+              inputMode="numeric"
+            />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">State *</Label>
             <select
               value={v.state ?? ""}
-              onChange={(e) => update("state", e.target.value)}
+              onChange={(e) => onChange({ ...v, state: e.target.value })}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">Select state</option>
-              {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {US_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label className="text-xs">Preferred contact method</Label>
-            <select
-              value={v.preferredContact ?? ""}
-              onChange={(e) => update("preferredContact", e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Any</option>
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="sms">Text message</option>
-            </select>
-          </div>
-          <div className="grid gap-1.5 sm:col-span-2">
-            <Label className="text-xs">Best time to contact (optional)</Label>
-            <Input value={v.bestTime ?? ""} onChange={(e) => update("bestTime", e.target.value)} placeholder="e.g., weekday mornings" />
           </div>
         </div>
       </div>

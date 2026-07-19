@@ -1,72 +1,77 @@
 import type { MetadataRoute } from "next";
-import { ARTICLES } from "@/lib/article-content";
-
-const SITE_URL = "https://novalyte.io";
-
-/**
- * Next.js sitemap.
- *
- * The Novalyte AI platform uses a Zustand view-router on a single `/` route,
- * with hash fragments expressing the active view (`#journal`, `#journal/{slug}`,
- * `#journal/category/{name}`). We expose these URLs to crawlers so the
- * structured data and canonical URLs are discoverable.
- */
-import { db } from "@/lib/db";
+import { getJournalCategories, getJournalRecords } from "@/lib/journal/data";
+import { listPublishedClinics } from "@/lib/public-clinics";
+import { canonicalPath } from "@/lib/site-config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  // Fetch clinics dynamically for SEO coverage
   let clinicRoutes: MetadataRoute.Sitemap = [];
   try {
-    const clinics = await db.clinic.findMany({
-      where: { deletedAt: null },
-      select: { slug: true },
-    });
-    clinicRoutes = clinics.map((c) => ({
-      url: `${SITE_URL}/#directory/${c.slug}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    }));
+    const clinics = await listPublishedClinics();
+    clinicRoutes = clinics
+      .filter((clinic) => clinic.slug && clinic.state && clinic.city)
+      .map((clinic) => ({
+        url: canonicalPath(
+          `/directory/${segment(clinic.state)}/${segment(clinic.city)}/${clinic.slug}`,
+        ),
+        lastModified: clinic.updatedAt ? new Date(clinic.updatedAt) : now,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      }));
   } catch (e) {
     console.error("Failed to fetch clinics for sitemap", e);
   }
 
-  // Main app routes (single-page, hash-fragmented)
   const mainRoutes: MetadataRoute.Sitemap = [
-    { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1.0 },
-    { url: `${SITE_URL}/#journal`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${SITE_URL}/#directory`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${SITE_URL}/#marketplace`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/#workforce`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/#patients`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE_URL}/clinics`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: canonicalPath("/"), lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: canonicalPath("/patients"), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: canonicalPath("/clinics"), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: canonicalPath("/clinics/apply"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: canonicalPath("/directory"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: canonicalPath("/workforce"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: canonicalPath("/marketplace"), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: canonicalPath("/journal"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: canonicalPath("/about"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: canonicalPath("/contact"), lastModified: now, changeFrequency: "yearly", priority: 0.5 },
+    { url: canonicalPath("/privacy"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: canonicalPath("/terms"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: canonicalPath("/medical-disclaimer"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: canonicalPath("/accessibility"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  // Journal article routes
-  const articleRoutes: MetadataRoute.Sitemap = ARTICLES.map((a) => ({
-    url: `${SITE_URL}/#journal/${a.slug}`,
-    lastModified: new Date(a.updatedAt),
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
+  let articleRoutes: MetadataRoute.Sitemap = [];
+  let categoryRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const [records, categories] = await Promise.all([
+      getJournalRecords(),
+      getJournalCategories(),
+    ]);
+    articleRoutes = records
+      .filter((r) => !r.seo.noIndex)
+      .map((r) => ({
+        url: canonicalPath(`/journal/${r.article.slug}`),
+        lastModified: new Date(r.article.updatedAt),
+        changeFrequency: "monthly",
+        priority: 0.8,
+      }));
+    categoryRoutes = categories.map((c) => ({
+      url: canonicalPath(`/journal/category/${c.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }));
+  } catch (e) {
+    console.error("Failed to build journal sitemap entries", e);
+  }
 
-  // Journal category routes
-  const categories = Array.from(new Set(ARTICLES.map((a) => a.category)));
-  const categoryRoutes: MetadataRoute.Sitemap = categories.map((c) => ({
-    url: `${SITE_URL}/#journal/category/${encodeURIComponent(c)}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.7,
-  }));
+  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...clinicRoutes];
+}
 
-  // Legal / informational routes
-  const legalRoutes: MetadataRoute.Sitemap = [
-    { url: `${SITE_URL}/#privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE_URL}/#terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-  ];
-
-  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...clinicRoutes, ...legalRoutes];
+function segment(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

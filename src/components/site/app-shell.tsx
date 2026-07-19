@@ -34,34 +34,52 @@ import { AboutView } from "@/components/views/about-view";
 import { LegalView } from "@/components/views/legal-view";
 import { useNav, useCompare, navigate, type ViewKey } from "@/lib/nav";
 import { ARTICLES, getArticleBySlug } from "@/lib/article-content";
+import { normalizeJournalSlug } from "@/lib/journal-article-v1";
 import { goToProfessionalAccess } from "@/lib/professional-client";
 import { ClinicCompareTray, ProductCompareTray } from "@/components/views/compare-trays";
 import type {
-  ClinicT,
-  ProfessionalT,
-  JobPostingT,
-  MarketplaceListingT,
-  ArticleT,
-  VendorT,
-} from "@/lib/types";
+  PlatformData,
+} from "@/lib/platform-data";
 
-export type PlatformData = {
-  clinics: ClinicT[];
-  professionals: ProfessionalT[];
-  jobs: JobPostingT[];
-  listings: MarketplaceListingT[];
-  articles: ArticleT[];
-  vendors: VendorT[];
-};
+export type { PlatformData };
 
-export function AppShell({ data }: { data: PlatformData }) {
-  const { view, params } = useNav();
+export function AppShell({
+  data,
+  initialView,
+  initialParams,
+}: {
+  data: PlatformData;
+  initialView?: ViewKey;
+  initialParams?: { id?: string; slug?: string; clinicId?: string };
+}) {
+  const { view: storedView, params: storedParams } = useNav();
+  const view = initialView ?? storedView;
+  const params = initialParams ?? storedParams;
   const [getStartedOpen, setGetStartedOpen] = useState(false);
   const compareClinics = useCompare((s) => s.clinics);
   const compareProducts = useCompare((s) => s.products);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Legacy hash links (`/#journal`, `/#journal/{slug}`,
+      // `/#journal/category/{name}`) now live at real routes. Hash fragments
+      // never reach the server, so redirect them client-side.
+      const hash = window.location.hash;
+      if (hash.startsWith("#journal")) {
+        const rest = hash.slice("#journal".length).replace(/^\//, "");
+        const normalize = (value: string) => normalizeJournalSlug(decodeURIComponent(value));
+        let target = "/journal";
+        if (rest.startsWith("category/")) {
+          const category = normalize(rest.slice("category/".length));
+          if (category) target = `/journal/category/${category}`;
+        } else if (rest) {
+          const slug = normalize(rest);
+          if (slug) target = `/journal/${slug}`;
+        }
+        window.location.replace(target);
+        return;
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       const queryView = searchParams.get("view") as ViewKey | null;
       const queryParamsRaw = searchParams.get("params");
@@ -107,21 +125,40 @@ export function AppShell({ data }: { data: PlatformData }) {
         {view === "clinics" && <ClinicsView data={data} onGetStarted={() => setGetStartedOpen(true)} />}
         {view === "directory" && <DirectoryView clinics={data.clinics} />}
         {view === "clinic-application" && <ClinicApplicationView />}
-        {view === "clinic-profile" && (
-          <ClinicProfileView
-            clinic={data.clinics.find((c) => c.id === params?.id) ?? data.clinics[0]}
-            allClinics={data.clinics}
-          />
-        )}
-        {view === "clinic-dashboard" && (
-          <ClinicDashboardView
-            clinic={data.clinics.find((c) => c.id === params?.id) ?? data.clinics[0]}
-            allClinics={data.clinics}
-          />
-        )}
+        {view === "clinic-profile" && (() => {
+          const clinic = data.clinics.find((c) => c.id === params?.id);
+          if (!clinic) {
+            return (
+              <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+                <h1 className="text-2xl font-semibold">Clinic profile not found</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  This clinic is not available in the public directory.
+                </p>
+                <Button className="mt-6" onClick={() => navigate("directory")}>
+                  Back to directory
+                </Button>
+              </div>
+            );
+          }
+          return <ClinicProfileView clinic={clinic} allClinics={data.clinics} />;
+        })()}
+        {view === "clinic-dashboard" && (() => {
+          const clinic = data.clinics.find((c) => c.id === params?.id);
+          if (!clinic) {
+            return (
+              <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+                <h1 className="text-2xl font-semibold">Clinic dashboard not found</h1>
+                <Button className="mt-6" onClick={() => navigate("directory")}>
+                  Back to directory
+                </Button>
+              </div>
+            );
+          }
+          return <ClinicDashboardView clinic={clinic} allClinics={data.clinics} />;
+        })()}
         {view === "provider-profile" && (() => {
-          let foundProvider = null;
-          let foundClinic = null;
+          let foundProvider: (typeof data.clinics)[number]["providers"][number] | null = null;
+          let foundClinic: (typeof data.clinics)[number] | null = null;
           for (const c of data.clinics) {
             const p = c.providers?.find((prov) => prov.id === params?.id);
             if (p) {

@@ -72,6 +72,7 @@ export type ClinicT = {
   phone: string | null;
   email: string | null;
   website: string | null;
+  bookingUrl?: string | null;
   hours: string | null;
   verified: boolean;
   verificationStatus: string;
@@ -96,6 +97,7 @@ export type ClinicT = {
   providers: ClinicProviderT[];
   treatments: ClinicTreatmentT[];
   reviews: ClinicReviewT[];
+  updatedAt?: string | Date;
 };
 
 export type ProfessionalT = {
@@ -133,6 +135,7 @@ export type JobPostingT = {
   description: string;
   applicationRequirements: string | null;
   status: string;
+  createdAt?: string;
 };
 
 export type MarketplaceListingT = {

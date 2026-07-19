@@ -35,11 +35,15 @@ import { initials } from "@/lib/constants";
 import { toast } from "sonner";
 import {
   articleJsonLd,
+  articleUrl,
   breadcrumbJsonLd,
+  categoryUrl,
   faqJsonLd,
 } from "@/lib/seo";
 import { getRelatedArticles } from "@/lib/article-content";
 import type { ArticleContent, ArticleBlock } from "@/lib/article-content";
+import { captureSafeEvent } from "@/lib/analytics-client";
+import { canonicalPath } from "@/lib/site-config";
 import {
   BookOpen,
   Clock,
@@ -162,6 +166,94 @@ function ListBlock({ items, ordered }: { items: string[]; ordered?: boolean }) {
   );
 }
 
+function VideoBlock({
+  url,
+  title,
+  caption,
+}: {
+  url: string;
+  title: string;
+  caption?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const embedUrl = useMemo(() => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname === "youtu.be") {
+        const id = parsed.pathname.replace(/^\/+/, "").split("/")[0];
+        return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+      }
+      if (
+        parsed.hostname === "youtube.com" ||
+        parsed.hostname === "www.youtube.com"
+      ) {
+        const id =
+          parsed.searchParams.get("v") ||
+          parsed.pathname.match(/^\/embed\/([^/]+)/)?.[1];
+        return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+      }
+      if (parsed.hostname === "vimeo.com" || parsed.hostname === "www.vimeo.com") {
+        const id = parsed.pathname.match(/\/(\d+)/)?.[1];
+        return id ? `https://player.vimeo.com/video/${id}` : null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, [url]);
+
+  if (!embedUrl) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-analytics-event="video_played"
+        data-analytics-label={title}
+        className="my-6 block rounded-xl border border-border bg-muted/30 p-4 font-medium text-teal-700 hover:underline"
+      >
+        Watch video: {title}
+      </a>
+    );
+  }
+
+  return (
+    <figure className="my-8 overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="relative aspect-video bg-slate-950">
+        {loaded ? (
+          <iframe
+            src={`${embedUrl}?autoplay=1`}
+            title={title}
+            className="absolute inset-0 h-full w-full"
+            loading="lazy"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <button
+            type="button"
+            className="absolute inset-0 flex h-full w-full items-center justify-center bg-slate-950 px-6 text-center text-base font-semibold text-white hover:bg-slate-900"
+            onClick={() => {
+              captureSafeEvent("video_played", {
+                article_path: window.location.pathname,
+                video_host: new URL(url).hostname,
+              });
+              setLoaded(true);
+            }}
+          >
+            Play video: {title}
+          </button>
+        )}
+      </div>
+      {caption && (
+        <figcaption className="border-t border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
 function BlockRenderer({ block }: { block: ArticleBlock }) {
   switch (block.type) {
     case "heading": {
@@ -206,6 +298,14 @@ function BlockRenderer({ block }: { block: ArticleBlock }) {
             </figcaption>
           )}
         </figure>
+      );
+    case "video":
+      return (
+        <VideoBlock
+          url={block.url}
+          title={block.title}
+          caption={block.caption}
+        />
       );
     case "callout":
       return <CalloutBlock tone={block.tone} text={block.text} />;
@@ -373,7 +473,7 @@ function ReviewerCard({ name, role }: { name: string; role: string }) {
 
 function ShareControls({ title, slug }: { title: string; slug: string }) {
   const [copied, setCopied] = useState(false);
-  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/#journal/${slug}` : `/#journal/${slug}`;
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/journal/${slug}` : `/journal/${slug}`;
   const shareText = `${title} — Novalyte Journal`;
 
   const copyLink = async () => {
@@ -528,8 +628,10 @@ function NewsletterCTA() {
 
 function RelatedArticleCard({ article }: { article: ArticleContent }) {
   return (
-    <button
-      onClick={() => navigate("journal-article", undefined, { slug: article.slug })}
+    <a
+      href={`/journal/${article.slug}`}
+      data-analytics-event="related_article_clicked"
+      data-analytics-label={article.title}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-premium-sm transition card-premium-hover"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden">
@@ -553,7 +655,7 @@ function RelatedArticleCard({ article }: { article: ArticleContent }) {
         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{article.excerpt}</p>
         <span className="mt-auto pt-3 text-xs font-medium text-teal-700 group-hover:underline">Read article →</span>
       </div>
-    </button>
+    </a>
   );
 }
 
@@ -578,13 +680,43 @@ export function ArticleView({
   const breadcrumbLd = useMemo(
     () =>
       breadcrumbJsonLd([
-        { label: "Home", url: "https://novalyte.ai/" },
-        { label: "Journal", url: "https://novalyte.ai/#journal" },
-        { label: article.category, url: `https://novalyte.ai/#journal/category/${encodeURIComponent(article.category)}` },
-        { label: article.title, url: `https://novalyte.ai/#journal/${article.slug}` },
+        { label: "Home", url: canonicalPath("/") },
+        { label: "Journal", url: canonicalPath("/journal") },
+        { label: article.category, url: categoryUrl(article.category) },
+        { label: article.title, url: articleUrl(article.slug) },
       ]),
     [article.category, article.slug, article.title],
   );
+
+  useEffect(() => {
+    captureSafeEvent("article_viewed", {
+      article_slug: article.slug,
+      category: article.category,
+      reading_time_minutes: article.readingTime,
+    });
+
+    const reached = new Set<number>();
+    const onScroll = () => {
+      const scrollable =
+        document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      const percent = Math.round((window.scrollY / scrollable) * 100);
+      for (const threshold of [50, 90]) {
+        if (percent >= threshold && !reached.has(threshold)) {
+          reached.add(threshold);
+          captureSafeEvent(
+            threshold === 50 ? "article_50_percent_read" : "article_90_percent_read",
+            {
+              article_slug: article.slug,
+              category: article.category,
+            },
+          );
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [article.category, article.readingTime, article.slug]);
 
   return (
     <div className="min-h-screen">
@@ -749,7 +881,20 @@ export function ArticleView({
                           {i + 1}
                         </span>
                         <div>
-                          <div className="font-medium text-foreground">{r.label}</div>
+                          {r.url ? (
+                            <a
+                              href={r.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-analytics-event="external_medical_source_clicked"
+                              data-analytics-label={r.label}
+                              className="font-medium text-teal-700 underline-offset-4 hover:underline"
+                            >
+                              {r.label}
+                            </a>
+                          ) : (
+                            <div className="font-medium text-foreground">{r.label}</div>
+                          )}
                           <div className="text-xs text-muted-foreground">{r.source}</div>
                         </div>
                       </li>
@@ -796,9 +941,26 @@ export function ArticleView({
                     </p>
                   </div>
                 </div>
-                <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("directory")}>
-                  Open directory <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    className="bg-teal-600 text-white hover:bg-teal-700"
+                    data-analytics-event="journal_directory_cta_clicked"
+                    onClick={() => navigate("directory")}
+                  >
+                    Open directory <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    data-analytics-event="journal_assessment_cta_clicked"
+                    onClick={() =>
+                      navigate("assessment", undefined, {
+                        slug: article.relatedTreatment ?? "testosterone-replacement-therapy",
+                      })
+                    }
+                  >
+                    Start assessment
+                  </Button>
+                </div>
               </div>
 
               {/* Back to journal */}

@@ -76,19 +76,26 @@ function ArticleCard({ article }: { article: ArticleContent }) {
 export function JournalCategoryView({
   category,
   articles,
+  categories,
 }: {
   category: string;
   articles: ArticleContent[];
+  categories?: Array<{ name: string; slug: string }>;
 }) {
   const filtered = useMemo(
     () => articles.filter((a) => a.category === category),
     [articles, category],
   );
 
-  const otherCategories = useMemo(
-    () => JOURNAL_CATEGORIES.filter((c) => c !== category),
-    [category],
-  );
+  const otherCategories = useMemo(() => {
+    if (categories && categories.length > 0) {
+      return categories.filter((c) => c.name !== category);
+    }
+    return JOURNAL_CATEGORIES.filter((c) => c !== category).map((name) => ({
+      name,
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    }));
+  }, [category, categories]);
 
   return (
     <div className="min-h-screen">
@@ -142,11 +149,11 @@ export function JournalCategoryView({
           </button>
           {otherCategories.map((c) => (
             <button
-              key={c}
-              onClick={() => navigate("journal-category", undefined, { slug: c })}
+              key={c.slug}
+              onClick={() => navigate("journal-category", undefined, { slug: c.slug })}
               className="shrink-0 rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-muted-foreground transition hover:border-teal-200 hover:text-teal-700"
             >
-              {c}
+              {c.name}
             </button>
           ))}
         </div>

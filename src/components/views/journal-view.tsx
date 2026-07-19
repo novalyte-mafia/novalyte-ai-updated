@@ -14,6 +14,8 @@ import { navigate } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import type { ArticleContent } from "@/lib/article-content";
 import { JOURNAL_CATEGORIES } from "@/lib/article-content";
+
+type CategoryOption = { name: string; slug: string };
 import { toast } from "sonner";
 import { useState } from "react";
 import {
@@ -292,11 +294,25 @@ function NewsletterCTA() {
    Main view
    ──────────────────────────────────────────────────────────────── */
 
-export function JournalView({ articles }: { articles: ArticleContent[] }) {
+export function JournalView({
+  articles,
+  categories,
+}: {
+  articles: ArticleContent[];
+  /** Dual-read categories from Supabase+hardcoded merge; falls back to hardcoded. */
+  categories?: CategoryOption[];
+}) {
   // Featured = first article (newest, by ordering from ARTICLES)
   const featured = articles[0];
   const editorsPicks = useMemo(() => articles.slice(1, 4), [articles]);
   const rest = useMemo(() => articles.slice(4), [articles]);
+  const categoryOptions = useMemo(() => {
+    if (categories && categories.length > 0) return categories;
+    return JOURNAL_CATEGORIES.map((name) => ({
+      name,
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    }));
+  }, [categories]);
 
   return (
     <div className="min-h-screen">
@@ -339,13 +355,13 @@ export function JournalView({ articles }: { articles: ArticleContent[] }) {
           >
             All
           </button>
-          {JOURNAL_CATEGORIES.map((c) => (
+          {categoryOptions.map((c) => (
             <button
-              key={c}
-              onClick={() => navigate("journal-category", undefined, { slug: c })}
+              key={c.slug}
+              onClick={() => navigate("journal-category", undefined, { slug: c.slug })}
               className="shrink-0 rounded-full border border-border bg-card px-4 py-1.5 text-sm font-medium text-muted-foreground transition hover:border-teal-200 hover:text-teal-700"
             >
-              {c}
+              {c.name}
             </button>
           ))}
         </div>

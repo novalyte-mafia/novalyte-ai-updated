@@ -861,7 +861,10 @@ function JobsSection({ jobs }: { jobs: JobPostingT[] }) {
     } else if (sort === "comp-low") {
       sorted.sort((a, b) => (a.compMin ?? a.compMax ?? Number.POSITIVE_INFINITY) - (b.compMin ?? b.compMax ?? Number.POSITIVE_INFINITY));
     } else if (sort === "newest") {
-      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      sorted.sort(
+        (a, b) =>
+          new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
+      );
     } else if (sort === "featured") {
       // Featured = contract roles and higher compensation first
       sorted.sort((a, b) => {

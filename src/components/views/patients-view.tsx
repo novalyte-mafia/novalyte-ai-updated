@@ -13,7 +13,7 @@ import { ASSESSMENTS } from "@/lib/assessment-config";
 import { getTreatmentIcon } from "@/lib/treatment-icons";
 import { navigate } from "@/lib/nav";
 import { IMAGES, ALT_TEXT } from "@/lib/images";
-import type { PlatformData } from "@/components/site/app-shell";
+import type { PlatformData } from "@/lib/platform-data";
 import {
   Stethoscope, ArrowRight, ShieldCheck, Sparkles, CheckCircle2,
   Compass, Lock, HeartPulse, FileText, Video, Building2,

@@ -50,15 +50,62 @@ export const useNav = create<NavState>((set) => ({
   setView: (view, anchor, params) => set({ view, anchor, params }),
 }));
 
+/** Slug normalization matching the shared Journal contract (kept dependency-free here). */
+function journalSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Journal views now live at real App Router routes. */
+function journalPath(view: ViewKey, params?: { slug?: string }): string | null {
+  if (view === "journal") return "/journal";
+  if (view === "journal-article") {
+    const slug = params?.slug ? journalSlug(params.slug) : "";
+    return slug ? `/journal/${slug}` : "/journal";
+  }
+  if (view === "journal-category") {
+    const slug = params?.slug ? journalSlug(params.slug) : "";
+    return slug ? `/journal/category/${slug}` : "/journal";
+  }
+  return null;
+}
+
+const PUBLIC_VIEW_PATHS: Partial<Record<ViewKey, string>> = {
+  home: "/",
+  patients: "/patients",
+  clinics: "/clinics",
+  directory: "/directory",
+  workforce: "/workforce",
+  marketplace: "/marketplace",
+  about: "/about",
+  contact: "/contact",
+  privacy: "/privacy",
+  terms: "/terms",
+  "medical-disclaimer": "/medical-disclaimer",
+  accessibility: "/accessibility",
+};
+
 /** Navigate between views. Accepts optional anchor and params for detail views. */
 export function navigate(
   view: ViewKey,
   anchor?: string,
   params?: { id?: string; slug?: string; clinicId?: string },
 ) {
-  if (view === "contact") {
+  const journalHref = journalPath(view, params);
+  if (journalHref) {
     if (typeof window !== "undefined") {
-      window.location.href = "/contact";
+      window.location.href = journalHref;
+    }
+    return;
+  }
+  const publicPath = PUBLIC_VIEW_PATHS[view];
+  if (publicPath) {
+    if (typeof window !== "undefined") {
+      const anchorSuffix = anchor ? `#${encodeURIComponent(anchor)}` : "";
+      window.location.href = `${publicPath}${anchorSuffix}`;
     }
     return;
   }

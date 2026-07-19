@@ -5,26 +5,42 @@
  * plain JSON-LD-compatible object that the article view renders inside a
  * <script type="application/ld+json"> tag.
  *
- * The platform uses a Zustand view-router on a single `/` route, so canonical
- * URLs are expressed using hash fragments (`/#journal/{slug}`) for crawler and
- * share-link clarity. This keeps the structured data honest about the actual
- * user-facing URL while remaining valid schema.org markup.
+ * The Journal lives at real App Router routes (`/journal/{slug}`,
+ * `/journal/category/{slug}`); legacy hash URLs redirect there.
  */
 
 import type { ArticleContent } from "@/lib/article-content";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+  absoluteSiteUrl,
+} from "@/lib/site-config";
 
-const SITE_URL = "https://novalyte.ai";
-const PUBLISHER_NAME = "Novalyte AI";
-const PUBLISHER_LOGO = `${SITE_URL}/logo.svg`;
+const PUBLISHER_LOGO = absoluteSiteUrl("/logo.svg");
 
-/** Build a journal article URL (hash-routed). */
-export function articleUrl(slug: string): string {
-  return `${SITE_URL}/#journal/${slug}`;
+/** Slug normalization matching the shared Journal contract. */
+function journalSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-/** Build a journal category URL (hash-routed). */
+/** Build a journal article URL (real App Router route). */
+export function articleUrl(slug: string): string {
+  return `${SITE_URL}/journal/${journalSlug(slug)}`;
+}
+
+/** Build a journal category URL (real App Router route). */
 export function categoryUrl(category: string): string {
-  return `${SITE_URL}/#journal/category/${encodeURIComponent(category)}`;
+  return `${SITE_URL}/journal/category/${journalSlug(category)}`;
+}
+
+/** Hero images may be site-relative paths or absolute Supabase Storage URLs. */
+export function absoluteImageUrl(src: string): string {
+  return /^https?:\/\//i.test(src) ? src : `${SITE_URL}${src}`;
 }
 
 /** Article schema.org JSON-LD. */
@@ -34,7 +50,7 @@ export function articleJsonLd(article: ArticleContent) {
     "@type": "Article",
     headline: article.title,
     description: article.excerpt,
-    image: [`${SITE_URL}${article.heroImage}`],
+    image: [absoluteImageUrl(article.heroImage)],
     datePublished: article.publishedAt,
     dateModified: article.updatedAt,
     author: {
@@ -50,7 +66,7 @@ export function articleJsonLd(article: ArticleContent) {
       : undefined,
     publisher: {
       "@type": "Organization",
-      name: PUBLISHER_NAME,
+      name: SITE_NAME,
       logo: {
         "@type": "ImageObject",
         url: PUBLISHER_LOGO,
@@ -101,15 +117,10 @@ export function organizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: PUBLISHER_NAME,
+    name: SITE_NAME,
     url: SITE_URL,
     logo: PUBLISHER_LOGO,
-    description:
-      "Novalyte AI is a technology platform that connects patient demand, verified clinics, specialized healthcare professionals, equipment suppliers, and operational services through one intelligent men's-health ecosystem.",
-    sameAs: [
-      "https://twitter.com/novalyteai",
-      "https://www.linkedin.com/company/novalyteai",
-    ],
+    description: SITE_DESCRIPTION,
   };
 }
 
@@ -118,11 +129,11 @@ export function websiteJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: PUBLISHER_NAME,
+    name: SITE_NAME,
     url: SITE_URL,
     publisher: {
       "@type": "Organization",
-      name: PUBLISHER_NAME,
+      name: SITE_NAME,
     },
   };
 }

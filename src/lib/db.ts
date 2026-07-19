@@ -35,7 +35,7 @@ class ModelAdapter<T> {
     if (options?.select) {
       selectFields = Object.keys(options.select).join(",");
     } else if (this.tableName === "Clinic" && options?.include) {
-      const includes = [];
+      const includes: string[] = [];
       if (options.include.locations) includes.push("locations:ClinicLocation(*)");
       if (options.include.providers) includes.push("providers:ClinicProvider(*)");
       if (options.include.treatments) includes.push("treatments:ClinicTreatment(*)");
@@ -82,7 +82,7 @@ class ModelAdapter<T> {
     const supabase = getSupabaseAdmin();
     let selectFields = "*";
     if (this.tableName === "Clinic" && options?.include) {
-      const includes = [];
+      const includes: string[] = [];
       if (options.include.locations) includes.push("locations:ClinicLocation(*)");
       if (options.include.providers) includes.push("providers:ClinicProvider(*)");
       if (options.include.treatments) includes.push("treatments:ClinicTreatment(*)");

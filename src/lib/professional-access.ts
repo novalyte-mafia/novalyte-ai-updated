@@ -2,6 +2,13 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  WorkforceAuthError,
+  getAuthenticatedUser,
+  getBearerToken,
+  hasAccountType,
+  workforceAuthErrorResponse,
+} from "@/lib/workforce/auth";
 
 export type ProfessionalAccessStatus =
   | "auth_unverified"
@@ -20,28 +27,32 @@ export type ProfessionalAccess = {
   redirectTo: string;
 };
 
-export class ProfessionalAuthError extends Error {
-  constructor(message: string, public readonly statusCode = 401) {
-    super(message);
-  }
-}
+export class ProfessionalAuthError extends WorkforceAuthError {}
 
-export function getBearerToken(request: Request): string {
-  const authorization = request.headers.get("authorization");
-  const [scheme, token] = authorization?.split(" ") ?? [];
-  if (scheme?.toLowerCase() !== "bearer" || !token) {
-    throw new ProfessionalAuthError("Authentication is required.");
-  }
-  return token;
-}
+export { getBearerToken, workforceAuthErrorResponse as professionalAuthErrorResponse };
 
 export async function getAuthenticatedProfessionalUser(request: Request): Promise<User> {
-  const token = getBearerToken(request);
-  const { data, error } = await getSupabaseAdmin().auth.getUser(token);
-  if (error || !data.user) {
-    throw new ProfessionalAuthError("Your session is invalid or has expired.");
+  const user = await getAuthenticatedUser(request);
+  // Prefer protected app_metadata; allow onboarding path before grant completes.
+  const hasProfessionalClaim = hasAccountType(user, "professional");
+  const admin = getSupabaseAdmin();
+  const { data: profile } = await admin
+    .from("workforce_professional_profiles")
+    .select("id")
+    .eq("userId", user.id)
+    .maybeSingle();
+  const { data: draft } = await admin
+    .from("professional_onboarding_drafts")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!hasProfessionalClaim && !profile && !draft) {
+    // First-time professional gateway users may not have app_metadata yet.
+    // Do not authorize from user_metadata.role.
   }
-  return data.user;
+
+  return user;
 }
 
 export async function resolveProfessionalAccess(request: Request): Promise<ProfessionalAccess> {
@@ -112,11 +123,4 @@ export async function resolveProfessionalAccess(request: Request): Promise<Profe
         ? "/workforce/professional/account-status"
         : "/workforce/professional/dashboard",
   };
-}
-
-export function professionalAuthErrorResponse(error: unknown): Response | null {
-  if (error instanceof ProfessionalAuthError) {
-    return Response.json({ error: error.message }, { status: error.statusCode });
-  }
-  return null;
 }

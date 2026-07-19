@@ -21,6 +21,7 @@ import { navigate, useSaved } from "@/lib/nav";
 import { splitCsv, colorClasses, initials } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import { toast } from "sonner";
 import {
   MapPin, Video, Phone, Mail, Globe, Clock, ShieldCheck, Stethoscope,
@@ -206,18 +207,32 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
                 </Button>
                 {clinic.phone && (
                   <Button variant="outline" className="font-semibold border-border" asChild>
-                    <a href={`tel:${clinic.phone}`}><Phone className="mr-1.5 h-4 w-4" /> Call Clinic</a>
+                    <a href={`tel:${clinic.phone}`} data-analytics-event="clinic_phone_clicked" data-analytics-label={clinic.slug}><Phone className="mr-1.5 h-4 w-4" /> Call Clinic</a>
                   </Button>
                 )}
                 {clinic.website && (
                   <Button variant="outline" className="font-semibold border-border" asChild>
-                    <a href={clinic.website} target="_blank" rel="noopener noreferrer"><Globe className="mr-1.5 h-4 w-4" /> Visit Website</a>
+                    <a href={clinic.website} target="_blank" rel="noopener noreferrer" data-analytics-event="clinic_website_clicked" data-analytics-label={clinic.slug}><Globe className="mr-1.5 h-4 w-4" /> Visit Website</a>
+                  </Button>
+                )}
+                {clinic.bookingUrl && (
+                  <Button className="bg-teal-600 text-white hover:bg-teal-700" asChild>
+                    <a href={clinic.bookingUrl} target="_blank" rel="noopener noreferrer" data-analytics-event="booking_link_clicked" data-analytics-label={clinic.slug}><Calendar className="mr-1.5 h-4 w-4" /> Book Online</a>
                   </Button>
                 )}
                 <Button variant="outline" className="font-semibold border-border" onClick={() => scrollToTab("treatments")}>
                   <Stethoscope className="mr-1.5 h-4 w-4" /> View Treatments Catalog
                 </Button>
-                <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} label={saved ? "Saved" : "Save"} />
+                <SaveButton
+                  saved={saved}
+                  onToggle={() => {
+                    if (!saved) {
+                      captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
+                    }
+                    toggleSave("clinic", clinic.id);
+                  }}
+                  label={saved ? "Saved" : "Save"}
+                />
               </div>
             </div>
 
@@ -234,9 +249,9 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
               </div>
               <Separator className="my-4" />
               <div className="space-y-1.5">
-                {clinic.phone && <a href={`tel:${clinic.phone}`} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> {clinic.phone}</a>}
+                {clinic.phone && <a href={`tel:${clinic.phone}`} data-analytics-event="clinic_phone_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> {clinic.phone}</a>}
                 {clinic.email && <a href={`mailto:${clinic.email}`} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.email}</span></a>}
-                {clinic.website && <a href={clinic.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.website.replace(/^https?:\/\//, "")}</span></a>}
+                {clinic.website && <a href={clinic.website} target="_blank" rel="noopener noreferrer" data-analytics-event="clinic_website_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.website.replace(/^https?:\/\//, "")}</span></a>}
               </div>
             </PremiumCard>
           </div>
@@ -490,7 +505,7 @@ function TreatmentsTab({ clinic }: { clinic: ClinicT }) {
                     </span>
                   )}
                 </div>
-                <Button size="xs" onClick={openContact} className="bg-teal-600 text-white hover:bg-teal-700 text-[10px] h-7 px-3">
+                <Button size="sm" onClick={openContact} className="bg-teal-600 text-white hover:bg-teal-700 text-[10px] h-7 px-3">
                   Request consult
                 </Button>
               </div>
@@ -553,7 +568,7 @@ function ProvidersTab({ clinic }: { clinic: ClinicT }) {
                   </div>
                   <Button
                     variant="ghost"
-                    size="xs"
+                    size="sm"
                     className="text-teal-700 hover:text-teal-800 hover:bg-teal-50 text-[10px] h-7 px-2 font-semibold flex items-center gap-0.5"
                     onClick={() => navigate("provider-profile", undefined, { id: p.id })}
                   >
@@ -1018,9 +1033,10 @@ function ContactTab({ clinic }: { clinic: ClinicT }) {
           <div>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase">Direct Contacts</h4>
             <div className="mt-3 space-y-2.5 text-xs">
-              {clinic.phone && <a href={`tel:${clinic.phone}`} className="flex items-center gap-2 text-foreground hover:text-teal-700 font-semibold"><Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> {clinic.phone}</a>}
+              {clinic.phone && <a href={`tel:${clinic.phone}`} data-analytics-event="clinic_phone_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-foreground hover:text-teal-700 font-semibold"><Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> {clinic.phone}</a>}
               {clinic.email && <a href={`mailto:${clinic.email}`} className="flex items-center gap-2 text-foreground hover:text-teal-700 truncate font-semibold"><Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.email}</span></a>}
-              {clinic.website && <a href={clinic.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-foreground hover:text-teal-700 truncate font-semibold"><Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">Visit Website</span></a>}
+              {clinic.website && <a href={clinic.website} target="_blank" rel="noopener noreferrer" data-analytics-event="clinic_website_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-foreground hover:text-teal-700 truncate font-semibold"><Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">Visit Website</span></a>}
+              {clinic.bookingUrl && <a href={clinic.bookingUrl} target="_blank" rel="noopener noreferrer" data-analytics-event="booking_link_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-foreground hover:text-teal-700 truncate font-semibold"><Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">Book Online</span></a>}
             </div>
           </div>
 

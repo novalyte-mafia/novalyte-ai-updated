@@ -44,7 +44,15 @@ async function maybeNotifySlack(event: ServerEvent, properties: Record<string, u
 }
 
 export async function captureServerEvent(event: ServerEvent): Promise<void> {
-  const properties = safeProperties(event.properties);
+  const properties = {
+    ...safeProperties(event.properties),
+    // Stamp production server conversions so HogQL can include them without $host/$current_url.
+    environment:
+      process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production"
+        ? "production"
+        : "development",
+    capture_source: "server",
+  };
   await maybeNotifySlack(event, properties).catch((error) => console.error("Analytics Slack alert failed", error));
   const projectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;

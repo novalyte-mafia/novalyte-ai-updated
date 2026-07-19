@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SectionShell } from "@/components/shared/section";
 import { VerificationBadge, StatusPill, CheckItem } from "@/components/shared/badges";
 import { DisclaimerBanner } from "@/components/shared/disclaimer";
@@ -24,6 +24,7 @@ import { splitCsv } from "@/lib/constants";
 import type { JobPostingT } from "@/lib/types";
 import { navigate, useSaved } from "@/lib/nav";
 import { cn } from "@/lib/utils";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import {
   MapPin,
   Briefcase,
@@ -91,6 +92,11 @@ export function JobDetailView({
   allJobs: JobPostingT[];
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const applicationStarted = useRef(false);
+
+  useEffect(() => {
+    captureSafeEvent("job_viewed", { job_id: job.id });
+  }, [job.id]);
 
   const licenses = splitCsv(job.requiredLicenses);
   const specialties = splitCsv(job.treatmentSpecialties);
@@ -126,6 +132,10 @@ export function JobDetailView({
   }, [allJobs, job, licenses, specialties]);
 
   function scrollToApply() {
+    if (!applicationStarted.current) {
+      applicationStarted.current = true;
+      captureSafeEvent("job_application_started", { job_id: job.id });
+    }
     setActiveTab("apply");
     // Allow tab state to render then smooth-scroll
     window.setTimeout(() => {
@@ -726,17 +736,11 @@ function ScheduleTab({ job }: { job: JobPostingT }) {
    ──────────────────────────────────────────────────────────────── */
 
 type ApplicationForm = {
-  applicantName: string;
-  applicantEmail: string;
-  applicantPhone: string;
   coverNote: string;
   consent: boolean;
 };
 
 const EMPTY_FORM: ApplicationForm = {
-  applicantName: "",
-  applicantEmail: "",
-  applicantPhone: "",
   coverNote: "",
   consent: false,
 };
@@ -749,27 +753,41 @@ function ApplyTab({ job, comp }: { job: JobPostingT; comp: string | null }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.consent) {
+      captureSafeEvent("form_error", { form_type: "job_application" });
       toast.error("Please acknowledge the platform disclosure to continue.");
       return;
     }
     setSubmitting(true);
     try {
+      const { getSupabaseClient } = await import("@/lib/supabase/client");
+      const supabase = getSupabaseClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error("Sign in to your professional account to apply.");
+        window.location.assign("/workforce/professional/sign-in");
+        return;
+      }
       const res = await fetch("/api/job-application", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           jobPostingId: job.id,
-          applicantName: form.applicantName,
-          applicantEmail: form.applicantEmail,
-          applicantPhone: form.applicantPhone || null,
           coverNote: form.coverNote || null,
+          consentVersion: "v1",
         }),
       });
-      if (!res.ok) throw new Error();
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Unable to apply.");
       setDone(true);
+      captureSafeEvent("job_application_submitted", { job_id: job.id });
       toast.success("Application submitted. The clinic will reach out if there is a fit.");
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (error) {
+      captureSafeEvent("form_error", { form_type: "job_application" });
+      toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -807,47 +825,11 @@ function ApplyTab({ job, comp }: { job: JobPostingT; comp: string | null }) {
               </h3>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Fields marked <span className="text-destructive">*</span> are required.
+              Applications require a signed-in professional account. Your name and contact details are taken from your verified profile.
             </p>
 
             <form onSubmit={submit} className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label htmlFor="jd-name" className="text-xs">
-                  Full name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="jd-name"
-                  required
-                  placeholder="Jane Doe"
-                  value={form.applicantName}
-                  onChange={(e) => setForm({ ...form, applicantName: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="jd-email" className="text-xs">
-                  Email <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="jd-email"
-                  type="email"
-                  required
-                  placeholder="jane@example.com"
-                  value={form.applicantEmail}
-                  onChange={(e) => setForm({ ...form, applicantEmail: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="jd-phone" className="text-xs">
-                  Phone <span className="text-muted-foreground">(optional)</span>
-                </Label>
-                <Input
-                  id="jd-phone"
-                  placeholder="(555) 123-4567"
-                  value={form.applicantPhone}
-                  onChange={(e) => setForm({ ...form, applicantPhone: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5 sm:col-span-2">
                 <Label htmlFor="jd-note" className="text-xs">
                   Cover note <span className="text-muted-foreground">(optional)</span>
                 </Label>
@@ -857,7 +839,6 @@ function ApplyTab({ job, comp }: { job: JobPostingT; comp: string | null }) {
                   placeholder="Why are you a strong fit for this role?"
                   value={form.coverNote}
                   onChange={(e) => setForm({ ...form, coverNote: e.target.value })}
-                  className="sm:col-span-2"
                 />
               </div>
 

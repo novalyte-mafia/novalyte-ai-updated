@@ -9,12 +9,13 @@ export function PremiumCard({
   className,
   hover = false,
   as: As = "div",
+  ...props
 }: {
   children: React.ReactNode;
   className?: string;
   hover?: boolean;
   as?: React.ElementType;
-}) {
+} & React.HTMLAttributes<HTMLElement>) {
   return (
     <As
       className={cn(
@@ -22,6 +23,7 @@ export function PremiumCard({
         hover && "card-premium-hover cursor-pointer",
         className,
       )}
+      {...props}
     >
       {children}
     </As>
@@ -227,25 +229,28 @@ export function SaveButton({
   onToggle,
   size = "default",
   label,
+  className,
 }: {
   saved: boolean;
-  onToggle: () => void;
-  size?: "sm" | "default";
+  onToggle?: () => void;
+  size?: "xs" | "sm" | "default";
   label?: string;
+  className?: string;
 }) {
   return (
     <button
-      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggle(); }}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggle?.(); }}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg border transition",
-        size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
+        size === "xs" ? "px-1.5 py-0.5 text-[10px]" : size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
         saved
           ? "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100"
           : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700",
+        className,
       )}
       aria-pressed={saved}
     >
-      <svg viewBox="0 0 24 24" className={cn(size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4")} fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+      <svg viewBox="0 0 24 24" className={cn(size === "default" ? "h-4 w-4" : "h-3.5 w-3.5")} fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       {label && <span>{label}</span>}

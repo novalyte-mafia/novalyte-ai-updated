@@ -1,7 +1,6 @@
 "use client";
 
 import { Logo } from "@/components/site/logo";
-import { navigate } from "@/lib/nav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -63,20 +62,36 @@ export function Footer({ onNewsletter }: { onNewsletter: (email: string) => Prom
           <nav aria-label="Policies" className="md:col-span-2 lg:col-span-1 lg:pt-1">
             <ul className="flex flex-wrap gap-x-4 gap-y-2 lg:flex-col lg:gap-1.5">
               <li>
-                <button
-                  onClick={() => navigate("privacy")}
+                <a
+                  href="/privacy"
                   className="text-sm text-muted-foreground transition hover:text-teal-700"
                 >
                   Privacy Policy
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => navigate("terms")}
+                <a
+                  href="/terms"
                   className="text-sm text-muted-foreground transition hover:text-teal-700"
                 >
                   Terms of Service
-                </button>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/medical-disclaimer"
+                  className="text-sm text-muted-foreground transition hover:text-teal-700"
+                >
+                  Medical Disclaimer
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/accessibility"
+                  className="text-sm text-muted-foreground transition hover:text-teal-700"
+                >
+                  Accessibility
+                </a>
               </li>
             </ul>
           </nav>

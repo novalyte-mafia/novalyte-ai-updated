@@ -48,8 +48,11 @@ export function ProviderProfileView({
     );
   }
 
-  const c = colorClasses(clinic.logoColor);
-  const specs = splitCsv(provider.specialties || clinic.specialties);
+  const activeClinic = clinic;
+  const activeProvider = provider;
+
+  const c = colorClasses(activeClinic.logoColor);
+  const specs = splitCsv(activeProvider.specialties || activeClinic.specialties);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,17 +62,17 @@ export function ProviderProfileView({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clinicId: clinic.id,
-          clinicName: clinic.name,
-          providerId: provider.id,
-          providerName: provider.name,
+          clinicId: activeClinic.id,
+          clinicName: activeClinic.name,
+          providerId: activeProvider.id,
+          providerName: activeProvider.name,
           ...form,
           treatmentInterest: specs[0] ?? null,
         }),
       });
       if (!res.ok) throw new Error();
       setDone(true);
-      toast.success(`Consultation request sent to ${provider.name}!`);
+      toast.success(`Consultation request sent to ${activeProvider.name}!`);
     } catch {
       toast.error("Failed to route consultation request. Please try again.");
     } finally {

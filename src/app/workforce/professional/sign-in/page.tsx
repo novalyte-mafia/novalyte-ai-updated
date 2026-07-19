@@ -44,7 +44,7 @@ export default function ProfessionalSignIn() {
         toast.error(error.message || "Failed to sign in. Please verify your credentials.");
       } else {
         if (data.user) {
-          identifyAnalyticsUser(data.user.id, { email: data.user.email, role: "professional" });
+          identifyAnalyticsUser(data.user.id, { role: "professional" });
           captureAnalyticsEvent("professional_signed_in");
         }
         toast.success("Welcome back! Checking your profile status...");

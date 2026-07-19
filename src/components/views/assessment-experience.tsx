@@ -12,6 +12,7 @@ import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
 import type { AssessmentConfig, Question } from "@/lib/assessment-config";
 import { navigate } from "@/lib/nav";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -70,6 +71,11 @@ export function AssessmentExperience({
   // Auto-advance for single-choice questions
   function handleSingleSelect(id: string, value: string) {
     setAnswer(id, value);
+    captureSafeEvent("assessment_step_completed", {
+      assessment_type: config.slug,
+      step_number: stepIndex + 1,
+      total_steps: totalSteps,
+    });
     setTransitioning(true);
     setTimeout(() => {
       if (stepIndex < totalSteps - 1) {
@@ -109,6 +115,11 @@ export function AssessmentExperience({
   }
 
   function next() {
+    captureSafeEvent("assessment_step_completed", {
+      assessment_type: config.slug,
+      step_number: stepIndex + 1,
+      total_steps: totalSteps,
+    });
     if (stepIndex < totalSteps - 1) {
       setStepIndex((s) => s + 1);
     } else {
@@ -124,6 +135,17 @@ export function AssessmentExperience({
     }
   }
 
+  function exitAssessment() {
+    if (phase === "questions" || phase === "review") {
+      captureSafeEvent("assessment_abandoned", {
+        assessment_type: config.slug,
+        step_number: stepIndex + 1,
+        total_steps: totalSteps,
+      });
+    }
+    onExit();
+  }
+
   function computeReadiness(): { status: string; clinics: string[] } {
     const timeline = answers["timeline"] as string | undefined;
     const selfPay = answers["self_pay"] as string | undefined;
@@ -134,8 +156,12 @@ export function AssessmentExperience({
     const matched = clinics
       .filter((c) => {
         const specs = splitCsv(c.specialties);
-        const specMatch = specs.some((s) => s.toLowerCase().includes(config.treatmentLabel.toLowerCase().split(" ")[0])) ||
-          config.treatmentLabel.toLowerCase().includes(s.toLowerCase().split(" ")[0]);
+        const treatmentToken = config.treatmentLabel.toLowerCase().split(" ")[0] ?? "";
+        const specMatch =
+          specs.some((s) => s.toLowerCase().includes(treatmentToken)) ||
+          specs.some((s) =>
+            config.treatmentLabel.toLowerCase().includes(s.toLowerCase().split(" ")[0] ?? ""),
+          );
         const stateMatch = !contactLoc?.state || c.state === contactLoc.state;
         const teleMatch = careFormat !== "in-person" || c.telehealth;
         return (specMatch || stateMatch) && teleMatch;
@@ -200,6 +226,14 @@ export function AssessmentExperience({
       if (!res.ok) throw new Error();
       setResults({ readiness: status, matchedClinicIds: matched });
       setPhase("results");
+      captureSafeEvent("assessment_completed", {
+        assessment_type: config.slug,
+        recommendation_count: matched.length,
+      });
+      captureSafeEvent("clinic_recommendation_viewed", {
+        assessment_type: config.slug,
+        recommendation_count: matched.length,
+      });
       toast.success("Assessment complete.");
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -214,7 +248,7 @@ export function AssessmentExperience({
     <div className="fixed inset-0 z-[70] bg-background">
       {/* Mobile top bar */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3 lg:hidden">
-        <button onClick={onExit} aria-label="Exit assessment">
+        <button onClick={exitAssessment} aria-label="Exit assessment">
           <Logo size="sm" />
         </button>
         <div className="flex items-center gap-2">
@@ -223,7 +257,7 @@ export function AssessmentExperience({
               {stepIndex + 1} / {totalSteps}
             </span>
           )}
-          <button onClick={onExit} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" aria-label="Save and exit">
+          <button onClick={exitAssessment} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted" aria-label="Save and exit">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -241,7 +275,7 @@ export function AssessmentExperience({
         <aside className="hidden w-[38%] shrink-0 overflow-y-auto border-r border-border bg-gradient-to-b from-teal-50/30 to-background lg:block novalyte-scroll">
           <div className="flex h-full flex-col p-8">
             {/* Logo */}
-            <button onClick={onExit} className="mb-8 w-fit">
+            <button onClick={exitAssessment} className="mb-8 w-fit">
               <Logo />
             </button>
 
@@ -366,7 +400,14 @@ export function AssessmentExperience({
 
             {/* Content area */}
             <div className="flex-1">
-              {phase === "intro" && <IntroScreen config={config} onBegin={() => { setPhase("questions"); setStepIndex(0); }} onExit={onExit} />}
+              {phase === "intro" && <IntroScreen config={config} onBegin={() => {
+                captureSafeEvent("assessment_started", {
+                  assessment_type: config.slug,
+                  total_steps: totalSteps,
+                });
+                setPhase("questions");
+                setStepIndex(0);
+              }} onExit={onExit} />}
 
               {phase === "questions" && currentQuestion && (
                 <div className={cn("novalyte-fade-up", transitioning && "opacity-60")}>
@@ -405,7 +446,7 @@ export function AssessmentExperience({
                   readiness={results.readiness}
                   matchedClinics={matchedClinics}
                   onRetake={() => { setPhase("intro"); setStepIndex(0); setAnswers({}); setResults(null); }}
-                  onExit={onExit}
+                  onExit={exitAssessment}
                 />
               )}
             </div>
@@ -904,7 +945,16 @@ function ResultsScreen({
       {/* Next steps */}
       <div className="mt-6 flex flex-wrap gap-2">
         {isReady && (
-          <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("directory")}>
+          <Button
+            className="bg-teal-600 text-white hover:bg-teal-700"
+            onClick={() => {
+              captureSafeEvent("directory_handoff_clicked", {
+                source: "assessment_results",
+                recommendation_count: matchedClinics.length,
+              });
+              navigate("directory");
+            }}
+          >
             View Matching Clinics <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,11 @@ import { navigate } from "@/lib/nav";
 import { US_STATES } from "@/lib/constants";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Upload, User, Building2, Image as ImageIcon,
-  ShieldCheck, Settings, Briefcase,
+  ShieldCheck, Settings, Briefcase, Loader2,
 } from "lucide-react";
 
 const EMPLOYER_STEPS = [
@@ -25,18 +27,125 @@ const EMPLOYER_STEPS = [
   { id: 5, label: "Dashboard Setup", icon: Settings },
 ];
 
+function requiredFieldsForStep(step: number, data: Record<string, unknown>): string | null {
+  if (step === 0) {
+    if (!String(data.name ?? "").trim()) return "Full name is required.";
+    if (!String(data.title ?? "").trim()) return "Job title is required.";
+    if (!String(data.email ?? "").trim()) return "Work email is required.";
+    if (!String(data.phone ?? "").trim()) return "Phone number is required.";
+    if (!String(data.password ?? "") || String(data.password).length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+  }
+  if (step === 1) {
+    if (!String(data.legalName ?? "").trim()) return "Legal organization name is required.";
+    if (!String(data.orgType ?? "").trim()) return "Organization type is required.";
+  }
+  if (step === 3 && data.authorized !== true) {
+    return "Authorization confirmation is required.";
+  }
+  return null;
+}
+
 export function EmployerOnboarding() {
+  const supabase = useMemo(() => getSupabaseClient(), []);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Record<string, unknown>>({});
+  const [submitting, setSubmitting] = useState(false);
   const total = EMPLOYER_STEPS.length;
   const progress = ((step + 1) / total) * 100;
 
-  function set(key: string, value: unknown) { setData((prev) => ({ ...prev, [key]: value })); }
-  function next() {
-    if (step < total - 1) setStep(step + 1);
-    else { toast.success("Organization account created. Welcome to Novalyte Workforce."); navigate("workforce"); }
+  useEffect(() => {
+    captureSafeEvent("employer_registration_started");
+  }, []);
+
+  function set(key: string, value: unknown) {
+    setData((prev) => ({ ...prev, [key]: value }));
   }
-  function back() { if (step === 0) navigate("join"); else setStep(step - 1); }
+
+  async function next() {
+    const validationError = requiredFieldsForStep(step, data);
+    if (validationError) {
+      captureSafeEvent("form_error", {
+        form_type: "employer_registration",
+        stage_number: step + 1,
+      });
+      toast.error(validationError);
+      return;
+    }
+
+    if (step < total - 1) {
+      captureSafeEvent("employer_registration_step_completed", {
+        stage_number: step + 1,
+      });
+      setStep(step + 1);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const email = String(data.email ?? "").trim().toLowerCase();
+      const password = String(data.password ?? "");
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/workforce/employer`,
+          data: {
+            account_intent: "employer",
+            first_name: String(data.name ?? "").split(" ")[0] ?? "",
+            last_name: String(data.name ?? "").split(" ").slice(1).join(" "),
+          },
+        },
+      });
+      if (signUpError) throw signUpError;
+
+      const session = signUpData.session;
+      if (!session) {
+        captureSafeEvent("employer_account_created", {
+          confirmation_required: true,
+        });
+        toast.success("Check your email to confirm your employer account, then continue onboarding.");
+        window.location.assign("/workforce/employer/sign-in");
+        return;
+      }
+
+      const response = await fetch("/api/workforce/employer/onboarding", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          currentStep: step,
+          data: {
+            ...data,
+            password: undefined,
+          },
+          finalize: true,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error ?? "Unable to create organization.");
+
+      captureSafeEvent("employer_profile_completed");
+      toast.success("Organization submitted for review. You can manage hiring from your employer dashboard.");
+      window.location.assign("/workforce/employer/dashboard");
+    } catch (error) {
+      captureSafeEvent("form_error", {
+        form_type: "employer_registration",
+        stage_number: step + 1,
+      });
+      toast.error(error instanceof Error ? error.message : "Unable to complete employer onboarding.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function back() {
+    if (step === 0) navigate("join");
+    else setStep(step - 1);
+  }
 
   return (
     <div className="fixed inset-0 z-[70] bg-background">
@@ -69,6 +178,9 @@ export function EmployerOnboarding() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900">
+              Organization accounts require email confirmation and admin review. Fake success paths have been removed.
+            </div>
             <div className="min-h-[400px]">
               {step === 0 && <EmpStepAccount data={data} set={set} />}
               {step === 1 && <EmpStepOrgInfo data={data} set={set} />}
@@ -78,8 +190,18 @@ export function EmployerOnboarding() {
               {step === 5 && <EmpStepDashboard data={data} set={set} />}
             </div>
             <div className="mt-8 flex items-center justify-between border-t pt-5">
-              <Button variant="ghost" onClick={back}><ArrowLeft className="mr-1 h-4 w-4" /> {step === 0 ? "Back to Join" : "Back"}</Button>
-              <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={next}>{step < total - 1 ? <>Continue <ArrowRight className="ml-1 h-4 w-4" /></> : <>Complete Setup <CheckCircle2 className="ml-1 h-4 w-4" /></>}</Button>
+              <Button variant="ghost" onClick={back} disabled={submitting}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> {step === 0 ? "Back to Join" : "Back"}
+              </Button>
+              <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={next} disabled={submitting}>
+                {submitting ? (
+                  <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Submitting...</>
+                ) : step < total - 1 ? (
+                  <>Continue <ArrowRight className="ml-1 h-4 w-4" /></>
+                ) : (
+                  <>Submit organization <CheckCircle2 className="ml-1 h-4 w-4" /></>
+                )}
+              </Button>
             </div>
           </div>
         </main>
@@ -99,7 +221,7 @@ function ChipToggle({ active, onClick, children }: { active: boolean; onClick: (
 function EmpStepAccount({ data, set }: { data: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
   return (
     <div className="space-y-4 novalyte-fade-up">
-      <div><h2 className="text-2xl font-semibold text-foreground">Account owner</h2><p className="mt-1 text-sm text-muted-foreground">Who will manage this organization's account?</p></div>
+      <div><h2 className="text-2xl font-semibold text-foreground">Account owner</h2><p className="mt-1 text-sm text-muted-foreground">Who will manage this organization&apos;s account?</p></div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Full name" required><Input value={(data.name as string) ?? ""} onChange={(e) => set("name", e.target.value)} /></Field>
         <Field label="Job title" required><Input value={(data.title as string) ?? ""} onChange={(e) => set("title", e.target.value)} placeholder="e.g., Owner, Medical Director, COO" /></Field>
@@ -142,9 +264,9 @@ function EmpStepOrgInfo({ data, set }: { data: Record<string, unknown>; set: (k:
 function EmpStepBranding({ data, set }: { data: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
   return (
     <div className="space-y-4 novalyte-fade-up">
-      <div><h2 className="text-2xl font-semibold text-foreground">Organization branding</h2><p className="mt-1 text-sm text-muted-foreground">Add your logo and visual identity.</p></div>
-      <Field label="Logo" hint="PNG or SVG, max 2MB"><div className="flex items-center gap-3"><div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Building2 className="h-6 w-6" /></div><Button variant="outline" size="sm">Upload logo</Button></div></Field>
-      <Field label="Cover image" hint="JPG or PNG, max 5MB, recommended 1600×400px"><button className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground hover:border-teal-300 hover:bg-teal-50/30"><Upload className="h-5 w-5" /> Upload cover image</button></Field>
+      <div><h2 className="text-2xl font-semibold text-foreground">Organization branding</h2><p className="mt-1 text-sm text-muted-foreground">Optional branding details for your hiring profile.</p></div>
+      <Field label="Logo" hint="Logo upload will be available after organization approval."><div className="flex items-center gap-3"><div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Building2 className="h-6 w-6" /></div><Button variant="outline" size="sm" disabled type="button">Upload logo</Button></div></Field>
+      <Field label="Cover image" hint="Available after approval."><button type="button" disabled className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground"><Upload className="h-5 w-5" /> Upload cover image</button></Field>
       <Field label="Brand description"><Textarea rows={2} value={(data.brandDesc as string) ?? ""} onChange={(e) => set("brandDesc", e.target.value)} /></Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="LinkedIn URL"><Input value={(data.linkedin as string) ?? ""} onChange={(e) => set("linkedin", e.target.value)} /></Field>
@@ -157,7 +279,7 @@ function EmpStepBranding({ data, set }: { data: Record<string, unknown>; set: (k
 function EmpStepVerification({ data, set }: { data: Record<string, unknown>; set: (k: string, v: unknown) => void }) {
   return (
     <div className="space-y-4 novalyte-fade-up">
-      <div><h2 className="text-2xl font-semibold text-foreground">Verification information</h2><p className="mt-1 text-sm text-muted-foreground">Provide information for verification. Your organization will not be marked as verified until the review process is complete.</p></div>
+      <div><h2 className="text-2xl font-semibold text-foreground">Verification information</h2><p className="mt-1 text-sm text-muted-foreground">Your organization remains unverified until Novalyte review is complete.</p></div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Organization NPI" hint="If applicable"><Input value={(data.npi as string) ?? ""} onChange={(e) => set("npi", e.target.value)} maxLength={10} /></Field>
         <Field label="Business registration number" hint="If applicable"><Input value={(data.businessReg as string) ?? ""} onChange={(e) => set("businessReg", e.target.value)} /></Field>
@@ -167,7 +289,15 @@ function EmpStepVerification({ data, set }: { data: Record<string, unknown>; set
         <Field label="Accreditation details" hint="If applicable"><Input value={(data.accreditation as string) ?? ""} onChange={(e) => set("accreditation", e.target.value)} /></Field>
         <Field label="Authorized representative name"><Input value={(data.authRep as string) ?? ""} onChange={(e) => set("authRep", e.target.value)} /></Field>
       </div>
-      <label className="flex items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" required className="mt-0.5 accent-teal-600" /><span>I confirm that I am authorized to submit this information on behalf of the organization, and the information provided is accurate.</span></label>
+      <label className="flex items-start gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          className="mt-0.5 accent-teal-600"
+          checked={data.authorized === true}
+          onChange={(e) => set("authorized", e.target.checked)}
+        />
+        <span>I confirm that I am authorized to submit this information on behalf of the organization, and the information provided is accurate.</span>
+      </label>
     </div>
   );
 }
@@ -193,7 +323,7 @@ function EmpStepDashboard({ data, set }: { data: Record<string, unknown>; set: (
         <Field label="Departments" hint="Comma-separated"><Input value={(data.departments as string) ?? ""} onChange={(e) => set("departments", e.target.value)} placeholder="Clinical, Operations, Admin" /></Field>
         <Field label="Notification preferences"><Select value={(data.notifications as string) ?? ""} onValueChange={(v) => set("notifications", v)}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{["Email all applicants", "Email new only", "Daily digest", "No notifications"].map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent></Select></Field>
       </div>
-      <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-4"><p className="text-xs text-teal-800">After setup, you'll be able to post your first healthcare role from your organization dashboard.</p></div>
+      <div className="rounded-lg border border-teal-200 bg-teal-50/40 p-4"><p className="text-xs text-teal-800">After submission, your organization is reviewed before full hiring features are unlocked.</p></div>
     </div>
   );
 }

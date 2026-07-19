@@ -16,13 +16,9 @@
  * industry piece that does not require clinical review.
  */
 
-export type ArticleBlock =
-  | { type: "heading"; level: 2 | 3; text: string; id: string }
-  | { type: "paragraph"; text: string }
-  | { type: "list"; items: string[]; ordered?: boolean }
-  | { type: "image"; src: string; alt: string; caption?: string; aspect?: "wide" | "standard" }
-  | { type: "callout"; tone: "info" | "warning" | "tip"; text: string }
-  | { type: "table"; headers: string[]; rows: string[][] };
+import type { JournalArticleBlock } from "@/lib/journal-article-v1";
+
+export type ArticleBlock = JournalArticleBlock;
 
 export type ArticleContent = {
   slug: string;
@@ -40,7 +36,7 @@ export type ArticleContent = {
   heroImageCaption?: string;
   tableOfContents: { id: string; title: string }[];
   body: ArticleBlock[];
-  references: { label: string; source: string }[];
+  references: { label: string; source: string; url?: string | null }[];
   faqs: { question: string; answer: string }[];
   relatedTreatment: string | null;
 };

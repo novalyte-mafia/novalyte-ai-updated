@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { SectionShell } from "@/components/shared/section";
 import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
@@ -23,6 +23,7 @@ import { navigate, useSaved, useCompare } from "@/lib/nav";
 import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import {
   Search, MapPin, Video, Building2, Phone, Star, ShieldCheck, Clock,
   ArrowRight, SlidersHorizontal, LayoutGrid, List, Map, X, Heart,
@@ -31,6 +32,16 @@ import {
 } from "lucide-react";
 
 const PAGE_SIZE = 6;
+
+function clinicProfilePath(clinic: ClinicT): string {
+  const segment = (value: string | null | undefined) =>
+    (value ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  return `/directory/${segment(clinic.state)}/${segment(clinic.city)}/${clinic.slug}`;
+}
 
 // Maps patient-level symptoms / concerns to medical specialties
 function getSpecialtiesForConcern(query: string): string[] {
@@ -90,6 +101,9 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   const [loading, startTransition] = useTransition();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [guidedOpen, setGuidedOpen] = useState(false);
+  const [locationNotice, setLocationNotice] = useState("");
+  const searchStarted = useRef(false);
+  const filtersMounted = useRef(false);
 
   // Restore a shareable search when a directory URL is revisited.
   /* eslint-disable react-hooks/set-state-in-effect -- URL state is an external navigation source. */
@@ -126,6 +140,63 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
     });
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   }, [query, locationQuery, state, city, treatment, careFormat, providerType, distanceRadius, consultationAvailability, language, sortBy]);
+
+  useEffect(() => {
+    if (searchStarted.current || (!query.trim() && !locationQuery.trim())) return;
+    searchStarted.current = true;
+    captureSafeEvent("directory_search_started");
+  }, [query, locationQuery]);
+
+  useEffect(() => {
+    if (!filtersMounted.current) {
+      filtersMounted.current = true;
+      return;
+    }
+    const activeFilterCount = [
+      state,
+      city,
+      treatment,
+      careFormat,
+      providerType,
+      clinicType,
+      pricingStatus,
+      claimedStatus,
+      distanceRadius,
+      consultationAvailability,
+      language,
+    ].filter((value) => value !== "all").length +
+      [
+        insuranceAccepted,
+        hsaFsaAccepted,
+        financingAvailable,
+        onSiteLab,
+        acceptingNewPatients,
+        verifiedOnly,
+      ].filter(Boolean).length;
+    if (activeFilterCount > 0) {
+      captureSafeEvent("directory_filter_applied", {
+        active_filter_count: activeFilterCount,
+      });
+    }
+  }, [
+    state,
+    city,
+    treatment,
+    careFormat,
+    providerType,
+    clinicType,
+    pricingStatus,
+    claimedStatus,
+    distanceRadius,
+    consultationAvailability,
+    language,
+    insuranceAccepted,
+    hsaFsaAccepted,
+    financingAvailable,
+    onSiteLab,
+    acceptingNewPatients,
+    verifiedOnly,
+  ]);
 
   // Derived filter options from clinics
   const allTreatments = useMemo(() => {
@@ -287,6 +358,17 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  useEffect(() => {
+    if (filtered.length !== 0 || (!query.trim() && !locationQuery.trim())) return;
+    const timer = window.setTimeout(() => {
+      captureSafeEvent("directory_no_results", {
+        has_care_query: Boolean(query.trim()),
+        has_location_query: Boolean(locationQuery.trim()),
+      });
+    }, 750);
+    return () => window.clearTimeout(timer);
+  }, [filtered.length, query, locationQuery]);
+
   // Active filter chips
   const activeFilters: { label: string; clear: () => void }[] = [];
   if (query) activeFilters.push({ label: `Care: "${query}"`, clear: () => setQuery("") });
@@ -405,6 +487,11 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               <Button 
                 onClick={() => {
                   setPage(1);
+                  captureSafeEvent("directory_search_submitted", {
+                    has_care_query: Boolean(query.trim()),
+                    has_location_query: Boolean(locationQuery.trim()),
+                    result_count: filtered.length,
+                  });
                   document.getElementById("directory-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
                 className="bg-teal-600 hover:bg-teal-700 text-white shadow-premium-sm font-semibold h-10 px-5"
@@ -414,7 +501,10 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("clinic-application")}
+                onClick={() => {
+                  captureSafeEvent("directory_listing_interest_clicked");
+                  navigate("clinic-application");
+                }}
                 className="h-10 border-teal-200 px-5 font-semibold text-teal-700 hover:bg-teal-50"
               >
                 Apply to List Your Clinic <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -426,8 +516,29 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
           <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-teal-700">
             <button
               onClick={() => {
-                setLocationQuery("Denver, CO");
-                setPage(1);
+                captureSafeEvent("directory_location_requested");
+                if (!navigator.geolocation) {
+                  setLocationNotice("Location is not supported by this browser.");
+                  captureSafeEvent("directory_location_permission_denied", {
+                    reason: "unsupported",
+                  });
+                  return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                  () => {
+                    setLocationNotice(
+                      "Location permission granted. Distance sorting will appear when approved clinic coordinates are available.",
+                    );
+                    captureSafeEvent("directory_location_permission_granted");
+                  },
+                  (error) => {
+                    setLocationNotice("Location permission was not granted.");
+                    captureSafeEvent("directory_location_permission_denied", {
+                      reason: error.code === 1 ? "denied" : "unavailable",
+                    });
+                  },
+                  { enableHighAccuracy: false, timeout: 8_000, maximumAge: 300_000 },
+                );
               }}
               className="hover:text-teal-950 transition flex items-center gap-1"
             >
@@ -448,6 +559,11 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               <Sparkles className="h-3.5 w-3.5" /> Complete the Patient Assessment
             </button>
           </div>
+          {locationNotice && (
+            <p className="mt-2 text-xs text-muted-foreground" role="status">
+              {locationNotice}
+            </p>
+          )}
 
           {/* Quick-Search Chips */}
           <div className="mt-6 flex flex-wrap items-center gap-1.5">
@@ -934,7 +1050,10 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
   const caps = useMemo(() => splitCsv(clinic.capabilities), [clinic.capabilities]);
   const providers = useMemo(() => splitCsv(clinic.providerTypes), [clinic.providerTypes]);
 
-  const open = () => navigate("clinic-profile", undefined, { id: clinic.id });
+  const profileHref = clinicProfilePath(clinic);
+  const open = () => {
+    window.location.href = profileHref;
+  };
 
   // Render claimed vs unclaimed tags
   const renderClaimBadge = () => {
@@ -980,7 +1099,7 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
       <PremiumCard hover className="overflow-hidden">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
           {/* Card image/logo */}
-          <button onClick={open} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-muted" aria-label={clinic.name}>
+          <a href={profileHref} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-muted" aria-label={`View ${clinic.name}`}>
             <SmartImage
               src={getClinicImage(clinic.slug)}
               alt={`${clinic.name} clinic`}
@@ -993,12 +1112,12 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
                 </div>
               }
             />
-          </button>
+          </a>
           
           {/* Main info */}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <button onClick={open} className="text-base font-semibold text-foreground hover:text-teal-700 text-left">{clinic.name}</button>
+              <a href={profileHref} className="text-base font-semibold text-foreground hover:text-teal-700 text-left">{clinic.name}</a>
               <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
               {renderClaimBadge()}
               {clinic.telehealth && <StatusPill tone="teal"><Video className="h-3 w-3" /> Telehealth</StatusPill>}
@@ -1028,7 +1147,17 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
           {/* Right Action blocks */}
           <div className="flex shrink-0 flex-col gap-2 sm:items-end justify-between self-stretch">
             <div className="flex gap-1.5">
-              <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} size="sm" label="Save" />
+              <SaveButton
+                saved={saved}
+                onToggle={() => {
+                  if (!saved) {
+                    captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
+                  }
+                  toggleSave("clinic", clinic.id);
+                }}
+                size="sm"
+                label="Save"
+              />
               <button
                 onClick={() => compareToggle("clinic", clinic.id)}
                 className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
@@ -1037,8 +1166,10 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
                 <GitCompare className="h-4 w-4" />
               </button>
             </div>
-            <Button size="sm" variant="outline" className="border-border hover:border-teal-200 font-semibold" onClick={open}>
-              View Clinic Profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+            <Button asChild size="sm" variant="outline" className="border-border hover:border-teal-200 font-semibold">
+              <a href={profileHref}>
+                View Clinic Profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+              </a>
             </Button>
           </div>
         </div>
@@ -1074,7 +1205,16 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
           </div>
 
           <div className="absolute right-3 top-3 flex gap-1.5">
-            <SaveButton saved={saved} onToggle={() => toggleSave("clinic", clinic.id)} size="sm" />
+            <SaveButton
+              saved={saved}
+              onToggle={() => {
+                if (!saved) {
+                  captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
+                }
+                toggleSave("clinic", clinic.id);
+              }}
+              size="sm"
+            />
             <button
               onClick={() => compareToggle("clinic", clinic.id)}
               className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card/80 text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
@@ -1088,9 +1228,9 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
         {/* Content body */}
         <div className="p-5 space-y-3">
           <div className="flex items-start justify-between gap-2">
-            <button onClick={open} className="block text-left">
+            <a href={profileHref} className="block text-left">
               <h3 className="text-base font-semibold leading-tight text-foreground group-hover:text-teal-700 transition">{clinic.name}</h3>
-            </button>
+            </a>
             {renderClaimBadge()}
           </div>
           
@@ -1136,8 +1276,8 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
 
       {/* Button Actions */}
       <div className="px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex gap-2">
-        <Button size="sm" variant="outline" className="flex-1 font-semibold border-border hover:border-teal-200" onClick={open}>
-          View Clinic Profile
+        <Button asChild size="sm" variant="outline" className="flex-1 font-semibold border-border hover:border-teal-200">
+          <a href={profileHref}>View Clinic Profile</a>
         </Button>
         <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={open}>
           Request Consultation <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -1222,8 +1362,10 @@ function MapView({ clinics }: { clinics: ClinicT[] }) {
                 <div className="flex justify-between"><span className="text-muted-foreground">Provider Types</span><span className="font-medium text-foreground truncate max-w-[140px]">{selected.providerTypes || "N/A"}</span></div>
               </div>
 
-              <Button size="sm" className="w-full bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold mt-2" onClick={() => navigate("clinic-profile", undefined, { id: selected.id })}>
-                View Profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              <Button asChild size="sm" className="w-full bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold mt-2">
+                <a href={clinicProfilePath(selected)}>
+                  View Profile <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </a>
               </Button>
             </div>
           ) : (
@@ -1240,6 +1382,7 @@ type GuidedWizardState = {
   step: number;
   concern: string;
   state: string;
+  treatment: string;
   careFormat: string;
   pricingModel: string;
 };

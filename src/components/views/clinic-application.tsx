@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import { US_STATES, TREATMENT_VERTICALS } from "@/lib/constants";
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Building2, MapPin, User, Stethoscope,
@@ -47,6 +48,8 @@ const DRAFT_KEY = "novalyte-clinic-application-draft-v1";
 type FormData = Record<string, string | boolean | string[]>;
 
 export function ClinicApplication({ onComplete }: { onComplete: (applicationId: string) => void }) {
+  const completed = useRef(false);
+  const latestStage = useRef(0);
   const [stage, setStage] = useState(() => {
     try {
       const saved = window.localStorage.getItem(DRAFT_KEY);
@@ -64,6 +67,18 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    captureSafeEvent("clinic_application_started");
+    return () => {
+      if (!completed.current) {
+        captureSafeEvent("clinic_application_abandoned", {
+          stage_number: latestStage.current + 1,
+        });
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    latestStage.current = stage;
     if (Object.keys(data).length === 0) return;
     try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ stage, data })); } catch {}
   }, [data, stage]);
@@ -178,9 +193,15 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
       }
       const result = await res.json();
       try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
+      completed.current = true;
+      captureSafeEvent("clinic_application_submitted");
       toast.success("Application submitted successfully.");
       onComplete(result.applicationId);
     } catch (e) {
+      captureSafeEvent("form_error", {
+        form_type: "clinic_application",
+        stage_number: stage + 1,
+      });
       toast.error("Something went wrong. Please try again.");
       console.error(e);
     } finally {
@@ -189,7 +210,12 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
   }
 
   function next() {
-    if (stage < 9) setStage(stage + 1);
+    if (stage < 9) {
+      captureSafeEvent("clinic_application_step_completed", {
+        stage_number: stage + 1,
+      });
+      setStage(stage + 1);
+    }
     else submit();
   }
 

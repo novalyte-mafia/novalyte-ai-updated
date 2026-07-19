@@ -7,6 +7,7 @@ import {
 import { sendProfessionalSlackNotification } from "@/lib/professional-notifications";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { grantAccountType } from "@/lib/workforce/auth";
 
 const draftSchema = z.object({
   currentStep: z.number().int().min(0).max(9),
@@ -271,6 +272,7 @@ export async function POST(request: Request) {
     if (completeError) throw completeError;
 
     await admin.from("professional_onboarding_drafts").delete().eq("user_id", user.id);
+    await grantAccountType(user.id, "professional");
 
     const notificationDelivery = await sendProfessionalSlackNotification({
       userId: user.id,

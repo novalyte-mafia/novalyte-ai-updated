@@ -8,6 +8,8 @@
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "supabase db query --linked -f prisma/supabase_migration.sql",
+    "db:migrate:list": "supabase migration list --linked",
+    "db:types": "supabase gen types typescript --linked > src/types/database.types.ts",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:generate": "supabase gen types typescript --linked > src/types/database.types.ts"
   },

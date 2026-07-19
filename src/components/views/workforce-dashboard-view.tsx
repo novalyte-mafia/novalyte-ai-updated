@@ -128,7 +128,7 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
           supabase.from("professional_documents").select("*").eq("profileId", profileId),
           supabase.from("professional_job_alerts").select("*").eq("profileId", profileId),
           supabase.from("workforce_job_matches").select("*").eq("profileId", profileId).order("score", { ascending: false }),
-          supabase.from("JobApplication").select("*, JobPosting(*)").eq("professionalId", profileId),
+          supabase.from("JobApplication").select("*, JobPosting(*)").eq("workforce_profile_id", profileId),
           supabase.from("notifications").select("*").eq("profileId", profileId).order("createdAt", { ascending: false }),
           supabase.from("JobPosting").select("*").eq("status", "open")
         ]);
@@ -286,36 +286,76 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
     }
   };
 
-  // Add document reference (résumé/certifications)
+  // Real private Storage upload via signed URL; verification stays pending for admin review.
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDocName) {
       toast.error("Please add a title for this file.");
       return;
     }
+    const fileInput = document.getElementById("workforce-doc-file") as HTMLInputElement | null;
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      toast.error("Choose a file to upload.");
+      return;
+    }
     setUploadingDoc(true);
     try {
-      // Simulate file upload metadata write to professional-documents
-      const docPath = `professional-documents/${profileId}/${Date.now()}-${newDocName.toLowerCase().replace(/ /g, "-")}`;
-      const { data, error } = await supabase
-        .from("professional_documents")
-        .insert({
-          profileId,
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sign in required.");
+
+      const start = await fetch("/api/workforce/professional/documents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           type: newDocType,
           name: newDocName,
-          path: docPath,
-          size: 1024 * 342, // mock size
-          status: "verified"
-        })
-        .select()
-        .single();
+          mimeType: file.type || "application/octet-stream",
+          size: file.size,
+        }),
+      });
+      const started = await start.json();
+      if (!start.ok) throw new Error(started.error || "Unable to start upload.");
 
-      if (error) throw error;
-      setDocuments(prev => [...prev, data]);
+      const { error: uploadError } = await supabase.storage
+        .from(started.bucket)
+        .uploadToSignedUrl(started.path, started.token, file);
+      if (uploadError) {
+        await fetch("/api/workforce/professional/documents", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ documentId: started.documentId, uploadStatus: "failed" }),
+        });
+        throw uploadError;
+      }
+
+      await fetch("/api/workforce/professional/documents", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ documentId: started.documentId, uploadStatus: "uploaded" }),
+      });
+
+      const { data } = await supabase
+        .from("professional_documents")
+        .select("*")
+        .eq("id", started.documentId)
+        .single();
+      if (data) setDocuments((prev) => [...prev, data]);
       setNewDocName("");
-      toast.success("Document uploaded and verified successfully.");
-    } catch {
-      toast.error("Document upload failed.");
+      if (fileInput) fileInput.value = "";
+      toast.success("Document uploaded. Verification is pending Novalyte review.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Document upload failed.");
     } finally {
       setUploadingDoc(false);
     }
@@ -817,8 +857,13 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
                     </Select>
                   </div>
                 </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="workforce-doc-file">File</Label>
+                  <Input id="workforce-doc-file" type="file" accept=".pdf,.doc,.docx,image/png,image/jpeg" />
+                  <p className="text-[10px] text-muted-foreground">Uploads go to private storage. Verification stays pending until Novalyte reviews the file.</p>
+                </div>
                 <Button type="submit" disabled={uploadingDoc} className="bg-teal-600 text-white hover:bg-teal-700">
-                  {uploadingDoc ? "Uploading..." : "Mock Document Upload"}
+                  {uploadingDoc ? "Uploading..." : "Upload Document"}
                 </Button>
               </form>
 
@@ -829,7 +874,9 @@ export function WorkforceDashboardView({ profileId }: { profileId: string }) {
                       <FileText className="h-8 w-8 text-teal-600" />
                       <div>
                         <span className="font-semibold text-sm text-foreground">{doc.name}</span>
-                        <p className="text-xs text-muted-foreground capitalize">Type: {doc.type} | Status: {doc.status}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          Type: {doc.type} | Upload: {doc.upload_status || doc.status} | Verification: {doc.verification_status || "pending"}
+                        </p>
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={async () => {
