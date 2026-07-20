@@ -86,11 +86,7 @@ export default function ClinicDashboardPage() {
                 <p className="mt-1 text-sm text-muted-foreground">{card.desc}</p>
               </div>
             );
-            return card.external ? (
-              <a key={card.title} href={card.href} target="_blank" rel="noreferrer">
-                {inner}
-              </a>
-            ) : (
+            return (
               <Link key={card.title} href={card.href}>
                 {inner}
               </Link>
