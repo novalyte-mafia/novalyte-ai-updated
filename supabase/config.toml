@@ -5,8 +5,17 @@ enabled = true
 site_url = "https://novalyte.io"
 additional_redirect_urls = [
   "https://novalyte.io/auth/callback",
+  "https://novalyte.io/**",
+  "https://www.novalyte.io/auth/callback",
+  "https://www.novalyte.io/**",
+  "https://portal.novalyte.io/auth/callback",
+  "https://portal.novalyte.io/**",
+  "https://portal.novalyte.io/clinic/reset-password",
+  "https://portal.novalyte.io/clinic/sign-in",
   "http://localhost:3000/auth/callback",
-  "http://127.0.0.1:3000/auth/callback"
+  "http://127.0.0.1:3000/auth/callback",
+  "http://portal.localhost:3000/auth/callback",
+  "http://portal.localhost:3000/**"
 ]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true

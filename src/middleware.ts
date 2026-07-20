@@ -5,7 +5,10 @@ const PORTAL_HOSTS = new Set(["portal.novalyte.io", "portal.localhost", "portal.
 
 /**
  * portal.novalyte.io is the clinic workspace host.
- * Map bare paths to /clinic/* while keeping APIs shared.
+ *
+ * IMPORTANT: use redirects (not rewrites) so the browser pathname matches a real
+ * /clinic/* App Router page. Rewriting / → /clinic while leaving the URL as /
+ * caused the client to hydrate the public marketing homepage.
  */
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
@@ -13,7 +16,7 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Shared assets / APIs / auth stay as-is.
+  // Shared assets / APIs / auth / already-clinic paths stay as-is.
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
@@ -27,12 +30,13 @@ export function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone();
   if (pathname === "/" || pathname === "") {
+    // Send portal root to the gateway (then sign-in or dashboard).
     url.pathname = "/clinic";
-    return NextResponse.rewrite(url);
+    return NextResponse.redirect(url);
   }
 
   url.pathname = `/clinic${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
-  return NextResponse.rewrite(url);
+  return NextResponse.redirect(url);
 }
 
 export const config = {
