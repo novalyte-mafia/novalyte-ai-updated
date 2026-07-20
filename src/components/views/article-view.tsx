@@ -45,6 +45,12 @@ import type { ArticleContent, ArticleBlock } from "@/lib/article-content";
 import { captureSafeEvent } from "@/lib/analytics-client";
 import { canonicalPath } from "@/lib/site-config";
 import {
+  ARTICLE_PEER_LINKS,
+  assessmentHref,
+  resolveAssessmentSlug,
+  softAssessmentCopy,
+} from "@/lib/journal/engagement";
+import {
   BookOpen,
   Clock,
   Calendar,
@@ -64,6 +70,7 @@ import {
   ChevronRight,
   Building2,
   ListOrdered,
+  ClipboardList,
 } from "lucide-react";
 
 /* ────────────────────────────────────────────────────────────────
@@ -80,6 +87,47 @@ function formatDate(value: string): string {
   } catch {
     return value;
   }
+}
+
+/** Render markdown-style [label](url) links; keep other text plain. */
+function RichText({
+  text,
+  className,
+}: {
+  text: string;
+  className?: string;
+}) {
+  const parts: React.ReactNode[] = [];
+  const pattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const label = match[1];
+    const href = match[2];
+    const isInternal =
+      href.startsWith("/") || href.startsWith("https://novalyte.io/");
+    parts.push(
+      <a
+        key={`link-${key++}`}
+        href={href}
+        className="font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-800"
+        {...(isInternal
+          ? {}
+          : { target: "_blank", rel: "noopener noreferrer" })}
+        data-analytics-event="journal_inline_link_clicked"
+        data-analytics-label={label.slice(0, 80)}
+      >
+        {label}
+      </a>,
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return <span className={className}>{parts}</span>;
 }
 
 /* ────────────────────────────────────────────────────────────────
@@ -110,7 +158,9 @@ function CalloutBlock({ tone, text }: { tone: "info" | "warning" | "tip"; text: 
   return (
     <div className={cn("my-6 flex items-start gap-3 rounded-xl border p-4 text-sm leading-relaxed", t.wrap)}>
       <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", t.icon)} />
-      <div>{text}</div>
+      <div>
+        <RichText text={text} />
+      </div>
     </div>
   );
 }
@@ -149,7 +199,9 @@ function ListBlock({ items, ordered }: { items: string[]; ordered?: boolean }) {
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-50 text-xs font-semibold text-teal-700">
               {i + 1}
             </span>
-            <span>{item}</span>
+            <span>
+              <RichText text={item} />
+            </span>
           </li>
         ))}
       </ol>
@@ -159,7 +211,7 @@ function ListBlock({ items, ordered }: { items: string[]; ordered?: boolean }) {
     <ul className="my-4 space-y-2 pl-5">
       {items.map((item, i) => (
         <li key={i} className="list-disc text-sm leading-relaxed text-foreground/90 marker:text-teal-500">
-          {item}
+          <RichText text={item} />
         </li>
       ))}
     </ul>
@@ -277,7 +329,11 @@ function BlockRenderer({ block }: { block: ArticleBlock }) {
       );
     }
     case "paragraph":
-      return <p className="my-4 text-[15px] leading-7 text-foreground/90">{block.text}</p>;
+      return (
+        <p className="my-4 text-[15px] leading-7 text-foreground/90">
+          <RichText text={block.text} />
+        </p>
+      );
     case "list":
       return <ListBlock items={block.items} ordered={block.ordered} />;
     case "image":
@@ -623,6 +679,126 @@ function NewsletterCTA() {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   Soft assessment + interlink nudges (skim-friendly)
+   ──────────────────────────────────────────────────────────────── */
+
+function SoftAssessmentNudge({
+  assessmentSlug,
+  compact = false,
+}: {
+  assessmentSlug: string;
+  compact?: boolean;
+}) {
+  const copy = softAssessmentCopy(assessmentSlug);
+  const href = assessmentHref(assessmentSlug);
+
+  if (compact) {
+    return (
+      <div className="my-8 rounded-xl border border-teal-200 bg-teal-50/80 px-4 py-3 text-sm text-teal-950">
+        <p className="leading-relaxed">
+          <span className="font-semibold">Skimming?</span>{" "}
+          {copy.body}{" "}
+          <a
+            href={href}
+            className="font-semibold text-teal-800 underline decoration-teal-400 underline-offset-2"
+            data-analytics-event="journal_assessment_nudge_clicked"
+            data-analytics-label={`${assessmentSlug}:inline`}
+          >
+            {copy.cta} →
+          </a>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="my-8 flex flex-col gap-3 rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white">
+          <ClipboardList className="h-5 w-5" />
+        </span>
+        <div>
+          <h3 className="text-base font-semibold text-foreground">{copy.title}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
+        </div>
+      </div>
+      <Button
+        className="shrink-0 bg-teal-600 text-white hover:bg-teal-700"
+        data-analytics-event="journal_assessment_nudge_clicked"
+        data-analytics-label={`${assessmentSlug}:card`}
+        onClick={() =>
+          navigate("assessment", undefined, { slug: assessmentSlug })
+        }
+      >
+        {copy.cta} <ArrowRight className="ml-1 h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+function PeerLinksNudge({
+  peers,
+}: {
+  peers: { slug: string; label: string }[];
+}) {
+  if (peers.length === 0) return null;
+  return (
+    <div className="my-8 rounded-xl border border-border bg-muted/40 px-4 py-4 text-sm">
+      <p className="font-semibold text-foreground">Related reading</p>
+      <ul className="mt-2 space-y-1.5">
+        {peers.map((peer) => (
+          <li key={peer.slug}>
+            <a
+              href={`/journal/${peer.slug}`}
+              className="text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-800"
+              data-analytics-event="journal_peer_link_clicked"
+              data-analytics-label={peer.slug}
+            >
+              {peer.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ReadNextCard({ article }: { article: ArticleContent }) {
+  return (
+    <a
+      href={`/journal/${article.slug}`}
+      data-analytics-event="journal_read_next_clicked"
+      data-analytics-label={article.slug}
+      className="mt-10 flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-premium-sm transition card-premium-hover sm:flex-row sm:items-center"
+    >
+      <div className="relative hidden h-24 w-36 shrink-0 overflow-hidden rounded-xl sm:block">
+        <SmartImage
+          src={article.heroImage}
+          alt={article.heroImageAlt}
+          fill
+          sizes="144px"
+          imgClassName="object-cover"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">
+          Read next
+        </p>
+        <h3 className="mt-1 text-pretty text-lg font-semibold leading-snug text-foreground">
+          {article.title}
+        </h3>
+        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+          {article.excerpt}
+        </p>
+      </div>
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-teal-700">
+        Continue <ArrowRight className="h-4 w-4" />
+      </span>
+    </a>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
    Related article card
    ──────────────────────────────────────────────────────────────── */
 
@@ -673,6 +849,23 @@ export function ArticleView({
   const related = useMemo(
     () => getRelatedArticles(article, allArticles, 3),
     [article, allArticles],
+  );
+  const readNext = related[0] ?? null;
+  const assessmentSlug = useMemo(
+    () =>
+      resolveAssessmentSlug({
+        relatedTreatment: article.relatedTreatment,
+        category: article.category,
+        tags: article.tags,
+        slug: article.slug,
+      }),
+    [article.category, article.relatedTreatment, article.slug, article.tags],
+  );
+  const peerLinks = ARTICLE_PEER_LINKS[article.slug] ?? [];
+  const earlyNudgeAt = Math.min(3, Math.max(1, article.body.length - 1));
+  const midNudgeAt = Math.min(
+    Math.max(earlyNudgeAt + 2, Math.floor(article.body.length / 2)),
+    Math.max(article.body.length - 1, 0),
   );
 
   const faqLd = useMemo(() => faqJsonLd(article.faqs), [article.faqs]);
@@ -831,8 +1024,25 @@ export function ArticleView({
           <article className="order-2 min-w-0 lg:order-none">
             <div className="mx-auto max-w-3xl">
               {article.body.map((block, i) => (
-                <BlockRenderer key={i} block={block} />
+                <div key={i}>
+                  <BlockRenderer block={block} />
+                  {i === earlyNudgeAt && (
+                    <SoftAssessmentNudge assessmentSlug={assessmentSlug} compact />
+                  )}
+                  {i === midNudgeAt && midNudgeAt !== earlyNudgeAt && (
+                    <>
+                      <PeerLinksNudge peers={peerLinks.slice(0, 3)} />
+                      <SoftAssessmentNudge assessmentSlug={assessmentSlug} />
+                    </>
+                  )}
+                </div>
               ))}
+
+              {peerLinks.length > 0 && midNudgeAt === earlyNudgeAt && (
+                <PeerLinksNudge peers={peerLinks.slice(0, 3)} />
+              )}
+
+              {readNext && <ReadNextCard article={readNext} />}
 
               {/* Educational disclaimer immediately after body */}
               <DisclaimerBanner tone="teal" className="mt-8">
@@ -925,41 +1135,44 @@ export function ArticleView({
               </div>
 
               {/* Platform CTA */}
-              <div className="mt-8 flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/30 p-6 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
-                    <Building2 className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground">
-                      {article.relatedTreatment
-                        ? `Explore ${article.relatedTreatment} clinics`
-                        : "Find a verified men's health clinic"}
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Browse the Novalyte directory of verified men's health clinics by location, specialty, and telehealth availability.
-                    </p>
+              <div className="mt-8 space-y-4">
+                <SoftAssessmentNudge assessmentSlug={assessmentSlug} />
+                <div className="flex flex-col items-start gap-4 rounded-2xl border border-border bg-muted/30 p-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                      <Building2 className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">
+                        {article.relatedTreatment
+                          ? `Explore ${article.relatedTreatment} clinics`
+                          : "Find a verified men's health clinic"}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Browse the Novalyte directory of verified men's health clinics by location, specialty, and telehealth availability.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    className="bg-teal-600 text-white hover:bg-teal-700"
-                    data-analytics-event="journal_directory_cta_clicked"
-                    onClick={() => navigate("directory")}
-                  >
-                    Open directory <ArrowRight className="ml-1 h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    data-analytics-event="journal_assessment_cta_clicked"
-                    onClick={() =>
-                      navigate("assessment", undefined, {
-                        slug: article.relatedTreatment ?? "testosterone-replacement-therapy",
-                      })
-                    }
-                  >
-                    Start assessment
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      className="bg-teal-600 text-white hover:bg-teal-700"
+                      data-analytics-event="journal_directory_cta_clicked"
+                      onClick={() => navigate("directory")}
+                    >
+                      Open directory <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      data-analytics-event="journal_assessment_cta_clicked"
+                      onClick={() =>
+                        navigate("assessment", undefined, {
+                          slug: assessmentSlug,
+                        })
+                      }
+                    >
+                      Start assessment
+                    </Button>
+                  </div>
                 </div>
               </div>
 
