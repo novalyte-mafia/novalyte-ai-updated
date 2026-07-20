@@ -66,7 +66,10 @@ Roles map to `organization_memberships.role` (`owner` | `admin` | `recruiter` | 
 ## Local / deploy notes
 
 - Portal host must be on the same Vercel project as `novalyte.io`.
-- Supabase Auth redirect allowlist must include `https://portal.novalyte.io/**` and `https://portal.novalyte.io/auth/callback`.
+- Middleware **redirects** (not rewrites) bare portal paths to `/clinic/*` so the App Router client pathname matches a real clinic page. Rewrites left the URL as `/` and hydrated the public marketing homepage.
+- Supabase Auth redirect allowlist (via `supabase/config.toml` + `supabase config push`):
+  - `https://portal.novalyte.io/**`
+  - `https://portal.novalyte.io/auth/callback`
 - Password reset from portal uses `/auth/callback?next=/clinic/reset-password`.
 
 ## Handoff checklist
