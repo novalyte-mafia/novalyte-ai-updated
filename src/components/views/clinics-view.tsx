@@ -128,6 +128,9 @@ export function ClinicsView({ onGetStarted }: { data: unknown; onGetStarted: () 
               <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={openApplication}>
                 Apply for a Free Clinic Listing <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
+              <Button size="lg" variant="outline" asChild>
+                <a href="https://portal.novalyte.io/sign-in">Clinic portal sign in</a>
+              </Button>
               <Button size="lg" variant="outline" onClick={() => document.getElementById("clinic-solutions")?.scrollIntoView({ behavior: "smooth" })}>
                 Explore Clinic Solutions
               </Button>

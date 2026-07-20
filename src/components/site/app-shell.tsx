@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
+import { WorkspaceShell } from "@/components/site/workspace-shell";
 import { JoinGateway } from "@/components/site/join-gateway";
 import { Button } from "@/components/ui/button";
 import { ProfessionalOnboarding } from "@/components/views/professional-onboarding";
@@ -116,6 +117,95 @@ export function AppShell({
   const showClinicTray = (view === "directory" || view === "clinic-profile") && compareClinics.length > 0;
   const showProductTray = (view === "marketplace" || view === "product-detail") && compareProducts.length > 0;
 
+  const isWorkspaceView =
+    view === "clinic-dashboard" ||
+    view === "workforce-dashboard" ||
+    view === "workforce-talent" ||
+    view === "professional-onboarding" ||
+    view === "employer-onboarding";
+
+  const clinicForWorkspace =
+    view === "clinic-dashboard"
+      ? data.clinics.find((c) => c.id === params?.id)
+      : undefined;
+
+  const workspaceMain = (
+    <>
+      {view === "clinic-dashboard" && (() => {
+        const clinic = clinicForWorkspace;
+        if (!clinic) {
+          return (
+            <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+              <h1 className="text-2xl font-semibold">Clinic dashboard not found</h1>
+              <Button className="mt-6" onClick={() => navigate("directory")}>
+                Back to directory
+              </Button>
+            </div>
+          );
+        }
+        return <ClinicDashboardView clinic={clinic} allClinics={data.clinics} />;
+      })()}
+      {view === "workforce-dashboard" && (
+        <WorkforceDashboardView profileId={params?.id || ""} />
+      )}
+      {view === "workforce-talent" && (
+        <TalentProfileView
+          profileId={params?.id || ""}
+          onBack={() => navigate("workforce-dashboard", undefined, { id: params?.id })}
+        />
+      )}
+      {view === "professional-onboarding" && <ProfessionalOnboarding />}
+      {view === "employer-onboarding" && <EmployerOnboarding />}
+    </>
+  );
+
+  if (isWorkspaceView) {
+    const role =
+      view === "clinic-dashboard"
+        ? "clinic"
+        : view === "employer-onboarding"
+          ? "employer"
+          : "professional";
+
+    const navItems =
+      view === "clinic-dashboard" && clinicForWorkspace
+        ? [
+            { label: "Dashboard", active: true as const, onClick: () => undefined },
+            {
+              label: "Public listing",
+              onClick: () => navigate("clinic-profile", undefined, { id: clinicForWorkspace.id }),
+            },
+          ]
+        : view === "workforce-dashboard" || view === "workforce-talent"
+          ? [
+              {
+                label: "Dashboard",
+                active: view === "workforce-dashboard",
+                onClick: () => navigate("workforce-dashboard", undefined, { id: params?.id }),
+              },
+              {
+                label: "Profile",
+                active: view === "workforce-talent",
+                onClick: () => navigate("workforce-talent", undefined, { id: params?.id }),
+              },
+              { label: "Settings", href: "/workforce/professional/settings" },
+            ]
+          : view === "professional-onboarding"
+            ? [{ label: "Onboarding", active: true as const, onClick: () => undefined }]
+            : [{ label: "Onboarding", active: true as const, onClick: () => undefined }];
+
+    return (
+      <WorkspaceShell
+        role={role}
+        contextLabel={clinicForWorkspace?.name}
+        navItems={navItems}
+        signOutRedirect={role === "employer" ? "/workforce/employer/sign-in" : "/workforce/professional/sign-in"}
+      >
+        {workspaceMain}
+      </WorkspaceShell>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header onGetStarted={() => setGetStartedOpen(true)} />
@@ -142,20 +232,6 @@ export function AppShell({
           }
           return <ClinicProfileView clinic={clinic} allClinics={data.clinics} />;
         })()}
-        {view === "clinic-dashboard" && (() => {
-          const clinic = data.clinics.find((c) => c.id === params?.id);
-          if (!clinic) {
-            return (
-              <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-                <h1 className="text-2xl font-semibold">Clinic dashboard not found</h1>
-                <Button className="mt-6" onClick={() => navigate("directory")}>
-                  Back to directory
-                </Button>
-              </div>
-            );
-          }
-          return <ClinicDashboardView clinic={clinic} allClinics={data.clinics} />;
-        })()}
         {view === "provider-profile" && (() => {
           let foundProvider: (typeof data.clinics)[number]["providers"][number] | null = null;
           let foundClinic: (typeof data.clinics)[number] | null = null;
@@ -175,15 +251,6 @@ export function AppShell({
           );
         })()}
         {view === "workforce" && <WorkforceView professionals={data.professionals} jobs={data.jobs} onGetStarted={() => setGetStartedOpen(true)} />}
-        {view === "workforce-dashboard" && (
-          <WorkforceDashboardView profileId={params?.id || ""} />
-        )}
-        {view === "workforce-talent" && (
-          <TalentProfileView
-            profileId={params?.id || ""}
-            onBack={() => navigate("workforce-dashboard", undefined, { id: params?.id })}
-          />
-        )}
         {view === "job-detail" && (
           <JobDetailView
             job={data.jobs.find((j) => j.id === params?.id) ?? data.jobs[0]}
@@ -266,8 +333,6 @@ export function AppShell({
             </div>
           </div>
         )}
-        {view === "professional-onboarding" && <ProfessionalOnboarding />}
-        {view === "employer-onboarding" && <EmployerOnboarding />}
         {view === "about" && <AboutView />}
         {(view === "privacy" || view === "terms" || view === "medical-disclaimer" || view === "accessibility" || view === "cookies") && (
           <LegalView view={view} />

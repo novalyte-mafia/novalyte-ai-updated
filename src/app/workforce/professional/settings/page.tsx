@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Logo } from "@/components/site/logo";
-import { Header } from "@/components/site/header";
-import { Footer } from "@/components/site/footer";
+import { WorkspaceShell } from "@/components/site/workspace-shell";
 import { toast } from "sonner";
-import { Lock, Mail, Loader2, ArrowLeft, ShieldCheck, LogOut, Check } from "lucide-react";
+import { Lock, Mail, Loader2, ArrowLeft, LogOut } from "lucide-react";
 import { fetchProfessionalStatus } from "@/lib/professional-client";
 
 export default function ProfessionalSettings() {
@@ -135,24 +133,25 @@ export default function ProfessionalSettings() {
     }
   }
 
+  const shellNav = [
+    { label: "Dashboard", href: "/workforce/professional/dashboard" },
+    { label: "Settings", href: "/workforce/professional/settings", active: true },
+  ];
+
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <Header onGetStarted={() => {}} />
-        <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+      <WorkspaceShell role="professional" navItems={shellNav} signOutRedirect="/workforce/professional/sign-in">
+        <div className="flex flex-1 flex-col items-center justify-center space-y-4 py-24">
           <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
           <p className="text-sm font-medium text-muted-foreground">Loading preferences...</p>
         </div>
-        <Footer onNewsletter={async () => {}} />
-      </div>
+      </WorkspaceShell>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header onGetStarted={() => {}} />
-
-      <main className="flex-1 max-w-4xl mx-auto w-full py-12 px-4 sm:px-6 lg:px-8">
+    <WorkspaceShell role="professional" navItems={shellNav} signOutRedirect="/workforce/professional/sign-in">
+      <div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Account Settings</h1>
@@ -275,9 +274,7 @@ export default function ProfessionalSettings() {
             </div>
           </div>
         </div>
-      </main>
-
-      <Footer onNewsletter={async () => {}} />
-    </div>
+      </div>
+    </WorkspaceShell>
   );
 }

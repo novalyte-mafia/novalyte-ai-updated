@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { WorkspaceShell } from "@/components/site/workspace-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -151,24 +152,37 @@ export default function EmployerDashboardPage() {
     toast.success("Applicant status updated.");
   }
 
+  const contextLabel = org?.public_name || org?.legal_name || undefined;
+  const shellNav = [
+    { label: "Dashboard", href: "/workforce/employer/dashboard", active: true },
+  ];
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading employer dashboard...
-      </div>
+      <WorkspaceShell role="employer" navItems={shellNav} signOutRedirect="/workforce/employer/sign-in">
+        <div className="flex min-h-[50vh] items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading employer dashboard...
+        </div>
+      </WorkspaceShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
+    <WorkspaceShell
+      role="employer"
+      contextLabel={contextLabel}
+      navItems={shellNav}
+      signOutRedirect="/workforce/employer/sign-in"
+    >
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-10">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 text-emerald-700 text-xs font-semibold uppercase tracking-wide">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
             <Building2 className="h-4 w-4" /> Employer dashboard
           </div>
           <h1 className="mt-2 text-2xl font-semibold">{org?.public_name || org?.legal_name || "Organization"}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Verification: {org?.verification_status ?? "unknown"} � Lifecycle: {org?.lifecycle_status ?? "unknown"}
+          <p className="mt-1 text-sm text-muted-foreground">
+            Verification: {org?.verification_status ?? "unknown"} · Lifecycle: {org?.lifecycle_status ?? "unknown"}
           </p>
         </div>
         <Button variant="outline" onClick={() => refresh()}>Refresh</Button>
@@ -216,7 +230,7 @@ export default function EmployerDashboardPage() {
             <div key={job.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3">
               <div>
                 <p className="font-medium text-sm">{job.title}</p>
-                <p className="text-xs text-muted-foreground">{job.city}, {job.state} � {job.employmentType} � {job.status}</p>
+                <p className="text-xs text-muted-foreground">{job.city}, {job.state} · {job.employmentType} · {job.status}</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => loadApplicants(job.id)}>View applicants</Button>
             </div>
@@ -250,5 +264,6 @@ export default function EmployerDashboardPage() {
         </section>
       )}
     </div>
+    </WorkspaceShell>
   );
 }

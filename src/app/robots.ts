@@ -31,6 +31,8 @@ export default function robots(): MetadataRoute.Robots {
           "/workforce/employer/dashboard",
           "/workforce/employer/onboarding",
           "/workforce/employer/sign-in",
+          "/clinic/",
+          "/clinic",
         ],
       },
     ],

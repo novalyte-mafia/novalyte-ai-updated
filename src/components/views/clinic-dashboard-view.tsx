@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { PremiumCard } from "@/components/shared/enterprise";
-import { navigate } from "@/lib/nav";
+import { PUBLIC_SITE_URL } from "@/lib/clinic-portal";
 import { splitCsv, US_STATES } from "@/lib/constants";
 import type { ClinicT, ClinicLocationT, ClinicProviderT, ClinicTreatmentT } from "@/lib/types";
 import { toast } from "sonner";
@@ -48,9 +49,12 @@ export function ClinicDashboardView({ clinic, allClinics }: { clinic: ClinicT; a
   const [treatments, setTreatments] = useState<Partial<ClinicTreatmentT>[]>(clinic.treatments ?? []);
 
   // Control tabs
-  const [activeTab, setActiveTab] = useState("editor"); // editor | analytics
   const [editorSubTab, setEditorSubTab] = useState("org"); // org | locations | providers | treatments | pricing
   const [saving, setSaving] = useState(false);
+
+  const previewHref = clinic.slug
+    ? `${PUBLIC_SITE_URL}/directory/${clinic.slug}`
+    : `${PUBLIC_SITE_URL}/directory`;
 
   // Profile completeness calculation
   const completeness = useMemo(() => {
@@ -137,9 +141,19 @@ export function ClinicDashboardView({ clinic, allClinics }: { clinic: ClinicT; a
         treatments,
       };
 
+      const { getSupabaseClient } = await import("@/lib/supabase/client");
+      const { data: sessionData } = await getSupabaseClient().auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error("Sign in to your clinic portal to save profile changes.");
+      }
+
       const res = await fetch(`/api/clinics/${clinic.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -163,37 +177,39 @@ export function ClinicDashboardView({ clinic, allClinics }: { clinic: ClinicT; a
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate("clinic-profile", undefined, { id: clinic.id })}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition"
-            title="Back to profile"
+          <Link
+            href="/clinic/directory"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:text-foreground"
+            title="Back to directory"
           >
             <ArrowLeft className="h-4 w-4" />
-          </button>
+          </Link>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-1.5">
               <Building2 className="h-5 w-5 text-teal-600" /> {name || "Clinic Dashboard"}
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Manage directory profile details, locations, pricing, and analytics.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Manage directory profile details, locations, and pricing.</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate("clinic-profile", undefined, { id: clinic.id })}
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
             className="font-semibold border-border flex items-center gap-1 text-xs"
           >
-            <Eye className="h-4 w-4 text-teal-600" /> Preview Profile
+            <a href={previewHref} target="_blank" rel="noreferrer">
+              <Eye className="h-4 w-4 text-teal-600" /> Preview Profile
+            </a>
           </Button>
-          <Button 
+          <Button
             disabled={saving}
             onClick={handlePublish}
             size="sm"
             className="bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1 text-xs shadow-premium-sm"
           >
-            <Save className="h-4 w-4" /> {saving ? "Publishing..." : "Publish Approved Changes"}
+            <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save profile"}
           </Button>
         </div>
       </div>
@@ -235,27 +251,21 @@ export function ClinicDashboardView({ clinic, allClinics }: { clinic: ClinicT; a
 
           {/* Navigation tabs */}
           <PremiumCard className="p-2 space-y-1">
-            <button
-              onClick={() => setActiveTab("editor")}
-              className={cn("w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition", 
-                activeTab === "editor" ? "bg-teal-50 text-teal-800" : "text-foreground/80 hover:bg-muted/40")}
-            >
+            <div className="w-full rounded-lg bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-800 flex items-center gap-2">
               <Building2 className="h-4 w-4" /> Profile Editor
-            </button>
-            <button
-              onClick={() => setActiveTab("analytics")}
-              className={cn("w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition", 
-                activeTab === "analytics" ? "bg-teal-50 text-teal-800" : "text-foreground/80 hover:bg-muted/40")}
+            </div>
+            <Link
+              href="/clinic/analytics"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-foreground/80 transition hover:bg-muted/40"
             >
-              <LineChart className="h-4 w-4" /> Performance Analytics
-            </button>
+              <LineChart className="h-4 w-4" /> View analytics
+            </Link>
           </PremiumCard>
         </div>
 
-        {/* Right Column: Tab View */}
+        {/* Right Column: Editor */}
         <div className="min-w-0">
-          {activeTab === "editor" && (
-            <PremiumCard className="p-6 border-border space-y-6">
+          <PremiumCard className="p-6 border-border space-y-6">
               {/* Editor Sub Navigation */}
               <div className="flex flex-wrap gap-1 border-b border-border/60 pb-3">
                 {[
@@ -593,65 +603,6 @@ export function ClinicDashboardView({ clinic, allClinics }: { clinic: ClinicT; a
                 </div>
               )}
             </PremiumCard>
-          )}
-
-          {activeTab === "analytics" && (
-            <PremiumCard className="p-6 border-border space-y-6">
-              <div>
-                <h3 className="text-base font-semibold text-foreground flex items-center gap-1.5">
-                  <LineChart className="h-5 w-5 text-teal-600" /> Directory Performance Metrics
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Real-time tracking of patient engagement and platform conversion rates.</p>
-              </div>
-
-              {/* Stat grid */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="p-4 rounded-xl border border-border bg-muted/20 text-center space-y-1">
-                  <p className="text-xs text-muted-foreground">Profile Views</p>
-                  <p className="text-2xl font-bold text-foreground">1,248</p>
-                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px]">+14% this mo</Badge>
-                </div>
-                <div className="p-4 rounded-xl border border-border bg-muted/20 text-center space-y-1">
-                  <p className="text-xs text-muted-foreground">Inquiries Generated</p>
-                  <p className="text-2xl font-bold text-foreground">42</p>
-                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px]">+8% this mo</Badge>
-                </div>
-                <div className="p-4 rounded-xl border border-border bg-muted/20 text-center space-y-1">
-                  <p className="text-xs text-muted-foreground">Saves & Compares</p>
-                  <p className="text-2xl font-bold text-foreground">89</p>
-                  <Badge variant="outline" className="border-border text-[10px]">Stable</Badge>
-                </div>
-                <div className="p-4 rounded-xl border border-border bg-muted/20 text-center space-y-1">
-                  <p className="text-xs text-muted-foreground">Click Conversion</p>
-                  <p className="text-2xl font-bold text-teal-700">3.4%</p>
-                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px]">Top 10%</Badge>
-                </div>
-              </div>
-
-              {/* Graph placeholder */}
-              <div className="border border-border rounded-xl p-4 bg-muted/10 h-64 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground">Consultation Request Trends</span>
-                  <span className="text-muted-foreground">Last 6 Months</span>
-                </div>
-                
-                {/* Mock Chart drawing */}
-                <div className="flex items-end justify-between h-40 px-4 pt-4 border-b border-l border-border">
-                  {[20, 35, 25, 45, 55, 42].map((val, idx) => (
-                    <div key={idx} className="flex flex-col items-center gap-1.5 flex-1">
-                      <div 
-                        className="w-8 bg-teal-600 rounded-t-sm transition-all duration-500 hover:bg-teal-500" 
-                        style={{ height: `${val * 2}px` }} 
-                      />
-                      <span className="text-[9px] text-muted-foreground font-semibold">
-                        {["Feb", "Mar", "Apr", "May", "Jun", "Jul"][idx]}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </PremiumCard>
-          )}
         </div>
       </div>
     </div>

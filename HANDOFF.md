@@ -102,13 +102,32 @@ Still required after deploy:
 3. **PostHog admin credentials** may be unset ? Traffic Analytics shows empty configured=false state (correct)
 4. **Distance radius filter** cannot sort by true geolocation until clinic coordinates exist
 5. **Dialpad** still mock mode for founder calling (unrelated but noted)
-6. Some older admin analytics views (sales funnel etc.) may still use operational approximations ù Traffic Analytics is the verified website adapter
+6. Some older admin analytics views (sales funnel etc.) may still use operational approximations ? Traffic Analytics is the verified website adapter
+
+## Clinic Portal (`portal.novalyte.io`) ? 2026-07-20
+
+Architecture: same Next.js app + host middleware; admin stays separate. Full write-up: `docs/PORTAL_ARCHITECTURE.md`.
+
+### Shipped
+- Portal shell with clinic sign-out, full IA nav, auth pages (forgot/reset)
+- Layout session gate for `/clinic/*` (except sign-in/reset)
+- Multi-org status API + claim search + in-portal claim
+- Profile PUT upserts Location/Provider/Treatment; no fake analytics
+- Team invites (`portal_invitations`), messages (`portal_notifications`)
+- Lead workflow status `contacted`; assessment/consultation ? lead RPCs
+- Admin Patient Leads wired to live `/api/patient-leads` + assign
+- Public clinics page CTA ? portal sign-in
+
+### Ops checklist
+- [ ] Supabase Auth redirect allowlist includes `https://portal.novalyte.io/**` and callback URLs
+- [ ] Tenant isolation smoke (clinic A cannot read clinic B assignments)
+- [ ] Confirm `portal.novalyte.io` serves `/clinic` after deploy
 
 ## Remaining priorities (exact next actions)
 
-1. Deploy both apps + apply migration if not already on prod
+1. Deploy both apps + confirm portal host
 2. Configure dashboard PostHog reporting env
 3. Publish article #1 from SEO Briefs (How to Choose a TRT Clinic) after human writing/review
 4. Continue clinic permission calls; publish first approved profiles
 5. Search Console verification + sitemap submit
-6. Next agent: optional city/treatment landing pages **only** when enough approved clinics exist ù do not generate thin pages
+6. Next agent: optional city/treatment landing pages **only** when enough approved clinics exist ? do not generate thin pages

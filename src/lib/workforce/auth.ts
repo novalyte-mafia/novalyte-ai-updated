@@ -89,12 +89,13 @@ export type OrgMembership = {
   user_id: string;
   role: "owner" | "admin" | "recruiter" | "viewer";
   status: string;
+  portal_capabilities?: Record<string, unknown>;
 };
 
 export async function getActiveMemberships(userId: string): Promise<OrgMembership[]> {
   const { data, error } = await getSupabaseAdmin()
     .from("organization_memberships")
-    .select("id, organization_id, user_id, role, status")
+    .select("id, organization_id, user_id, role, status, portal_capabilities")
     .eq("user_id", userId)
     .eq("status", "active");
   if (error) throw error;

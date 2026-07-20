@@ -26,15 +26,19 @@ function AuthCallbackComponent() {
       if (queryStatus === "success") {
         setStatus("success");
         setType(queryType);
+        const nextParam = searchParams.get("next");
+        const clinicNext =
+          nextParam?.startsWith("/clinic") ? nextParam : null;
         if (queryType === "recovery") {
           setMessage("Authentication verified. Redirecting to reset your password...");
           setTimeout(() => {
-            window.location.href = "/workforce/professional/reset-password";
+            window.location.href =
+              clinicNext || "/workforce/professional/reset-password";
           }, 2000);
         } else {
-          setMessage("Email confirmed successfully! Preparing your professional profile...");
+          setMessage("Email confirmed successfully! Redirecting...");
           setTimeout(() => {
-            window.location.href = "/workforce/professional";
+            window.location.href = clinicNext || "/workforce/professional";
           }, 2000);
         }
         return;
@@ -73,13 +77,15 @@ function AuthCallbackComponent() {
               setType("recovery");
               setMessage("Authentication verified. Redirecting to reset your password...");
               setTimeout(() => {
-                window.location.href = "/workforce/professional/reset-password";
+                window.location.href = next.includes("reset-password")
+                  ? next
+                  : "/workforce/professional/reset-password";
               }, 2000);
             } else {
               setType("signup");
-              setMessage("Email confirmed successfully! Preparing your professional profile...");
+              setMessage("Email confirmed successfully! Redirecting...");
               setTimeout(() => {
-                window.location.href = "/workforce/professional";
+                window.location.href = next;
               }, 2000);
             }
           }
@@ -92,9 +98,9 @@ function AuthCallbackComponent() {
         const { data } = await supabaseClient.auth.getSession();
         if (data?.session) {
           setStatus("success");
-          setMessage("You are already signed in. Checking your professional profile...");
+          setMessage("You are already signed in. Redirecting...");
           setTimeout(() => {
-            window.location.href = "/workforce/professional";
+            window.location.href = next;
           }, 2000);
         } else {
           setStatus("error");

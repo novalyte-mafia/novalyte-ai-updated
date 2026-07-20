@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/site/header";
-import { Footer } from "@/components/site/footer";
+import { WorkspaceShell } from "@/components/site/workspace-shell";
 import { getSupabaseClient } from "@/lib/supabase/client";
 
 export default function VerificationPendingPage() {
@@ -33,9 +32,8 @@ export default function VerificationPendingPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header onGetStarted={() => {}} />
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
+    <WorkspaceShell role="professional" navItems={[]} signOutRedirect="/workforce/professional/sign-in">
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
         <section className="w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-premium-md">
           <MailCheck className="mx-auto h-12 w-12 text-teal-600" />
           <h1 className="mt-5 text-2xl font-bold">Confirm your email</h1>
@@ -46,12 +44,19 @@ export default function VerificationPendingPage() {
           <Button className="mt-6 w-full bg-teal-600 text-white hover:bg-teal-700" onClick={resend} disabled={sending || !email}>
             {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Resend confirmation email
           </Button>
-          <Button variant="ghost" className="mt-2 w-full" onClick={() => getSupabaseClient().auth.signOut().then(() => window.location.replace("/workforce/professional/sign-in"))}>
+          <Button
+            variant="ghost"
+            className="mt-2 w-full"
+            onClick={() =>
+              getSupabaseClient()
+                .auth.signOut()
+                .then(() => window.location.replace("/workforce/professional/sign-in"))
+            }
+          >
             Use a different account
           </Button>
         </section>
-      </main>
-      <Footer onNewsletter={async () => {}} />
-    </div>
+      </div>
+    </WorkspaceShell>
   );
 }
