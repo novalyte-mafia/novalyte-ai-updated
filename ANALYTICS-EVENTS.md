@@ -95,6 +95,17 @@ CTA clicks also use `data-analytics-event` attributes; manager captures those wi
 | `job_application_started` | Apply scroll/tab | `job_id` |
 | `job_application_submitted` | Apply success | `job_id` |
 
+## Campaign landing pages
+
+| Event | Trigger | Properties |
+|-------|---------|------------|
+| `campaign_assessment_viewed` | Embedded assessment mount | `page_id`, `campaign_id`, `assessment_type`, `host` |
+| `campaign_assessment_started` | Begin assessment on LP | same (no answers) |
+| `campaign_assessment_completed` | Successful POST from LP | same (no answers) |
+| `campaign_assessment_completed` (server) | `/api/assessment` campaign submit | `page_id`, `campaign_id`, `assessment_type`, `host`, `source_page` |
+
+Client events fire via `captureSafeEvent` in `EmbeddedAssessment` / `AssessmentExperience` when `attribution.csPageId` is set. Never include assessment answers or contact fields.
+
 ## Admin interfaces
 
 | View | Source | Notes |

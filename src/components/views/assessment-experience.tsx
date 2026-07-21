@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,15 +24,66 @@ import {
 
 type Answers = Record<string, string | string[] | Record<string, unknown>>;
 
+export type AssessmentAttribution = {
+  csPageId?: string;
+  csCampaignId?: string;
+  assessmentTemplateId?: string;
+  assessmentVersion?: number;
+  pageVersion?: number;
+  pagePath?: string;
+  host?: string;
+  trafficSource?: string;
+  deviceType?: string;
+  consentVersion?: string;
+  startTime?: string;
+  assessmentMode?: "full" | "short";
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+};
+
+function fireCampaignAssessmentEvent(
+  event: "viewed" | "started" | "completed",
+  attribution: AssessmentAttribution | undefined,
+  assessmentType: string,
+) {
+  if (!attribution?.csPageId) return;
+  captureSafeEvent(`campaign_assessment_${event}`, {
+    page_id: attribution.csPageId,
+    campaign_id: attribution.csCampaignId ?? undefined,
+    assessment_type: assessmentType,
+    host: attribution.host ?? undefined,
+  });
+}
+
+function clinicDirectoryHref(clinic: ClinicT): string {
+  const state = clinic.state?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const city = clinic.city?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (state && city && clinic.slug) {
+    return `/directory/${state}/${city}/${clinic.slug}`;
+  }
+  return "/directory";
+}
+
 export function AssessmentExperience({
   config,
   clinics,
   onExit,
+  variant = "fullscreen",
+  attribution,
+  initialAnswers,
 }: {
   config: AssessmentConfig;
   clinics: ClinicT[];
   onExit: () => void;
+  variant?: "fullscreen" | "embedded";
+  attribution?: AssessmentAttribution;
+  initialAnswers?: Answers;
 }) {
+  const isEmbedded = variant === "embedded";
+  const startTimeRef = useRef<string>(new Date().toISOString());
   const [phase, setPhase] = useState<"intro" | "questions" | "review" | "results">("intro");
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
@@ -39,6 +91,15 @@ export function AssessmentExperience({
   const [results, setResults] = useState<{ readiness: string; matchedClinicIds: string[] } | null>(null);
   const [transitioning, setTransitioning] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fireCampaignAssessmentEvent("viewed", attribution, config.slug);
+  }, [attribution, config.slug]);
+
+  useEffect(() => {
+    if (!initialAnswers || Object.keys(initialAnswers).length === 0) return;
+    setAnswers((prev) => ({ ...initialAnswers, ...prev }));
+  }, [initialAnswers]);
 
   // Filter questions by conditional logic
   const activeQuestions = useMemo(() => {
@@ -197,6 +258,7 @@ export function AssessmentExperience({
     const consent = answers["consent"] as { consentContact?: boolean; consentSms?: boolean } | undefined;
 
     try {
+      const completionTime = new Date().toISOString();
       const res = await fetch("/api/assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -220,7 +282,27 @@ export function AssessmentExperience({
           consentSms: consent?.consentSms ?? false,
           internalStatus: status,
           matchedClinicIds: matched,
-          sourcePage: "assessment-fullscreen",
+          sourcePage: attribution?.csPageId
+            ? `campaign:${attribution.csPageId}${attribution.csCampaignId ? `:${attribution.csCampaignId}` : ""}`
+            : "assessment-fullscreen",
+          csPageId: attribution?.csPageId ?? null,
+          csCampaignId: attribution?.csCampaignId ?? null,
+          assessmentTemplateId: attribution?.assessmentTemplateId ?? null,
+          assessmentVersion: attribution?.assessmentVersion ?? null,
+          pageVersion: attribution?.pageVersion ?? null,
+          pagePath: attribution?.pagePath ?? null,
+          host: attribution?.host ?? null,
+          trafficSource: attribution?.trafficSource ?? null,
+          deviceType: attribution?.deviceType ?? null,
+          consentVersion: attribution?.consentVersion ?? null,
+          startTime: attribution?.startTime ?? startTimeRef.current,
+          completionTime,
+          assessmentMode: attribution?.assessmentMode ?? "full",
+          utmSource: attribution?.utmSource ?? null,
+          utmMedium: attribution?.utmMedium ?? null,
+          utmCampaign: attribution?.utmCampaign ?? null,
+          utmContent: attribution?.utmContent ?? null,
+          utmTerm: attribution?.utmTerm ?? null,
         }),
       });
       if (!res.ok) throw new Error();
@@ -234,6 +316,7 @@ export function AssessmentExperience({
         assessment_type: config.slug,
         recommendation_count: matched.length,
       });
+      fireCampaignAssessmentEvent("completed", attribution, config.slug);
       toast.success("Assessment complete.");
     } catch {
       toast.error("Something went wrong. Please try again.");
@@ -245,8 +328,15 @@ export function AssessmentExperience({
   const matchedClinics = results ? clinics.filter((c) => results.matchedClinicIds.includes(c.id)) : [];
 
   return (
-    <div className="fixed inset-0 z-[70] bg-background">
+    <div
+      className={cn(
+        isEmbedded
+          ? "relative w-full overflow-hidden rounded-2xl border border-border bg-background shadow-premium-sm"
+          : "fixed inset-0 z-[70] bg-background",
+      )}
+    >
       {/* Mobile top bar */}
+      {!isEmbedded && (
       <div className="flex items-center justify-between border-b border-border px-4 py-3 lg:hidden">
         <button onClick={exitAssessment} aria-label="Exit assessment">
           <Logo size="sm" />
@@ -262,16 +352,22 @@ export function AssessmentExperience({
           </button>
         </div>
       </div>
+      )}
 
       {/* Mobile progress bar */}
       {phase === "questions" && (
-        <div className="h-1 bg-muted lg:hidden">
+        <div className={cn("h-1 bg-muted", !isEmbedded && "lg:hidden")}>
           <div className="h-full bg-teal-600 transition-all duration-300" style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }} />
         </div>
       )}
 
-      <div className="flex h-[calc(100vh-3.5rem)] lg:h-screen">
+      <div
+        className={cn(
+          isEmbedded ? "flex max-h-[min(720px,80vh)] flex-col" : "flex h-[calc(100vh-3.5rem)] lg:h-screen",
+        )}
+      >
         {/* LEFT PANEL — Context (desktop only, 38%) */}
+        {!isEmbedded && (
         <aside className="hidden w-[38%] shrink-0 overflow-y-auto border-r border-border bg-gradient-to-b from-teal-50/30 to-background lg:block novalyte-scroll">
           <div className="flex h-full flex-col p-8">
             {/* Logo */}
@@ -366,9 +462,10 @@ export function AssessmentExperience({
             </div>
           </div>
         </aside>
+        )}
 
         {/* RIGHT PANEL — Active question (62%) */}
-        <main className="flex-1 overflow-y-auto novalyte-scroll">
+        <main className={cn("flex-1 overflow-y-auto novalyte-scroll", isEmbedded && "max-h-[min(720px,80vh)]")}>
           <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col px-4 py-6 sm:px-8 sm:py-12 lg:px-12">
             {/* Desktop progress rail */}
             {phase === "questions" && (
@@ -400,11 +497,12 @@ export function AssessmentExperience({
 
             {/* Content area */}
             <div className="flex-1">
-              {phase === "intro" && <IntroScreen config={config} onBegin={() => {
+              {phase === "intro" && <IntroScreen config={config} embedded={isEmbedded} onBegin={() => {
                 captureSafeEvent("assessment_started", {
                   assessment_type: config.slug,
                   total_steps: totalSteps,
                 });
+                fireCampaignAssessmentEvent("started", attribution, config.slug);
                 setPhase("questions");
                 setStepIndex(0);
               }} onExit={onExit} />}
@@ -445,6 +543,7 @@ export function AssessmentExperience({
                   answers={answers}
                   readiness={results.readiness}
                   matchedClinics={matchedClinics}
+                  embedded={isEmbedded}
                   onRetake={() => { setPhase("intro"); setStepIndex(0); setAnswers({}); setResults(null); }}
                   onExit={exitAssessment}
                 />
@@ -490,9 +589,19 @@ export function AssessmentExperience({
 }
 
 /* ── Intro screen ────────────────────────────────────────────── */
-function IntroScreen({ config, onBegin, onExit }: { config: AssessmentConfig; onBegin: () => void; onExit: () => void }) {
+function IntroScreen({
+  config,
+  onBegin,
+  onExit,
+  embedded = false,
+}: {
+  config: AssessmentConfig;
+  onBegin: () => void;
+  onExit: () => void;
+  embedded?: boolean;
+}) {
   return (
-    <div className="flex flex-col justify-center novalyte-fade-up" style={{ minHeight: "60vh" }}>
+    <div className="flex flex-col justify-center novalyte-fade-up" style={{ minHeight: embedded ? "auto" : "60vh" }}>
       {/* Mobile image */}
       <div className="relative mb-6 aspect-[16/9] overflow-hidden rounded-2xl shadow-premium-md lg:hidden">
         <SmartImage src={config.heroImage} alt={config.heroImageAlt} fill sizes="100vw" imgClassName="object-cover" />
@@ -535,9 +644,11 @@ function IntroScreen({ config, onBegin, onExit }: { config: AssessmentConfig; on
         <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onBegin}>
           Begin Assessment <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
-        <Button size="lg" variant="outline" onClick={onExit}>
-          Choose a Different Treatment
-        </Button>
+        {!embedded && (
+          <Button size="lg" variant="outline" onClick={onExit}>
+            Choose a Different Treatment
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -837,6 +948,7 @@ function ResultsScreen({
   matchedClinics,
   onRetake,
   onExit,
+  embedded = false,
 }: {
   config: AssessmentConfig;
   answers: Answers;
@@ -844,6 +956,7 @@ function ResultsScreen({
   matchedClinics: ClinicT[];
   onRetake: () => void;
   onExit: () => void;
+  embedded?: boolean;
 }) {
   const isReady = readiness === "consultation-ready" || readiness === "high-intent";
   const isInsurance = readiness === "insurance-dependent";
@@ -904,24 +1017,43 @@ function ResultsScreen({
           {matchedClinics.length === 0 ? (
             <div className="mt-3 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               No clinics matched your exact preferences yet. Browse the full directory.
-              <div className="mt-3"><Button variant="outline" size="sm" onClick={() => navigate("directory")}>Browse directory</Button></div>
+              <div className="mt-3">
+                {embedded ? (
+                  <Button variant="outline" size="sm" asChild><Link href="/directory">Browse directory</Link></Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => navigate("directory")}>Browse directory</Button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {matchedClinics.map((c) => {
                 const col = colorClasses(c.logoColor);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => navigate("clinic-profile", undefined, { id: c.id })}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-200 hover:shadow-sm"
-                  >
+                const card = (
+                  <>
                     <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white", col.bg)}>{initials(c.name)}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{c.name}</p>
                       <p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" /> {c.city}, {c.state}</p>
                     </div>
                     <VerificationBadge verified={c.verified} status={c.verificationStatus} />
+                  </>
+                );
+                return embedded ? (
+                  <Link
+                    key={c.id}
+                    href={clinicDirectoryHref(c)}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-200 hover:shadow-sm"
+                  >
+                    {card}
+                  </Link>
+                ) : (
+                  <button
+                    key={c.id}
+                    onClick={() => navigate("clinic-profile", undefined, { id: c.id })}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-200 hover:shadow-sm"
+                  >
+                    {card}
                   </button>
                 );
               })}
@@ -936,8 +1068,17 @@ function ResultsScreen({
           <h3 className="text-sm font-semibold text-foreground">Recommended next steps</h3>
           <p className="mt-1 text-xs text-muted-foreground">You may benefit from reviewing additional information before requesting a consultation.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => navigate("journal")}><BookOpen className="mr-1 h-3.5 w-3.5" /> Read Journal articles</Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("treatment-detail", undefined, { slug: config.slug })}><FileText className="mr-1 h-3.5 w-3.5" /> View treatment guide</Button>
+            {embedded ? (
+              <>
+                <Button size="sm" variant="outline" asChild><Link href="/journal"><BookOpen className="mr-1 h-3.5 w-3.5" /> Read Journal articles</Link></Button>
+                <Button size="sm" variant="outline" asChild><Link href="/patients"><FileText className="mr-1 h-3.5 w-3.5" /> View treatment guide</Link></Button>
+              </>
+            ) : (
+              <>
+                <Button size="sm" variant="outline" onClick={() => navigate("journal")}><BookOpen className="mr-1 h-3.5 w-3.5" /> Read Journal articles</Button>
+                <Button size="sm" variant="outline" onClick={() => navigate("treatment-detail", undefined, { slug: config.slug })}><FileText className="mr-1 h-3.5 w-3.5" /> View treatment guide</Button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -945,21 +1086,37 @@ function ResultsScreen({
       {/* Next steps */}
       <div className="mt-6 flex flex-wrap gap-2">
         {isReady && (
-          <Button
-            className="bg-teal-600 text-white hover:bg-teal-700"
-            onClick={() => {
-              captureSafeEvent("directory_handoff_clicked", {
-                source: "assessment_results",
-                recommendation_count: matchedClinics.length,
-              });
-              navigate("directory");
-            }}
-          >
-            View Matching Clinics <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
+          embedded ? (
+            <Button className="bg-teal-600 text-white hover:bg-teal-700" asChild>
+              <Link
+                href="/directory"
+                onClick={() => {
+                  captureSafeEvent("directory_handoff_clicked", {
+                    source: "assessment_results",
+                    recommendation_count: matchedClinics.length,
+                  });
+                }}
+              >
+                View Matching Clinics <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              className="bg-teal-600 text-white hover:bg-teal-700"
+              onClick={() => {
+                captureSafeEvent("directory_handoff_clicked", {
+                  source: "assessment_results",
+                  recommendation_count: matchedClinics.length,
+                });
+                navigate("directory");
+              }}
+            >
+              View Matching Clinics <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          )
         )}
         <Button variant="outline" onClick={onRetake}>Retake assessment</Button>
-        <Button variant="ghost" onClick={onExit}>Back to Patients</Button>
+        {!embedded && <Button variant="ghost" onClick={onExit}>Back to Patients</Button>}
       </div>
 
       <div className="mt-6 flex items-start gap-1.5 text-xs text-muted-foreground">

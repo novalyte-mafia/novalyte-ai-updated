@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { listIndexableOrganicPaths } from "@/lib/campaigns/public-pages";
 import { getJournalCategories, getJournalRecords } from "@/lib/journal/data";
 import { listPublishedClinics } from "@/lib/public-clinics";
 import { canonicalPath } from "@/lib/site-config";
@@ -65,7 +66,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to build journal sitemap entries", e);
   }
 
-  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...clinicRoutes];
+  let campaignRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const paths = await listIndexableOrganicPaths();
+    campaignRoutes = paths.map((path) => ({
+      url: canonicalPath(path),
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.75,
+    }));
+  } catch (e) {
+    console.error("Failed to build campaign sitemap entries", e);
+  }
+
+  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...clinicRoutes, ...campaignRoutes];
 }
 
 function segment(value: string): string {

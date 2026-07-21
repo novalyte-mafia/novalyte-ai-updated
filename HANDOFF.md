@@ -1,4 +1,4 @@
-# Handoff ù Traffic / SEO / Analytics Platform Work
+# Handoff ÔøΩ Traffic / SEO / Analytics Platform Work
 
 Date: 2026-07-19
 Repos:
@@ -97,8 +97,8 @@ Still required after deploy:
 
 ## Known problems
 
-1. **Not deployed yet** ù production may still serve old hash/404 routes until ship
-2. **No published clinics yet** ù directory SEO pages appear only after real permission + approval
+1. **Not deployed yet** ÔøΩ production may still serve old hash/404 routes until ship
+2. **No published clinics yet** ÔøΩ directory SEO pages appear only after real permission + approval
 3. **PostHog admin credentials** may be unset ? Traffic Analytics shows empty configured=false state (correct)
 4. **Distance radius filter** cannot sort by true geolocation until clinic coordinates exist
 5. **Dialpad** still mock mode for founder calling (unrelated but noted)
@@ -123,11 +123,29 @@ Architecture: same Next.js app + host middleware; admin stays separate. Full wri
 - [ ] Tenant isolation smoke (clinic A cannot read clinic B assignments)
 - [ ] Confirm `portal.novalyte.io` serves `/clinic` after deploy
 
+## Campaign Studio & Landing Pages ‚Äî 2026-07-20
+
+Architecture: `the-dashboard/docs/CAMPAIGN_STUDIO_ARCHITECTURE.md`  
+Proof checklist: `the-dashboard/docs/CAMPAIGN_STUDIO_PROOF.md`  
+Public routes: `docs/CAMPAIGN_LANDING_PAGES.md`
+
+### Shipped
+- Replaced Growth nav with Campaign Studio (wizard, overview, detail, landing pages, page editor with Assessment tab, templates, analytics)
+- Supabase `cs_*` schema + assessment templates; every conversion LP auto-binds embedded assessment
+- Organic `/find/[service]/[state]/[city]` + paid `/ads/[slug]` with `ads.novalyte.io` middleware redirects
+- Assessment stays on-page (`AssessmentExperience` variant=embedded); attribution to `cs_page_id` / `cs_campaign_id`
+- Supporting article API ‚Üí Content Studio draft
+
+### Ops checklist
+- [ ] Attach `ads.novalyte.io` in Vercel (`novalyte-ai-updated`)
+- [ ] Set `CAMPAIGN_REVALIDATE_SECRET` (both apps) + `CAMPAIGN_REVALIDATE_URL` on dashboard
+- [ ] Run Scenario A smoke: publish TRT Beverly Hills ‚Üí complete embedded assessment ‚Üí verify lead attribution
+
 ## Remaining priorities (exact next actions)
 
-1. Deploy both apps + confirm portal host
-2. Configure dashboard PostHog reporting env
+1. Deploy both apps + confirm portal host + ads host
+2. Configure dashboard PostHog reporting env + campaign revalidate secrets
 3. Publish article #1 from SEO Briefs (How to Choose a TRT Clinic) after human writing/review
 4. Continue clinic permission calls; publish first approved profiles
 5. Search Console verification + sitemap submit
-6. Next agent: optional city/treatment landing pages **only** when enough approved clinics exist ? do not generate thin pages
+6. Campaign Studio Scenario A‚ÄìE smoke after deploy (see CAMPAIGN_STUDIO_PROOF.md)

@@ -326,11 +326,15 @@ model AssessmentSubmission {
   internalStatus   String?  // consultation-ready | high-intent | researching | needs-follow-up | insurance-dependent | incomplete
   matchedClinicIds String?  // CSV of clinic ids suggested
   sourcePage       String?
+  csPageId         String?
+  csCampaignId     String?
+  attributionJson  Json?
   createdAt        DateTime @default(now())
 
   @@index([createdAt])
   @@index([treatmentType])
   @@index([email])
+  @@index([csPageId])
 }
 
 model ConsultationRequest {
