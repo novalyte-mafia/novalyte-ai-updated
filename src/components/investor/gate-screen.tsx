@@ -30,6 +30,7 @@ export function InvestorGateScreen() {
         setLoading(false);
         return;
       }
+      router.replace("/investor");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

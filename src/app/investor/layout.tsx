@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { Lora } from "next/font/google";
-
-import { InvestorGateScreen } from "@/components/investor/gate-screen";
-import { INVESTOR_GATE_COOKIE, verifyGateToken } from "@/lib/investor/gate";
 
 const investorSerif = Lora({
   subsets: ["latin"],
@@ -27,17 +23,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function InvestorLayout({
+export default function InvestorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const unlocked = verifyGateToken(cookieStore.get(INVESTOR_GATE_COOKIE)?.value);
-
-  return (
-    <div className={investorSerif.variable}>
-      {unlocked ? children : <InvestorGateScreen />}
-    </div>
-  );
+  return <div className={investorSerif.variable}>{children}</div>;
 }
