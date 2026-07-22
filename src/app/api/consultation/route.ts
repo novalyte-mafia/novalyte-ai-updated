@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   clinicId: z.string().optional().nullable(),
@@ -33,6 +34,21 @@ export async function POST(req: Request) {
         notes: parsed.data.notes ?? null,
       },
     });
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "consultation_request",
+      sourceTable: "ConsultationRequest",
+      sourceRecordId: record.id,
+      contactName: parsed.data.patientName,
+      contactEmail: parsed.data.patientEmail,
+      contactPhone: parsed.data.patientPhone ?? null,
+      organization: parsed.data.clinicName,
+      safeMetadata: {
+        clinic_id: parsed.data.clinicId,
+        preferred_time_provided: Boolean(parsed.data.preferredTime),
+      },
+      containsSensitiveHealthData: true,
+    }).catch((error) => console.error("consultation notification failed", error));
     await captureServerEvent({
       distinctId: record.id,
       event: "consultation_requested",

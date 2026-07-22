@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({ email: z.string().email().max(160) });
 
@@ -17,6 +18,14 @@ export async function POST(req: Request) {
       update: {},
       create: { email: parsed.data.email },
     });
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "newsletter_signup",
+      sourceTable: "NewsletterSignup",
+      sourceRecordId: record.id,
+      contactEmail: parsed.data.email,
+      safeMetadata: {},
+    }).catch((error) => console.error("newsletter notification failed", error));
     await captureServerEvent({
       distinctId: record.id,
       event: "newsletter_signup",

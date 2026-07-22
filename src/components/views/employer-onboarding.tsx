@@ -66,7 +66,7 @@ export function EmployerOnboarding() {
   async function next() {
     const validationError = requiredFieldsForStep(step, data);
     if (validationError) {
-      captureSafeEvent("form_error", {
+      captureSafeEvent("form_validation_error", {
         form_type: "employer_registration",
         stage_number: step + 1,
       });
@@ -132,7 +132,7 @@ export function EmployerOnboarding() {
       toast.success("Organization submitted for review. You can manage hiring from your employer dashboard.");
       window.location.assign("/workforce/employer/dashboard");
     } catch (error) {
-      captureSafeEvent("form_error", {
+      captureSafeEvent("form_submission_error", {
         form_type: "employer_registration",
         stage_number: step + 1,
       });

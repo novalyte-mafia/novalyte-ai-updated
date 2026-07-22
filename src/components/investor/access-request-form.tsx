@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { captureSafeEvent } from "@/lib/analytics-client";
 
 const investorTypes = [
   { value: "angel", label: "Angel" },
@@ -30,6 +31,7 @@ export function AccessRequestForm() {
     setStatus("submitting");
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
+    captureSafeEvent("investor_contact_started", { form_type: "investor_access" });
 
     try {
       const res = await fetch("/api/investor/access-request", {
@@ -40,13 +42,16 @@ export function AccessRequestForm() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setError(body.error ?? "Unable to submit request. Please try again.");
+        captureSafeEvent("form_submission_error", { form_type: "investor_access" });
         setStatus("idle");
         return;
       }
       setStatus("success");
+      captureSafeEvent("investor_contact_submitted", { form_type: "investor_access" });
       form.reset();
     } catch {
       setError("Something went wrong. Please try again.");
+      captureSafeEvent("form_submission_error", { form_type: "investor_access" });
       setStatus("idle");
     }
   }

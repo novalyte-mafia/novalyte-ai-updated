@@ -492,6 +492,11 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
                     has_location_query: Boolean(locationQuery.trim()),
                     result_count: filtered.length,
                   });
+                  captureSafeEvent("clinic_search", {
+                    has_care_query: Boolean(query.trim()),
+                    has_location_query: Boolean(locationQuery.trim()),
+                    result_count: filtered.length,
+                  });
                   document.getElementById("directory-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
                 className="bg-teal-600 hover:bg-teal-700 text-white shadow-premium-sm font-semibold h-10 px-5"

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   firstName: z.string().max(80).optional().nullable(),
@@ -77,6 +78,25 @@ export async function POST(req: Request) {
         { onConflict: "page_id,day" },
       );
     }
+
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "campaign_lead",
+      sourceTable: "patient_leads",
+      sourceRecordId: data.id,
+      contactName: [d.firstName, d.lastName].filter(Boolean).join(" ") || "Patient",
+      contactEmail: d.email ?? null,
+      contactPhone: d.phone ?? null,
+      safeMetadata: {
+        cs_page_id: d.csPageId,
+        cs_campaign_id: d.csCampaignId,
+        consent_contact: d.consentContact ?? false,
+      },
+      containsSensitiveHealthData: true,
+      sourcePage: d.csPageId ? `campaign:${d.csPageId}` : "campaign",
+    }).catch((notificationError) =>
+      console.error("campaign-leads notification failed", notificationError),
+    );
 
     return NextResponse.json({ ok: true, id: data.id });
   } catch (e) {

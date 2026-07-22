@@ -6,6 +6,7 @@ import {
   requireVerifiedUser,
   workforceAuthErrorResponse,
 } from "@/lib/workforce/auth";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   organizationId: z.string().uuid(),
@@ -70,6 +71,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       .select("id, status")
       .single();
     if (claimError || !claim) throw claimError ?? new Error("Unable to submit claim.");
+
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "clinic_claim",
+      sourceTable: "clinic_claims",
+      sourceRecordId: claim.id,
+      userId: user.id,
+      contactName: [parsed.data.dmFirstName, parsed.data.dmLastName].filter(Boolean).join(" ") || null,
+      contactEmail: parsed.data.dmEmail ?? user.email ?? null,
+      contactPhone: parsed.data.dmPhone ?? null,
+      organization: parsed.data.organizationId,
+      safeMetadata: { clinic_id: clinicId, organization_id: parsed.data.organizationId },
+    });
 
     // Never mark Clinic as claimed here — admin approval only.
     return NextResponse.json({

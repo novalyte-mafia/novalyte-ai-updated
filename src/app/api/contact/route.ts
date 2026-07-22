@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
 import crypto from "crypto";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 // Validation Schema
 const schema = z.object({
@@ -34,6 +35,15 @@ const schema = z.object({
 interface RoutingInfo {
   team: string;
   priority: string;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 // Centralized Routing Logic
@@ -103,62 +113,6 @@ function getRoutingInfo(senderType: string, category: string): RoutingInfo {
   return { team, priority };
 }
 
-// Helpers
-async function sendSlackNotification(webhookUrl: string, sub: any) {
-  const payload = {
-    blocks: [
-      {
-        type: "header",
-        text: {
-          type: "plain_text",
-          text: `📬 New Contact Submission (${sub.priority.toUpperCase()})`,
-          emoji: true
-        }
-      },
-      {
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*Ref Number:*\n${sub.reference_number}` },
-          { type: "mrkdwn", text: `*Routing Team:*\n${sub.routing_team}` },
-          { type: "mrkdwn", text: `*Sender Type:*\n${sub.sender_type}` },
-          { type: "mrkdwn", text: `*Category:*\n${sub.inquiry_category}` }
-        ]
-      },
-      {
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: `*Name:*\n${sub.first_name} ${sub.last_name}` },
-          { type: "mrkdwn", text: `*Email:*\n${sub.email}` },
-          { type: "mrkdwn", text: `*Phone:*\n${sub.phone || "N/A"}` },
-          { type: "mrkdwn", text: `*Organization:*\n${sub.organization_name || "N/A"}` }
-        ]
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*Subject:* ${sub.subject}\n\n*Message:*\n${sub.message}`
-        }
-      },
-      {
-        type: "context",
-        elements: [
-          { type: "mrkdwn", text: `*Submitted At:* ${new Date(sub.created_at).toLocaleString()} | *Source:* ${sub.source_page || "Direct"}` }
-        ]
-      }
-    ]
-  };
-
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    throw new Error(`Slack status ${res.status}`);
-  }
-}
-
 async function sendEmailViaResend({
   apiKey,
   from,
@@ -207,9 +161,9 @@ export async function POST(req: Request) {
 
     const val = parsed.data;
 
-    // Generate unique reference number (REF-20260715-XXXX)
+    // Generate a human-readable reference without embedding a stale release date.
     const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const referenceNumber = `REF-20260715-${randomChars}`;
+    const referenceNumber = `REF-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${randomChars}`;
 
     // Get routing info
     const routing = getRoutingInfo(val.senderType, val.inquiryCategory);
@@ -221,7 +175,7 @@ export async function POST(req: Request) {
       const salt = process.env.CONTACT_RATE_LIMIT_SECRET || "novalyte_secret_salt";
       ipHash = crypto.createHmac("sha256", salt).update(ip).digest("hex");
     } catch (e) {
-      ipHash = ip; // Fallback
+      ipHash = "hash_unavailable";
     }
 
     // Capture user agent
@@ -270,31 +224,49 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to save submission." }, { status: 500 });
     }
 
-    // Create delivery queue items in database (for retry mechanism and delivery tracking)
-    const channels = ["slack", "internal_email", "sender_confirmation_email"];
-    const deliveryRecords: any[] = [];
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "contact_inquiry",
+      sourceTable: "contact_submissions",
+      sourceRecordId: submission.id,
+      contactName: `${val.firstName} ${val.lastName}`.trim(),
+      contactEmail: val.email,
+      contactPhone: val.phone ?? null,
+      organization: val.organizationName ?? null,
+      safeMessage: val.senderType === "patient" ? null : val.message,
+      containsSensitiveHealthData: val.senderType === "patient",
+      safeMetadata: {
+        reference_number: referenceNumber,
+        sender_type: val.senderType,
+        inquiry_category: val.inquiryCategory,
+        routing_team: routing.team,
+        priority: routing.priority,
+        preferred_contact_method: val.preferredContactMethod,
+        utm_source: val.utm_source,
+        utm_medium: val.utm_medium,
+        utm_campaign: val.utm_campaign,
+      },
+      sourcePage: val.sourcePage ?? null,
+    }).catch((error) => console.error("Contact admin notification failed", error));
 
-    for (const channel of channels) {
-      const { data: delRec, error: delError } = await supabase
-        .from("contact_notification_deliveries")
-        .insert([
-          {
-            contact_submission_id: submission.id,
-            channel,
-            status: "pending",
-            attempt_count: 0
-          }
-        ])
-        .select()
-        .single();
-      
-      if (!delError && delRec) {
-        deliveryRecords.push(delRec);
-      }
-    }
+    // Preserve the sender confirmation without duplicating admin Slack/email delivery.
+    const { data: confirmationEmailRecord } = await supabase
+      .from("contact_notification_deliveries")
+      .insert({
+        contact_submission_id: submission.id,
+        channel: "sender_confirmation_email",
+        status: "pending",
+        attempt_count: 0,
+      })
+      .select()
+      .single();
 
-    // Define helper to update delivery status
-    const updateDeliveryStatus = async (recordId: string, status: string, errorMsg?: string, messageId?: string) => {
+    const updateDeliveryStatus = async (
+      recordId: string,
+      status: string,
+      errorMsg?: string,
+      messageId?: string,
+    ) => {
       await supabase
         .from("contact_notification_deliveries")
         .update({
@@ -302,115 +274,13 @@ export async function POST(req: Request) {
           attempt_count: 1,
           last_error: errorMsg || null,
           provider_message_id: messageId || null,
-          sent_at: status === "sent" ? new Date().toISOString() : null
+          sent_at: status === "sent" ? new Date().toISOString() : null,
         })
         .eq("id", recordId);
     };
 
-    // Get secrets
-    const slackWebhook = process.env.SLACK_CONTACT_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL;
     const resendApiKey = process.env.RESEND_API_KEY;
-    const notificationTo = process.env.CONTACT_NOTIFICATION_TO_EMAIL || "admin@novalyte.io";
-    const notificationFrom = process.env.CONTACT_NOTIFICATION_FROM_EMAIL || "accounts@novalyte.io";
     const confirmationFrom = process.env.CONTACT_CONFIRMATION_FROM_EMAIL || "no-reply@novalyte.io";
-
-    // 1. Deliver to Slack
-    const slackRecord = deliveryRecords.find(r => r.channel === "slack");
-    if (slackRecord) {
-      if (slackWebhook) {
-        try {
-          await sendSlackNotification(slackWebhook, submission);
-          await updateDeliveryStatus(slackRecord.id, "sent");
-        } catch (err: any) {
-          console.error("Slack delivery failed:", err);
-          await updateDeliveryStatus(slackRecord.id, "failed", err.message);
-        }
-      } else {
-        await updateDeliveryStatus(slackRecord.id, "failed", "Slack webhook URL missing");
-      }
-    }
-
-    // 2. Deliver Internal Email
-    const internalEmailRecord = deliveryRecords.find(r => r.channel === "internal_email");
-    if (internalEmailRecord) {
-      if (resendApiKey) {
-        try {
-          const emailSubject = `[Novalyte Contact] [${submission.sender_type.toUpperCase()}] ${submission.subject} — ${submission.reference_number}`;
-          const emailHtml = `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e5e5; border-radius: 12px;">
-              <h2 style="color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 10px;">New Inquiry Received</h2>
-              <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold; width: 150px;">Ref Number:</td>
-                  <td>${submission.reference_number}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Sender Type:</td>
-                  <td>${submission.sender_type}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Category:</td>
-                  <td>${submission.inquiry_category}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Routing Team:</td>
-                  <td>${submission.routing_team}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Priority:</td>
-                  <td style="color: ${submission.priority === "urgent" ? "#b91c1c" : "#000"}; font-weight: bold;">${submission.priority.toUpperCase()}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Full Name:</td>
-                  <td>${submission.first_name} ${submission.last_name}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Email:</td>
-                  <td><a href="mailto:${submission.email}">${submission.email}</a></td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Phone:</td>
-                  <td>${submission.phone || "N/A"}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">Organization:</td>
-                  <td>${submission.organization_name || "N/A"} (${submission.organization_website || "N/A"})</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-weight: bold;">City/State:</td>
-                  <td>${submission.city || "N/A"}, ${submission.state || "N/A"}</td>
-                </tr>
-              </table>
-              <div style="margin-top: 20px; padding: 15px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6;">
-                <h4 style="margin-top: 0; color: #1f2937;">Subject: ${submission.subject}</h4>
-                <p style="white-space: pre-wrap; font-size: 14px; line-height: 1.5; color: #374151; margin-bottom: 0;">${submission.message}</p>
-              </div>
-              <p style="font-size: 11px; color: #6b7280; margin-top: 20px;">
-                Submitted from: ${submission.source_page || "Direct"} | IP: Hidden for privacy
-              </p>
-            </div>
-          `;
-
-          const msgId = await sendEmailViaResend({
-            apiKey: resendApiKey,
-            from: `Novalyte AI <${notificationFrom}>`,
-            to: notificationTo,
-            replyTo: submission.email,
-            subject: emailSubject,
-            html: emailHtml
-          });
-          await updateDeliveryStatus(internalEmailRecord.id, "sent", undefined, msgId);
-        } catch (err: any) {
-          console.error("Internal email delivery failed:", err);
-          await updateDeliveryStatus(internalEmailRecord.id, "failed", err.message);
-        }
-      } else {
-        await updateDeliveryStatus(internalEmailRecord.id, "failed", "Resend API key missing");
-      }
-    }
-
-    // 3. Deliver Confirmation Email
-    const confirmationEmailRecord = deliveryRecords.find(r => r.channel === "sender_confirmation_email");
     if (confirmationEmailRecord) {
       if (resendApiKey) {
         try {
@@ -421,13 +291,13 @@ export async function POST(req: Request) {
                 <h2 style="color: #0f766e; margin-bottom: 4px;">Novalyte AI</h2>
                 <p style="font-size: 12px; color: #6b7280; margin-top: 0;">Connecting the healthcare ecosystem</p>
               </div>
-              <p style="font-size: 15px; color: #1f2937;">Dear ${submission.first_name},</p>
+              <p style="font-size: 15px; color: #1f2937;">Dear ${escapeHtml(submission.first_name)},</p>
               <p style="font-size: 14px; color: #4b5563; line-height: 1.5;">
-                Thank you for contacting Novalyte AI. We have received your inquiry and our team has routed it to the <strong>${submission.routing_team.replace("_", " ")}</strong> department.
+                Thank you for contacting Novalyte AI. We have received your inquiry and our team has routed it to the <strong>${escapeHtml(submission.routing_team.replace("_", " "))}</strong> department.
               </p>
               <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #f3f4f6; margin: 20px 0;">
-                <h4 style="margin-top: 0; color: #1f2937;">Copy of Inquiry: ${submission.subject}</h4>
-                <p style="white-space: pre-wrap; font-size: 13px; line-height: 1.5; color: #4b5563; margin-bottom: 0;">${submission.message}</p>
+                <h4 style="margin-top: 0; color: #1f2937;">Copy of Inquiry: ${escapeHtml(submission.subject)}</h4>
+                <p style="white-space: pre-wrap; font-size: 13px; line-height: 1.5; color: #4b5563; margin-bottom: 0;">${escapeHtml(submission.message)}</p>
               </div>
               <p style="font-size: 12px; color: #6b7280; line-height: 1.5;">
                 <strong>Medical Emergency Disclaimer:</strong> Novalyte AI does not provide emergency or medical care. If you are experiencing a medical emergency, please contact local emergency services immediately.

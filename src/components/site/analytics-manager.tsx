@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { Analytics } from "@vercel/analytics/react";
@@ -13,6 +13,7 @@ import {
   ensurePostHogInitialized,
   identifyAnalyticsUser,
   isPostHogInitialized,
+  persistAttribution,
 } from "@/lib/analytics-client";
 
 declare global {
@@ -35,6 +36,7 @@ function applyGtagConsent(analyticsEnabled: boolean, marketingEnabled: boolean) 
 
 export function AnalyticsManager() {
   const pathname = usePathname();
+  const previousGaPath = useRef<string | null>(null);
   const preferences = useCookieConsent((state) => state.preferences);
   const analyticsEnabled = preferences?.analytics === true;
   const marketingEnabled = preferences?.marketing === true;
@@ -52,6 +54,22 @@ export function AnalyticsManager() {
       posthog.set_config({ persistence: "memory" });
     }
   }, [analyticsEnabled, preferences]);
+
+  useEffect(() => {
+    if (!analyticsEnabled || !posthogEnabled) return;
+    if (!ensurePostHogInitialized()) return;
+    const privateSurface =
+      pathname.startsWith("/clinic") ||
+      pathname.startsWith("/workforce") ||
+      pathname.startsWith("/investor/admin") ||
+      pathname.startsWith("/investor/data-room") ||
+      pathname.startsWith("/investor/financials") ||
+      pathname.startsWith("/investor/workspace") ||
+      pathname.startsWith("/investor/updates") ||
+      pathname.startsWith("/investor/traction");
+    if (privateSurface) posthog.stopSessionRecording();
+    else posthog.startSessionRecording();
+  }, [analyticsEnabled, pathname]);
 
   useEffect(() => {
     if (!analyticsEnabled || !posthogEnabled) return;
@@ -105,7 +123,19 @@ export function AnalyticsManager() {
       }
     })();
 
-    captureSafeEvent("page_viewed", {
+    persistAttribution({
+      landing_path: window.sessionStorage.getItem("novalyte-session-started")
+        ? undefined
+        : url.pathname,
+      referrer_domain: referrerDomain,
+      utm_source: url.searchParams.get("utm_source"),
+      utm_medium: url.searchParams.get("utm_medium"),
+      utm_campaign: url.searchParams.get("utm_campaign"),
+      utm_content: url.searchParams.get("utm_content"),
+      utm_term: url.searchParams.get("utm_term"),
+    });
+
+    captureSafeEvent("page_view", {
       path: url.pathname,
       page_title: document.title,
       referrer_domain: referrerDomain,
@@ -116,6 +146,21 @@ export function AnalyticsManager() {
       utm_content: url.searchParams.get("utm_content"),
       utm_term: url.searchParams.get("utm_term"),
     });
+    if (
+      window.location.hostname === "investor.novalyte.io" ||
+      url.pathname.startsWith("/investor")
+    ) {
+      captureSafeEvent("investor_page_viewed", { path: url.pathname });
+    }
+
+    if (previousGaPath.current && previousGaPath.current !== url.pathname) {
+      window.gtag?.("event", "page_view", {
+        page_title: document.title,
+        page_location: url.href,
+        page_path: url.pathname,
+      });
+    }
+    previousGaPath.current = url.pathname;
 
     if (!window.sessionStorage.getItem("novalyte-session-started")) {
       window.sessionStorage.setItem("novalyte-session-started", "1");
@@ -168,6 +213,14 @@ export function AnalyticsManager() {
       const explicitEvent = element.getAttribute("data-analytics-event");
       if (explicitEvent) {
         captureSafeEvent(explicitEvent, {
+          path: window.location.pathname,
+          cta_label: label,
+        });
+      } else if (
+        element.getAttribute("data-slot") === "button" ||
+        element.classList.contains("bg-primary")
+      ) {
+        captureSafeEvent("primary_cta_clicked", {
           path: window.location.pathname,
           cta_label: label,
         });

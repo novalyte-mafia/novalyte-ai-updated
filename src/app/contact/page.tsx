@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import { 
   Loader2, CheckCircle2, User, Building2, Stethoscope, 
   Briefcase, ShoppingBag, ShieldAlert, Globe, FileText, 
@@ -288,6 +289,7 @@ export default function ContactPage() {
     }
 
     setLoading(true);
+    captureSafeEvent("contact_form_started", { form_type: "contact" });
 
     try {
       // Extract query parameters for UTM tracking
@@ -314,11 +316,17 @@ export default function ContactPage() {
         toast.success("Inquiry submitted successfully!");
         setRefNum(data.referenceNumber);
         setSuccess(true);
+        captureSafeEvent("contact_form_submitted", {
+          form_type: "contact",
+          sender_type: fields.senderType,
+        });
       } else {
+        captureSafeEvent("form_submission_error", { form_type: "contact" });
         toast.error(data.error || "Failed to submit inquiry. Please try again.");
       }
     } catch (err) {
       console.error("Submission error", err);
+      captureSafeEvent("form_submission_error", { form_type: "contact" });
       toast.error("A connection error occurred. Your input was preserved so you can try again.");
     } finally {
       setLoading(false);

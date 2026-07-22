@@ -7,6 +7,7 @@ import {
   requireVerifiedUser,
   workforceAuthErrorResponse,
 } from "@/lib/workforce/auth";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const jobSchema = z.object({
   organizationId: z.string().uuid(),
@@ -88,6 +89,20 @@ export async function POST(request: Request) {
       .select("*")
       .single();
     if (error) throw error;
+    await recordFormSubmissionAndNotify({
+      request,
+      formType: "job_posting",
+      sourceTable: "JobPosting",
+      sourceRecordId: data.id,
+      userId: user.id,
+      organization: data.clinicName,
+      safeMetadata: {
+        job_posting_id: data.id,
+        employment_type: parsed.data.employmentType,
+        state: parsed.data.state,
+        status: parsed.data.status,
+      },
+    });
     return NextResponse.json({ ok: true, job: data });
   } catch (error) {
     const authResponse = workforceAuthErrorResponse(error);

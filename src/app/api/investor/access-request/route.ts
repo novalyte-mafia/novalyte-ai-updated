@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { accessRequestSchema } from "@/lib/investor/schemas";
 import { logInvestorEvent } from "@/lib/investor/auth";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 function clientIp(request: Request): string {
   return (
@@ -74,66 +75,23 @@ export async function POST(request: Request) {
       metadata: { requestId: data.id, ipHash },
     });
 
-    // Notify founder (best-effort)
-    const notifyEmail =
-      process.env.INVESTOR_NOTIFY_EMAIL?.trim() ||
-      process.env.CONTACT_NOTIFICATION_TO_EMAIL?.trim() ||
-      "founder@novalyte.io";
-    const resendKey = process.env.RESEND_API_KEY?.trim();
-    if (resendKey) {
-      try {
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from:
-              process.env.CONTACT_NOTIFICATION_FROM_EMAIL?.trim() ||
-              "Novalyte AI <no-reply@novalyte.io>",
-            to: [notifyEmail],
-            subject: `Investor access request: ${parsed.fullName}`,
-            text: [
-              `New investor access request`,
-              `Name: ${parsed.fullName}`,
-              `Email: ${parsed.workEmail}`,
-              `Firm: ${parsed.firm || "—"}`,
-              `Type: ${parsed.investorType}`,
-              `Reason: ${parsed.reasonForInterest}`,
-              `Review in investor admin: /investor/admin/requests`,
-            ].join("\n"),
-          }),
-        });
-        await admin.from("investor_notification_deliveries").insert({
-          channel: "email",
-          recipient: notifyEmail,
-          event_type: "access_request",
-          payload: { requestId: data.id },
-          status: emailRes.ok ? "sent" : "failed",
-          error: emailRes.ok ? null : await emailRes.text(),
-        });
-      } catch (notifyError) {
-        console.error("investor notify failed", notifyError);
-      }
-    }
-
-    const slackUrl =
-      process.env.SLACK_INVESTOR_WEBHOOK_URL?.trim() ||
-      process.env.SLACK_CONTACT_WEBHOOK_URL?.trim();
-    if (slackUrl) {
-      try {
-        await fetch(slackUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: `Investor access request from ${parsed.fullName} (${parsed.workEmail}) — ${parsed.investorType}`,
-          }),
-        });
-      } catch {
-        // non-blocking
-      }
-    }
+    await recordFormSubmissionAndNotify({
+      request,
+      formType: "investor_access_request",
+      sourceTable: "investor_access_requests",
+      sourceRecordId: data.id,
+      contactName: parsed.fullName,
+      contactEmail: parsed.workEmail,
+      organization: parsed.firm || null,
+      safeMetadata: {
+        investor_type: parsed.investorType,
+        role_title: parsed.roleTitle,
+        check_size_range: parsed.checkSizeRange,
+        discovery_source: parsed.discoverySource,
+      },
+    }).catch((notificationError) =>
+      console.error("investor access request notification failed", notificationError),
+    );
 
     return NextResponse.json({ ok: true, id: data.id });
   } catch (error) {

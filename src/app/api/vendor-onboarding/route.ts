@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   companyName: z.string().min(2).max(160),
@@ -21,6 +22,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input", issues: parsed.error.flatten() }, { status: 400 });
     }
     const record = await db.vendorOnboarding.create({ data: parsed.data });
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "vendor_onboarding",
+      sourceTable: "VendorOnboarding",
+      sourceRecordId: record.id,
+      contactName: parsed.data.contactName,
+      contactEmail: parsed.data.email,
+      organization: parsed.data.companyName,
+      safeMetadata: {
+        category: parsed.data.category,
+        product_types: parsed.data.productTypes,
+        website: parsed.data.website,
+      },
+    }).catch((error) => console.error("vendor onboarding notification failed", error));
     await captureServerEvent({
       distinctId: record.id,
       event: "vendor_onboarding_submitted",

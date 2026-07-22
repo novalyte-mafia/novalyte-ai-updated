@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   clinicName: z.string().min(2).max(160),
@@ -23,6 +24,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input", issues: parsed.error.flatten() }, { status: 400 });
     }
     const record = await db.clinicOnboarding.create({ data: parsed.data });
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "clinic_onboarding",
+      sourceTable: "ClinicOnboarding",
+      sourceRecordId: record.id,
+      contactName: parsed.data.contactName,
+      contactEmail: parsed.data.email,
+      contactPhone: parsed.data.phone ?? null,
+      organization: parsed.data.clinicName,
+      safeMetadata: {
+        city: parsed.data.city,
+        state: parsed.data.state,
+        current_volume: parsed.data.currentVolume,
+      },
+    }).catch((error) => console.error("clinic onboarding notification failed", error));
     await captureServerEvent({
       distinctId: record.id,
       event: "clinic_onboarding_submitted",

@@ -3,16 +3,60 @@
 import posthog from "posthog-js";
 
 declare global {
-  interface Window { dataLayer: unknown[]; }
+  interface Window {
+    dataLayer: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
 }
 
 const CONSENT_KEY = "novalyte-cookie-consent";
+const ATTRIBUTION_KEY = "novalyte-attribution";
 const SENSITIVE_PROPERTY =
   /(answer|assessment|symptom|diagnos|medical|medication|condition|message|content|password|token|secret|email|phone|address|first_name|last_name|full_name)/i;
 let posthogInitialized = false;
 
 type AnalyticsPrimitive = string | number | boolean | null;
 type AnalyticsProperties = Record<string, AnalyticsPrimitive | undefined>;
+
+type Attribution = {
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_content?: string | null;
+  utm_term?: string | null;
+  landing_path?: string | null;
+  referrer_domain?: string | null;
+};
+
+export function persistAttribution(attribution: Attribution): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = JSON.parse(
+      window.localStorage.getItem(ATTRIBUTION_KEY) ?? "{}",
+    ) as Attribution;
+    const merged = Object.fromEntries(
+      Object.entries({ ...existing, ...attribution }).filter(
+        ([, value]) => value !== null && value !== undefined && value !== "",
+      ),
+    ) as Attribution;
+    const serialized = JSON.stringify(merged);
+    window.localStorage.setItem(ATTRIBUTION_KEY, serialized);
+    document.cookie = `${ATTRIBUTION_KEY}=${encodeURIComponent(serialized)}; Path=/; Max-Age=2592000; SameSite=Lax; Secure`;
+  } catch {
+    // Attribution must never break page rendering or form submission.
+  }
+}
+
+function storedAttribution(): Attribution {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(
+      window.localStorage.getItem(ATTRIBUTION_KEY) ?? "{}",
+    ) as Attribution;
+  } catch {
+    return {};
+  }
+}
 
 export function ensurePostHogInitialized(): boolean {
   if (posthogInitialized) return true;
@@ -25,9 +69,10 @@ export function ensurePostHogInitialized(): boolean {
     api_host: "/ingest",
     ui_host: posthogUiHost,
     defaults: "2026-05-30",
-    capture_exceptions: true,
+    // Explicit events only — autocapture can leak medical/PII-adjacent DOM text.
+    capture_exceptions: false,
     capture_pageview: "history_change",
-    autocapture: true,
+    autocapture: false,
     session_recording: {
       maskAllInputs: true,
       maskTextSelector: "*",
@@ -57,9 +102,13 @@ export function captureAnalyticsEvent(
   properties: AnalyticsProperties = {},
 ): void {
   if (!hasAnalyticsConsent() || typeof window === "undefined") return;
-  const safeProperties = sanitizeAnalyticsProperties(properties);
+  const safeProperties = sanitizeAnalyticsProperties({
+    ...storedAttribution(),
+    ...properties,
+  });
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event, ...safeProperties });
+  window.gtag?.("event", event, safeProperties);
   if (!ensurePostHogInitialized()) return;
   if (posthog.has_opted_out_capturing()) {
     posthog.set_config({ persistence: "localStorage+cookie" });

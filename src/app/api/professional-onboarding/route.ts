@@ -4,7 +4,7 @@ import {
   getAuthenticatedProfessionalUser,
   professionalAuthErrorResponse,
 } from "@/lib/professional-access";
-import { sendProfessionalSlackNotification } from "@/lib/professional-notifications";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { captureServerEvent } from "@/lib/posthog-server";
 import { grantAccountType } from "@/lib/workforce/auth";
@@ -274,12 +274,45 @@ export async function POST(request: Request) {
     await admin.from("professional_onboarding_drafts").delete().eq("user_id", user.id);
     await grantAccountType(user.id, "professional");
 
-    const notificationDelivery = await sendProfessionalSlackNotification({
-      userId: user.id,
-      profileId,
-      eventKey: "onboarding_completed",
-      text: `👤 *Professional onboarding completed*\n*Name:* ${name}\n*Title:* ${d.professionalTitle}\n*Location:* ${[d.city, d.state].filter(Boolean).join(", ")}\n*Email:* ${email}\n*Status:* Pending review`,
-    });
+    let notificationDelivery:
+      | { status: "sent" | "already_sent" }
+      | { status: "failed"; error: string };
+    try {
+      const result = await recordFormSubmissionAndNotify({
+        request,
+        formType: "professional_onboarding",
+        sourceTable: "workforce_professional_profiles",
+        sourceRecordId: profileId,
+        contactName: name,
+        contactEmail: email,
+        contactPhone: d.phone,
+        safeMetadata: {
+          professional_title: d.professionalTitle,
+          city: d.city,
+          state: d.state,
+          review_status: "pending_review",
+          specialty_count: d.specialties.length,
+        },
+        userId: user.id,
+      });
+      const failedDelivery = result.notificationResults.find(
+        (delivery) => delivery.status !== "sent",
+      );
+      notificationDelivery = failedDelivery
+        ? {
+            status: "failed",
+            error: "One or more onboarding notifications could not be delivered.",
+          }
+        : {
+            status: result.notificationResults.length ? "sent" : "already_sent",
+          };
+    } catch (error) {
+      console.error("Professional onboarding notification failed", error);
+      notificationDelivery = {
+        status: "failed",
+        error: "Unable to queue onboarding notification.",
+      };
+    }
 
     await captureServerEvent({
       distinctId: user.id,

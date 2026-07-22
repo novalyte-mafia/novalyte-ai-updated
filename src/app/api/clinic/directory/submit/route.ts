@@ -7,6 +7,7 @@ import {
   requireVerifiedUser,
   workforceAuthErrorResponse,
 } from "@/lib/workforce/auth";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const submitSchema = z.object({
   clinicId: z.string().min(1),
@@ -54,19 +55,38 @@ export async function POST(request: Request) {
       .eq("id", clinic.id);
     if (updateError) throw updateError;
 
-    const { error: notifyError } = await admin.from("portal_notifications").insert({
-      organization_id: clinic.organization_id,
-      user_id: user.id,
-      type: "directory_review_request",
-      title: "Directory listing submitted for review",
-      body: `${clinic.name} was submitted for Novalyte review. Publication requires admin approval.`,
-      payload: {
-        clinicId: clinic.id,
-        claimStatus: clinic.claimStatus,
-        previousVerificationStatus: clinic.verificationStatus,
+    const { data: notification, error: notifyError } = await admin
+      .from("portal_notifications")
+      .insert({
+        organization_id: clinic.organization_id,
+        user_id: user.id,
+        type: "directory_review_request",
+        title: "Directory listing submitted for review",
+        body: `${clinic.name} was submitted for Novalyte review. Publication requires admin approval.`,
+        payload: {
+          clinicId: clinic.id,
+          claimStatus: clinic.claimStatus,
+          previousVerificationStatus: clinic.verificationStatus,
+        },
+      })
+      .select("id")
+      .single();
+    if (notifyError || !notification) throw notifyError ?? new Error("Unable to create review notification.");
+
+    await recordFormSubmissionAndNotify({
+      request,
+      formType: "directory_listing",
+      sourceTable: "portal_notifications",
+      sourceRecordId: notification.id,
+      userId: user.id,
+      contactEmail: user.email ?? null,
+      organization: clinic.name,
+      safeMetadata: {
+        clinic_id: clinic.id,
+        organization_id: clinic.organization_id,
+        previous_verification_status: clinic.verificationStatus,
       },
     });
-    if (notifyError) throw notifyError;
 
     return NextResponse.json({
       ok: true,

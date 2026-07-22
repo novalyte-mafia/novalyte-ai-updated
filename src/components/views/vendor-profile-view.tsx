@@ -787,14 +787,21 @@ function ContactForm({
         ? `[Novalyte B2B Supplier Room — vendor: ${vendor.name} — listing ref: ${defaultListingId}] ${form.message}`
         : `[Novalyte B2B Supplier Room — vendor: ${vendor.name}] ${form.message}`;
 
+      const [firstName, ...rest] = form.name.trim().split(/\s+/);
+      const lastName = rest.join(" ") || "Contact";
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name,
+          senderType: "vendor",
+          inquiryCategory: "Vendor / supplier inquiry",
+          firstName: firstName || "Vendor",
+          lastName,
           email: form.email,
-          role: "vendor",
+          organizationName: form.organization || vendor.name,
+          subject: `Vendor contact: ${vendor.name}`,
           message: form.organization ? `[Org: ${form.organization}] ${context}` : context,
+          sourcePage: typeof window !== "undefined" ? window.location.href : `/vendors/${vendor.slug ?? vendor.name}`,
         }),
       });
 

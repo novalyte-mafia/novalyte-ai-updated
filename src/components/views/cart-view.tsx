@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PremiumCard } from "@/components/shared/enterprise";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import { 
   ShoppingBag, 
   Trash2, 
@@ -323,7 +324,12 @@ export function CartView() {
 
               <Button 
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 flex items-center justify-center gap-2 rounded-xl"
-                onClick={() => navigate("checkout")}
+                onClick={() => {
+                  captureSafeEvent("marketplace_checkout_started", {
+                    item_count: items.length,
+                  });
+                  navigate("checkout");
+                }}
               >
                 Proceed to Checkout <ArrowRight className="h-4 w-4" />
               </Button>

@@ -6,6 +6,7 @@ import {
   requireVerifiedUser,
   workforceAuthErrorResponse,
 } from "@/lib/workforce/auth";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   currentStep: z.number().int().min(0).max(5),
@@ -123,6 +124,25 @@ export async function POST(request: Request) {
     );
 
     await grantAccountType(user.id, "employer");
+
+    await recordFormSubmissionAndNotify({
+      request,
+      formType: "employer_onboarding",
+      sourceTable: "employer_organizations",
+      sourceRecordId: organization.id,
+      contactName: String(safeData.name ?? "") || null,
+      contactEmail: user.email ?? (String(safeData.email ?? "") || null),
+      contactPhone: String(safeData.phone ?? "") || null,
+      organization: legalName,
+      safeMetadata: {
+        org_type: orgType,
+        hq_state: String(safeData.hqState ?? "") || null,
+        org_size: String(safeData.orgSize ?? "") || null,
+        location_count: Number(safeData.locCount) || null,
+        status: "pending_review",
+      },
+      userId: user.id,
+    }).catch((error) => console.error("Employer onboarding notification failed", error));
 
     return NextResponse.json({ ok: true, organizationId: organization.id, status: "pending_review" });
   } catch (error) {

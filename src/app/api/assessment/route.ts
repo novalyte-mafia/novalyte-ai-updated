@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   treatmentType: z.string().max(160).optional().nullable(),
@@ -208,6 +209,27 @@ export async function POST(req: Request) {
     if (isCampaign) {
       await incrementCampaignAnalytics(d.csPageId!, "assessment_completions");
     }
+
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "patient_assessment",
+      sourceTable: "AssessmentSubmission",
+      sourceRecordId: record.id,
+      contactName:
+        d.contactName ??
+        ([d.firstName, d.lastName].filter(Boolean).join(" ") || null),
+      contactEmail: d.contactEmail ?? d.email ?? null,
+      contactPhone: d.phone ?? null,
+      safeMetadata: {
+        source_page: sourcePage,
+        cs_page_id: d.csPageId,
+        cs_campaign_id: d.csCampaignId,
+        assessment_mode: d.assessmentMode,
+        consent_contact: d.consentContact ?? d.consent ?? false,
+      },
+      containsSensitiveHealthData: true,
+      sourcePage,
+    }).catch((error) => console.error("assessment notification failed", error));
 
     await captureServerEvent({
       distinctId: record.id,

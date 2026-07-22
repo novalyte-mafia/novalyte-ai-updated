@@ -61,8 +61,19 @@ export function GetStartedDialog({ open, onOpenChange }: { open: boolean; onOpen
       } else if (role === "vendor") {
         payload = { companyName: form.company, contactName: form.name, email: form.email, notes: form.message };
       } else {
-        // patient / other → contact form
-        payload = { name: form.name, email: form.email, message: form.message || "Interested in patient resources.", role };
+        // Patient / other must match /api/contact Zod schema.
+        const [firstName, ...rest] = form.name.trim().split(/\s+/);
+        const lastName = rest.join(" ") || "Visitor";
+        payload = {
+          senderType: role === "patient" ? "patient" : "general",
+          inquiryCategory: role === "patient" ? "Patient inquiry" : "General inquiry",
+          firstName: firstName || "Visitor",
+          lastName,
+          email: form.email,
+          subject: role === "patient" ? "Patient get-started inquiry" : "Get-started inquiry",
+          message: form.message || "Interested in patient resources.",
+          sourcePage: typeof window !== "undefined" ? window.location.href : "/get-started",
+        };
       }
       const res = await fetch(endpoint, {
         method: "POST",

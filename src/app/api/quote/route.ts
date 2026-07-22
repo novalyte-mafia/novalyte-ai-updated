@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 const schema = z.object({
   listingId: z.string().min(2),
@@ -29,6 +30,19 @@ export async function POST(req: Request) {
         notes: parsed.data.notes ?? null,
       },
     });
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "marketplace_quote",
+      sourceTable: "QuoteRequest",
+      sourceRecordId: record.id,
+      contactName: parsed.data.requesterName,
+      contactEmail: parsed.data.requesterEmail,
+      organization: parsed.data.requesterOrg ?? null,
+      safeMetadata: {
+        listing_id: parsed.data.listingId,
+        quantity: parsed.data.quantity,
+      },
+    }).catch((error) => console.error("quote notification failed", error));
     await captureServerEvent({
       distinctId: record.id,
       event: "quote_requested",

@@ -7,6 +7,8 @@
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:push": "supabase db query --linked -f prisma/supabase_migration.sql",
     "db:migrate:list": "supabase migration list --linked",
     "db:types": "supabase gen types typescript --linked > src/types/database.types.ts",
@@ -96,6 +98,7 @@
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

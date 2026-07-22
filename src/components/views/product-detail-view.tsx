@@ -29,6 +29,7 @@ import type { MarketplaceListingT, VendorT } from "@/lib/types";
 import { navigate, useSaved, useCompare } from "@/lib/nav";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
+import { captureSafeEvent } from "@/lib/analytics-client";
 import {
   ArrowRight,
   Globe,
@@ -153,6 +154,14 @@ export function ProductDetailView({
 
   const c = colorClasses(listing.imageColor);
   const avail = availabilityMeta(listing.availability);
+
+  useEffect(() => {
+    captureSafeEvent("marketplace_product_viewed", {
+      listing_id: listing.id,
+      listing_type: listing.listingType,
+      category: listing.category,
+    });
+  }, [listing.category, listing.id, listing.listingType]);
 
   // Derive vendor structure
   const vendor = useMemo(

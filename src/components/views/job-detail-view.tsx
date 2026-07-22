@@ -753,7 +753,7 @@ function ApplyTab({ job, comp }: { job: JobPostingT; comp: string | null }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.consent) {
-      captureSafeEvent("form_error", { form_type: "job_application" });
+      captureSafeEvent("form_validation_error", { form_type: "job_application" });
       toast.error("Please acknowledge the platform disclosure to continue.");
       return;
     }
@@ -786,7 +786,7 @@ function ApplyTab({ job, comp }: { job: JobPostingT; comp: string | null }) {
       captureSafeEvent("job_application_submitted", { job_id: job.id });
       toast.success("Application submitted. The clinic will reach out if there is a fit.");
     } catch (error) {
-      captureSafeEvent("form_error", { form_type: "job_application" });
+      captureSafeEvent("form_submission_error", { form_type: "job_application" });
       toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);

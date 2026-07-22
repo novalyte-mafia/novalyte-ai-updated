@@ -198,7 +198,7 @@ export function ClinicApplication({ onComplete }: { onComplete: (applicationId: 
       toast.success("Application submitted successfully.");
       onComplete(result.applicationId);
     } catch (e) {
-      captureSafeEvent("form_error", {
+      captureSafeEvent("form_submission_error", {
         form_type: "clinic_application",
         stage_number: stage + 1,
       });

@@ -99,7 +99,7 @@ export function ProfessionalOnboarding() {
     // Validate required fields
     if (step === 0) {
       if (!data.firstName || !data.lastName || !data.phone || !data.state) {
-        captureAnalyticsEvent("form_error", {
+        captureAnalyticsEvent("form_validation_error", {
           form_type: "professional_profile",
           stage_number: step + 1,
         });
@@ -109,7 +109,7 @@ export function ProfessionalOnboarding() {
     }
     if (step === 1) {
       if (!data.headline) {
-        captureAnalyticsEvent("form_error", {
+        captureAnalyticsEvent("form_validation_error", {
           form_type: "professional_profile",
           stage_number: step + 1,
         });
@@ -183,7 +183,7 @@ export function ProfessionalOnboarding() {
         window.location.assign("/workforce/professional/dashboard");
       } catch (err) {
         console.error(err);
-        captureAnalyticsEvent("form_error", {
+        captureAnalyticsEvent("form_submission_error", {
           form_type: "professional_profile",
           stage_number: step + 1,
         });

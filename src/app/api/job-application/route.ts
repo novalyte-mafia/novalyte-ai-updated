@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 import {
   requireVerifiedUser,
   workforceAuthErrorResponse,
@@ -82,6 +83,24 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (insertError || !record) throw insertError ?? new Error("Unable to create application.");
+
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "job_application",
+      sourceTable: "JobApplication",
+      sourceRecordId: record.id,
+      contactName: profile.name,
+      contactEmail: profile.email ?? user.email ?? null,
+      contactPhone: profile.phone ?? null,
+      organization: job.clinicName,
+      safeMetadata: {
+        job_posting_id: parsed.data.jobPostingId,
+        job_title: job.title,
+        workforce_profile_id: profile.id,
+        has_cover_note: Boolean(parsed.data.coverNote),
+      },
+      userId: user.id,
+    }).catch((error) => console.error("job application notification failed", error));
 
     await captureServerEvent({
       distinctId: user.id,

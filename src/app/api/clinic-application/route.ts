@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
 
 function genAppId(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -187,6 +188,24 @@ export async function POST(req: Request) {
         submittedAt: new Date(),
       },
     });
+
+    await recordFormSubmissionAndNotify({
+      request: req,
+      formType: "clinic_application",
+      sourceTable: "ClinicApplication",
+      sourceRecordId: record.id,
+      contactName: `${d.dmFirstName} ${d.dmLastName}`.trim(),
+      contactEmail: d.dmEmail,
+      contactPhone: d.dmPhone ?? d.dmMobile ?? null,
+      organization: d.legalName,
+      safeMetadata: {
+        application_id: record.applicationId,
+        org_type: d.orgType,
+        ownership_type: d.ownershipType,
+        location_count: d.locationCount,
+        referral_source: d.referralSource,
+      },
+    }).catch((error) => console.error("clinic application notification failed", error));
 
     await captureServerEvent({
       distinctId: record.applicationId,
