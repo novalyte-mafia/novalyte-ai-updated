@@ -9,6 +9,7 @@ import {
 import { meetingRequestSchema } from "@/lib/investor/schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
   try {
@@ -66,6 +67,15 @@ export async function POST(request: Request) {
     }).catch((notificationError) =>
       console.error("investor meeting notification failed", notificationError),
     );
+
+    await captureServerEvent({
+      distinctId: data.id,
+      event: "investor_meeting_requested",
+      properties: {
+        inquiry_type: parsed.inquiryType,
+        has_preferred_date: Boolean(parsed.preferredDate),
+      },
+    }).catch(() => undefined);
 
     return NextResponse.json({ ok: true, id: data.id });
   } catch (error) {

@@ -5,8 +5,8 @@ import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 export const metadata: Metadata = {
   robots: INDEXABLE_ROBOTS,
   title: {
-    default: "Novalyte Care Navigation",
-    template: "%s | Novalyte",
+    default: "Novalyte AI",
+    template: "%s | Novalyte AI",
   },
 };
 

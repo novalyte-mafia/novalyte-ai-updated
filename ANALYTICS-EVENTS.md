@@ -16,7 +16,7 @@ Sources:
 
 | Event | Trigger | Properties | Where viewed | How to test |
 |-------|---------|------------|--------------|-------------|
-| `page_viewed` | Page load after consent | `path`, `page_title`, `referrer_domain`, `device_type`, UTMs | PostHog / GTM / Traffic Analytics | Load any public page with consent |
+| `page_view` | Page load after consent | `path`, `page_title`, `referrer_domain`, `device_type`, UTMs | PostHog / GTM / Traffic Analytics | Load any public page with consent |
 | `session_started` | First page in session | `landing_path`, `referrer_domain`, `device_type` | PostHog | New browser session |
 | `scroll_depth_reached` | 25/50/75/90% scroll | `path`, `percent` | PostHog | Scroll a long page |
 | `navigation_item_clicked` | Shell nav custom event | `destination_view` | PostHog | Click main nav |

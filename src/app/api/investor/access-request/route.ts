@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { accessRequestSchema } from "@/lib/investor/schemas";
 import { logInvestorEvent } from "@/lib/investor/auth";
 import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 function clientIp(request: Request): string {
   return (
@@ -92,6 +93,16 @@ export async function POST(request: Request) {
     }).catch((notificationError) =>
       console.error("investor access request notification failed", notificationError),
     );
+
+    await captureServerEvent({
+      distinctId: data.id,
+      event: "investor_access_requested",
+      properties: {
+        investor_type: parsed.investorType,
+        discovery_source: parsed.discoverySource,
+        has_firm: Boolean(parsed.firm),
+      },
+    }).catch(() => undefined);
 
     return NextResponse.json({ ok: true, id: data.id });
   } catch (error) {

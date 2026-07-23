@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { recordFormSubmissionAndNotify } from "@/lib/form-notifications";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const schema = z.object({
   firstName: z.string().max(80).optional().nullable(),
@@ -97,6 +98,18 @@ export async function POST(req: Request) {
     }).catch((notificationError) =>
       console.error("campaign-leads notification failed", notificationError),
     );
+
+    await captureServerEvent({
+      distinctId: data.id,
+      event: "campaign_lead_submitted",
+      properties: {
+        cs_page_id: d.csPageId ?? null,
+        cs_campaign_id: d.csCampaignId ?? null,
+        has_email: Boolean(d.email),
+        has_phone: Boolean(d.phone),
+        state: d.state ?? null,
+      },
+    }).catch(() => undefined);
 
     return NextResponse.json({ ok: true, id: data.id });
   } catch (e) {

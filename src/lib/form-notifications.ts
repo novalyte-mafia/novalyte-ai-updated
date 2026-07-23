@@ -470,7 +470,7 @@ export async function processFormNotificationDelivery(deliveryId: string) {
     const rawError = cause instanceof Error ? cause.message : "Delivery failed";
     const notConfigured = rawError.startsWith("NOT_CONFIGURED:");
     const finalFailure = delivery.attempt_count >= 5;
-    const status = notConfigured ? "not_configured" : finalFailure ? "failed" : "failed";
+    const status = notConfigured ? "not_configured" : finalFailure ? "failed" : "retrying";
     await admin
       .from("form_notification_deliveries")
       .update({
