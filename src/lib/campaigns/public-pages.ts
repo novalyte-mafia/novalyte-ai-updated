@@ -287,14 +287,43 @@ async function fetchIndexableOrganicPaths(): Promise<string[]> {
   return (data ?? []).map((row) => row.path as string).filter(Boolean);
 }
 
+async function fetchIndexableAdsPaths(): Promise<string[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("cs_pages")
+    .select("path, updated_at")
+    .eq("host", "ads")
+    .eq("status", "published")
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    if (error.code !== "PGRST204") {
+      console.error("campaign pages: indexable ads paths failed", { code: error.code });
+    }
+    return [];
+  }
+
+  return (data ?? []).map((row) => row.path as string).filter(Boolean);
+}
+
 const cachedIndexablePaths = unstable_cache(
   fetchIndexableOrganicPaths,
   ["campaign-indexable-paths"],
   { revalidate: CAMPAIGN_CACHE_SECONDS, tags: [CAMPAIGN_PAGES_TAG] },
 );
 
+const cachedIndexableAdsPaths = unstable_cache(
+  fetchIndexableAdsPaths,
+  ["campaign-indexable-ads-paths"],
+  { revalidate: CAMPAIGN_CACHE_SECONDS, tags: [CAMPAIGN_PAGES_TAG] },
+);
+
 export async function listIndexableOrganicPaths(): Promise<string[]> {
   return cachedIndexablePaths();
+}
+
+export async function listIndexableAdsPaths(): Promise<string[]> {
+  return cachedIndexableAdsPaths();
 }
 
 export function verticalToAssessmentSlug(verticalSlug: string): string {

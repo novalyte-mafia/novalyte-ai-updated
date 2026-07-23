@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { CampaignAdsShell } from "@/components/campaign/campaign-shell";
-import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
+import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 
 export const metadata = {
-  title: "Campaign landing pages",
-  robots: NOINDEX_ROBOTS,
+  title: "Novalyte care landing pages",
+  description:
+    "Find men's-health care navigation and clinic discovery landers from Novalyte AI.",
+  robots: INDEXABLE_ROBOTS,
+  alternates: { canonical: "https://ads.novalyte.io/ads" },
 };
 
 export default function AdsIndexPage() {

@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
+import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 
+/** Landing pages on ads.novalyte.io / /ads must be crawlable. */
 export const metadata: Metadata = {
-  robots: NOINDEX_ROBOTS,
-  title: "Campaign",
+  robots: INDEXABLE_ROBOTS,
+  title: {
+    default: "Novalyte Care Navigation",
+    template: "%s | Novalyte",
+  },
 };
 
 export default function AdsLayout({ children }: { children: React.ReactNode }) {

@@ -12,7 +12,12 @@ function shouldBypass(pathname: string): boolean {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/favicon") ||
-    pathname.startsWith("/images")
+    pathname.startsWith("/images") ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/sitemap" ||
+    pathname.startsWith("/opengraph-image") ||
+    pathname.startsWith("/icon")
   );
 }
 

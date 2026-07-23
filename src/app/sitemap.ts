@@ -1,11 +1,47 @@
 import type { MetadataRoute } from "next";
-import { listIndexableOrganicPaths } from "@/lib/campaigns/public-pages";
+import { headers } from "next/headers";
+import {
+  listIndexableAdsPaths,
+  listIndexableOrganicPaths,
+} from "@/lib/campaigns/public-pages";
 import { getJournalCategories, getJournalRecords } from "@/lib/journal/data";
 import { listPublishedClinics } from "@/lib/public-clinics";
 import { canonicalPath } from "@/lib/site-config";
 
+const ADS_HOST = "https://ads.novalyte.io";
+const ADS_HOSTS = new Set(["ads.novalyte.io", "ads.localhost", "ads.local"]);
+
+function adsUrl(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${ADS_HOST}${normalized.replace(/\/+$/, "") || ""}`;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const host = (await headers()).get("host")?.split(":")[0]?.toLowerCase() ?? "";
+  const isAdsHost = ADS_HOSTS.has(host);
+
+  // ads.novalyte.io sitemap: landing pages only
+  if (isAdsHost) {
+    let adsRoutes: MetadataRoute.Sitemap = [
+      { url: adsUrl("/ads"), lastModified: now, changeFrequency: "daily", priority: 1 },
+    ];
+    try {
+      const paths = await listIndexableAdsPaths();
+      adsRoutes = [
+        ...adsRoutes,
+        ...paths.map((path) => ({
+          url: adsUrl(path),
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.9,
+        })),
+      ];
+    } catch (e) {
+      console.error("Failed to build ads sitemap entries", e);
+    }
+    return adsRoutes;
+  }
 
   let clinicRoutes: MetadataRoute.Sitemap = [];
   try {
@@ -24,8 +60,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to fetch clinics for sitemap", e);
   }
 
-  // Public marketing surfaces only. Auth, clinic portals, investor, ads, and
-  // preview routes stay out of the sitemap (and are disallowed in robots.txt).
   const mainRoutes: MetadataRoute.Sitemap = [
     { url: canonicalPath("/"), lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: canonicalPath("/patients"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
@@ -81,7 +115,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to build campaign sitemap entries", e);
   }
 
-  return [...mainRoutes, ...articleRoutes, ...categoryRoutes, ...clinicRoutes, ...campaignRoutes];
+  // Also list ads.novalyte.io landers from the marketing sitemap for discovery.
+  let adsHostRoutes: MetadataRoute.Sitemap = [
+    { url: adsUrl("/ads"), lastModified: now, changeFrequency: "daily", priority: 0.85 },
+  ];
+  try {
+    const adsPaths = await listIndexableAdsPaths();
+    adsHostRoutes = [
+      ...adsHostRoutes,
+      ...adsPaths.map((path) => ({
+        url: adsUrl(path),
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.85,
+      })),
+    ];
+  } catch (e) {
+    console.error("Failed to build ads host sitemap entries", e);
+  }
+
+  return [
+    ...mainRoutes,
+    ...articleRoutes,
+    ...categoryRoutes,
+    ...clinicRoutes,
+    ...campaignRoutes,
+    ...adsHostRoutes,
+  ];
 }
 
 function segment(value: string): string {
