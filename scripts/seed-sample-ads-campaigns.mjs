@@ -362,6 +362,83 @@ const samples = [
   },
 ];
 
+async function loadGatePublishedClinicIds() {
+  const { data, error } = await sb
+    .from("prospect_directory_profiles")
+    .select("publicClinicId")
+    .eq("listingStatus", "published")
+    .eq("verificationStatus", "verified")
+    .eq("publicationStatus", "published")
+    .not("permissionSourceCallId", "is", null)
+    .not("permissionGrantedAt", "is", null)
+    .not("approvedAt", "is", null)
+    .not("publishedAt", "is", null);
+
+  if (error) {
+    console.warn("clinic gate lookup skipped:", error.message);
+    return new Set();
+  }
+  return new Set(
+    (data ?? [])
+      .map((row) => row.publicClinicId)
+      .filter(Boolean),
+  );
+}
+
+async function assignSampleClinics(pageId, stateCode, cityHint) {
+  const gateIds = await loadGatePublishedClinicIds();
+  if (gateIds.size === 0) {
+    console.log("No gate-published clinics available to assign for", pageId);
+    return;
+  }
+
+  let query = sb
+    .from("Clinic")
+    .select("id, city, state, name")
+    .is("deletedAt", null)
+    .eq("state", stateCode)
+    .limit(40);
+
+  const { data: clinics, error } = await query;
+  if (error) {
+    console.warn("Clinic lookup failed:", error.message);
+    return;
+  }
+
+  const cityNeedle = (cityHint || "").toLowerCase();
+  const ranked = (clinics ?? [])
+    .filter((c) => gateIds.has(c.id))
+    .sort((a, b) => {
+      const aHit = cityNeedle && String(a.city || "").toLowerCase().includes(cityNeedle) ? 0 : 1;
+      const bHit = cityNeedle && String(b.city || "").toLowerCase().includes(cityNeedle) ? 0 : 1;
+      return aHit - bHit;
+    })
+    .slice(0, 3);
+
+  if (ranked.length === 0) {
+    console.log("No matching published clinics for", pageId, stateCode, cityHint || "");
+    return;
+  }
+
+  await sb.from("cs_page_clinics").delete().eq("page_id", pageId);
+  const rows = ranked.map((c, idx) => ({
+    page_id: pageId,
+    clinic_id: c.id,
+    is_primary: idx === 0,
+    weight: 100 - idx,
+  }));
+  const { error: linkErr } = await sb.from("cs_page_clinics").insert(rows);
+  if (linkErr) {
+    console.warn("cs_page_clinics insert failed:", linkErr.message);
+    return;
+  }
+  console.log(
+    "Assigned clinics →",
+    pageId,
+    ranked.map((c) => `${c.name} (${c.city}, ${c.state})`).join("; "),
+  );
+}
+
 async function main() {
   const usId = "a1000000-0000-4000-8000-000000000001";
   await ensureGeo(usId, "country", "us", "United States", null, null);
@@ -465,6 +542,13 @@ async function main() {
     }
 
     console.log("OK", path, "→", `https://ads.novalyte.io/${s.treatment}/${s.location}`);
+
+    const stateCode =
+      s.stateSlug === "arizona" ? "AZ" : s.stateSlug === "california" ? "CA" : null;
+    const cityHint = s.location.split("-").slice(0, -1).join(" ");
+    if (stateCode) {
+      await assignSampleClinics(s.pageId, stateCode, cityHint);
+    }
   }
 
   // Named non-geo campaign example: ads.novalyte.io/campaign/phoenix-trt-july
@@ -547,6 +631,7 @@ async function main() {
     });
   }
   console.log("OK", namedPath, "→", "https://ads.novalyte.io/campaign/phoenix-trt-july");
+  await assignSampleClinics(named.pageId, "AZ", "phoenix");
 
   console.log("Seeded sample ads campaigns (published, noindex_follow).");
 }

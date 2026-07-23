@@ -89,6 +89,18 @@ Do not publish claims that Novalyte diagnoses, guarantees eligibility/treatment/
 
 Do not publish numerical price ranges without an approved, dated source.
 
+## Demand Intelligence (prepared, not auto-published)
+
+TypeScript contract: [`src/lib/campaigns/demand-intelligence.ts`](../src/lib/campaigns/demand-intelligence.ts)
+
+Suggested workflow:
+
+`Demand signal detected → Campaign opportunity created → Content drafted → Human reviewed → Approved → Published`
+
+`DemandCampaignOpportunity` holds query, cluster, treatment, geo, internal volume/CPC/competition (never public), intent, suggested slug/hero/answers/assessment/directory filters, plus content/compliance/publication status and last-reviewed.
+
+`canPublishFromDemandOpportunity()` requires approved content, cleared compliance, ready_to_publish, assessment/path, and lastReviewed. Raw AI drafts must not auto-publish.
+
 ## Sample seed
 
 ```bash
@@ -97,11 +109,7 @@ node scripts/seed-sample-ads-campaigns.mjs
 
 Creates sample published `noindex_follow` pages (`settings.sample=true`), including Phoenix TRT answer cards + cost factors and a named `/campaign/phoenix-trt-july` route.
 
-## Demand Intelligence (prepared, not auto-published)
-
-Suggested future DI → Studio fields: query, cluster, treatment, city/state/ZIP, volume/CPC (internal only), intent, suggested slug/hero/answers/assessment/directory filters, compliance + publication status, last reviewed.
-
-Raw AI drafts must remain human-reviewed before publish/index.
+When gate-published clinics exist for the campaign state, the seed attaches up to three via `cs_page_clinics` (city match preferred). Samples remain marked `settings.sample=true` and are not production partners.
 
 ## Env
 
@@ -110,5 +118,5 @@ No new secrets. Existing Supabase + PostHog (+ optional campaign revalidate secr
 ## Limitations
 
 - Assessment question editor in admin remains thin
-- Sample clinic assignments may be empty until live clinics are attached
-- Samples are not production clinic partners
+- Demand Intelligence admin UI is not built yet (types + publish gate only)
+- Samples are not production clinic partners even when clinics are attached for demo
