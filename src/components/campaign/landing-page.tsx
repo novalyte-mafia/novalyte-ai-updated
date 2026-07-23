@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { MapPin, CheckCircle2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { VerificationBadge } from "@/components/shared/badges";
 import { EmbeddedAssessment } from "@/components/campaign/embedded-assessment";
 import { colorClasses, initials } from "@/lib/constants";
@@ -230,11 +229,29 @@ export function CampaignLandingPage({ data, fallbackClinics = [] }: LandingPageP
           </Button>
         </section>
 
-        <DisclaimerBanner tone="amber">
-          Novalyte AI provides informational content and care navigation tools only. We do not
-          diagnose medical conditions, prescribe treatment, or guarantee clinical eligibility. A
-          licensed provider must evaluate your health history and determine appropriate care.
-        </DisclaimerBanner>
+        <section className="mt-10 rounded-xl border border-border bg-muted/30 p-5 text-left text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">Important information</p>
+          <ul className="mt-2 list-disc space-y-1.5 pl-4">
+            <li>This assessment is informational only and is not medical advice, diagnosis, or treatment.</li>
+            <li>Eligibility and care decisions are made by licensed providers — not by Novalyte AI.</li>
+            <li>Novalyte AI is a healthcare technology platform and facilitator, not a medical provider.</li>
+            <li>Submitting this form does not guarantee treatment, an appointment, or a clinic match.</li>
+            <li>If you are experiencing a medical emergency, call 911 or go to the nearest emergency department.</li>
+          </ul>
+          <p className="mt-3">
+            <Link href="/privacy" className="underline-offset-2 hover:underline">
+              Privacy
+            </Link>
+            {" · "}
+            <Link href="/terms" className="underline-offset-2 hover:underline">
+              Terms
+            </Link>
+            {" · "}
+            <Link href="/medical-disclaimer" className="underline-offset-2 hover:underline">
+              Medical disclaimer
+            </Link>
+          </p>
+        </section>
       </div>
     </div>
   );

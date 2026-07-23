@@ -22,12 +22,10 @@ function shouldBypass(pathname: string): boolean {
 }
 
 /**
- * portal.novalyte.io → /clinic/*
- * ads.novalyte.io → /ads/*
- * investor.novalyte.io → rewrite to /investor/* (clean host paths)
- *
- * Portal/ads use redirects so App Router pathname matches. Investor uses rewrite
- * so the public URL stays clean (investor.novalyte.io/company).
+ * portal.novalyte.io → /clinic/* (redirect)
+ * ads.novalyte.io → rewrite to /ads/* so public URLs stay clean:
+ *   ads.novalyte.io/trt/phoenix-az  →  /ads/trt/phoenix-az
+ * investor.novalyte.io → rewrite to /investor/*
  */
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
@@ -58,18 +56,23 @@ export async function middleware(request: NextRequest) {
   }
 
   if (ADS_HOSTS.has(host)) {
-    if (shouldBypass(pathname) || pathname.startsWith("/ads")) {
+    if (shouldBypass(pathname)) {
+      return response;
+    }
+
+    // Already under /ads — continue (legacy + App Router paths)
+    if (pathname === "/ads" || pathname.startsWith("/ads/")) {
       return response;
     }
 
     const url = request.nextUrl.clone();
     if (pathname === "/" || pathname === "") {
       url.pathname = "/ads";
-      return NextResponse.redirect(url);
+    } else {
+      url.pathname = `/ads${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
     }
-
-    url.pathname = `/ads${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
-    return NextResponse.redirect(url);
+    // Rewrite (not redirect) so the browser keeps ads.novalyte.io/trt/phoenix-az
+    return NextResponse.rewrite(url);
   }
 
   if (INVESTOR_HOSTS.has(host)) {

@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { CampaignLandingPage } from "@/components/campaign/landing-page";
 import { CampaignAdsShell } from "@/components/campaign/campaign-shell";
 import { campaignMetadata } from "@/lib/campaigns/metadata";
-import { getPublishedPageByAdsSlug } from "@/lib/campaigns/public-pages";
+import { adsCanonicalUrl, getPublishedPageByAdsSlug } from "@/lib/campaigns/public-pages";
 import { listPublishedClinics } from "@/lib/public-clinics";
-import { INDEXABLE_ROBOTS, NOINDEX_ROBOTS } from "@/lib/seo-robots";
+import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
 
 export const revalidate = 300;
 
@@ -15,22 +15,32 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  // Hierarchical landers are handled by /ads/[treatment]/[location]
+  if (slug.includes("/")) {
+    return { title: "Not found", robots: NOINDEX_ROBOTS };
+  }
   const data = await getPublishedPageByAdsSlug(slug);
   if (!data) return { title: "Not found", robots: NOINDEX_ROBOTS };
   const meta = campaignMetadata(data);
-  // ads.novalyte.io is a public landing host — keep published pages indexable.
+  const canonical = data.page.canonical_url || adsCanonicalUrl(data.page.path);
   return {
     ...meta,
-    robots: INDEXABLE_ROBOTS,
+    robots: meta.robots ?? NOINDEX_ROBOTS,
     alternates: {
       ...meta.alternates,
-      canonical: meta.alternates?.canonical ?? `https://ads.novalyte.io/ads/${slug}`,
+      canonical,
+    },
+    openGraph: {
+      ...meta.openGraph,
+      url: canonical,
     },
   };
 }
 
 export default async function AdsCampaignPage({ params }: PageProps) {
   const { slug } = await params;
+  if (slug.includes("/")) notFound();
+
   const [data, fallbackClinics] = await Promise.all([
     getPublishedPageByAdsSlug(slug),
     listPublishedClinics(),

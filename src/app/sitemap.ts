@@ -21,17 +21,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const host = (await headers()).get("host")?.split(":")[0]?.toLowerCase() ?? "";
   const isAdsHost = ADS_HOSTS.has(host);
 
-  // ads.novalyte.io sitemap: landing pages only
+  // ads.novalyte.io sitemap: only explicitly indexable landers (+ hub)
   if (isAdsHost) {
     let adsRoutes: MetadataRoute.Sitemap = [
-      { url: adsUrl("/ads"), lastModified: now, changeFrequency: "daily", priority: 1 },
+      { url: adsUrl("/"), lastModified: now, changeFrequency: "daily", priority: 1 },
     ];
     try {
+      const { adsPublicPath } = await import("@/lib/campaigns/public-pages");
       const paths = await listIndexableAdsPaths();
       adsRoutes = [
         ...adsRoutes,
         ...paths.map((path) => ({
-          url: adsUrl(path),
+          url: adsUrl(adsPublicPath(path)),
           lastModified: now,
           changeFrequency: "weekly" as const,
           priority: 0.9,
@@ -115,16 +116,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to build campaign sitemap entries", e);
   }
 
-  // Also list ads.novalyte.io landers from the marketing sitemap for discovery.
+  // Also list indexable ads.novalyte.io landers from the marketing sitemap.
   let adsHostRoutes: MetadataRoute.Sitemap = [
-    { url: adsUrl("/ads"), lastModified: now, changeFrequency: "daily", priority: 0.85 },
+    { url: adsUrl("/"), lastModified: now, changeFrequency: "daily", priority: 0.85 },
   ];
   try {
+    const { adsPublicPath } = await import("@/lib/campaigns/public-pages");
     const adsPaths = await listIndexableAdsPaths();
     adsHostRoutes = [
       ...adsHostRoutes,
       ...adsPaths.map((path) => ({
-        url: adsUrl(path),
+        url: adsUrl(adsPublicPath(path)),
         lastModified: now,
         changeFrequency: "weekly" as const,
         priority: 0.85,

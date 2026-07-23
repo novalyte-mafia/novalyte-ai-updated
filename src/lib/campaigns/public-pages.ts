@@ -18,6 +18,8 @@ const VERTICAL_ASSESSMENT_MAP: Record<string, string> = {
   trt: "testosterone-replacement-therapy",
   "sexual-health": "erectile-dysfunction",
   "weight-management": "medical-weight-loss",
+  "weight-loss": "medical-weight-loss",
+  longevity: "longevity-medicine",
   "glp-1": "glp-1",
   peptides: "peptide-therapy",
   "hair-restoration": "hair-restoration",
@@ -263,8 +265,33 @@ export async function getPublishedPageByPath(path: string): Promise<PublicCampai
 }
 
 export async function getPublishedPageByAdsSlug(slug: string): Promise<PublicCampaignPage | null> {
-  const normalizedSlug = slug.trim().toLowerCase();
+  const normalizedSlug = slug.trim().toLowerCase().replace(/^\/+/, "");
+  // Support both legacy flat slugs and hierarchical treatment/location.
   return getPublishedPageByPath(`/ads/${normalizedSlug}`);
+}
+
+/** Hierarchical ads lookup: /ads/{treatment}/{location} */
+export async function getPublishedPageByTreatmentLocation(
+  treatment: string,
+  location: string,
+): Promise<PublicCampaignPage | null> {
+  const t = treatment.trim().toLowerCase();
+  const loc = location.trim().toLowerCase();
+  if (!t || !loc) return null;
+  return getPublishedPageByPath(`/ads/${t}/${loc}`);
+}
+
+/** Public browser path on ads.novalyte.io (no /ads prefix). */
+export function adsPublicPath(internalPath: string): string {
+  const normalized = normalizePath(internalPath);
+  if (normalized === "/ads") return "/";
+  if (normalized.startsWith("/ads/")) return normalized.slice(4) || "/";
+  return normalized;
+}
+
+export function adsCanonicalUrl(internalPath: string): string {
+  const publicPath = adsPublicPath(internalPath);
+  return `https://ads.novalyte.io${publicPath === "/" ? "" : publicPath}`;
 }
 
 async function fetchIndexableOrganicPaths(): Promise<string[]> {
@@ -294,6 +321,7 @@ async function fetchIndexableAdsPaths(): Promise<string[]> {
     .select("path, updated_at")
     .eq("host", "ads")
     .eq("status", "published")
+    .eq("indexing_policy", "index_follow")
     .order("updated_at", { ascending: false });
 
   if (error) {

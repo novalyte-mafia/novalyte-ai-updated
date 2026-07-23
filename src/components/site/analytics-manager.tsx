@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/react";
 import posthog from "posthog-js";
 import { CookieConsent } from "@/components/site/cookie-consent";
 import { useCookieConsent } from "@/lib/cookie-consent-store";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import { tryGetSupabaseClient } from "@/lib/supabase/client";
 import {
   captureSafeEvent,
   ensurePostHogInitialized,
@@ -74,7 +74,8 @@ export function AnalyticsManager() {
   useEffect(() => {
     if (!analyticsEnabled || !posthogEnabled) return;
     if (!ensurePostHogInitialized()) return;
-    const supabase = getSupabaseClient();
+    const supabase = tryGetSupabaseClient();
+    if (!supabase) return;
 
     const identify = async () => {
       const { data } = await supabase.auth.getUser();
@@ -145,7 +146,50 @@ export function AnalyticsManager() {
       utm_campaign: url.searchParams.get("utm_campaign"),
       utm_content: url.searchParams.get("utm_content"),
       utm_term: url.searchParams.get("utm_term"),
+      ...(() => {
+        // ads.novalyte.io/{treatment}/{location} or /ads/{treatment}/{location}
+        const parts = url.pathname.replace(/^\/ads\/?/, "/").split("/").filter(Boolean);
+        if (parts.length >= 2) {
+          return {
+            campaign_treatment: parts[0],
+            campaign_location: parts[1],
+            campaign_slug: `${parts[0]}/${parts[1]}`,
+            ad_platform: url.searchParams.get("utm_source"),
+          };
+        }
+        if (parts.length === 1 && parts[0] !== "") {
+          return { campaign_slug: parts[0] };
+        }
+        return {};
+      })(),
     });
+    if (
+      window.location.hostname.startsWith("ads.") ||
+      url.pathname.startsWith("/ads/")
+    ) {
+      const parts = url.pathname.replace(/^\/ads\/?/, "/").split("/").filter(Boolean);
+      if (parts.length >= 2) {
+        captureSafeEvent("campaign_landing_viewed", {
+          treatment: parts[0],
+          location: parts[1],
+          campaign_slug: `${parts[0]}/${parts[1]}`,
+          path: url.pathname,
+          utm_source: url.searchParams.get("utm_source"),
+          utm_campaign: url.searchParams.get("utm_campaign"),
+        });
+        try {
+          if (isPostHogInitialized()) {
+            posthog.register({
+              campaign_treatment: parts[0],
+              campaign_location: parts[1],
+              campaign_slug: `${parts[0]}/${parts[1]}`,
+            });
+          }
+        } catch {
+          /* posthog optional */
+        }
+      }
+    }
     if (
       window.location.hostname === "investor.novalyte.io" ||
       url.pathname.startsWith("/investor")
