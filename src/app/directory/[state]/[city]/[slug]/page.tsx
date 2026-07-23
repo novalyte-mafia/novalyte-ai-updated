@@ -46,14 +46,23 @@ export async function generateMetadata({
   const description =
     clinic.overview?.trim() ||
     `Review public information for ${clinic.name}, a men's-health clinic in ${clinic.city}, ${clinic.state}.`;
+  const isDemo =
+    clinic.listingStatus === "demo" || clinic.verificationStatus === "demo";
 
   return {
-    title: clinic.name,
-    description,
+    title: isDemo ? `${clinic.name} (Demo Profile)` : clinic.name,
+    description: isDemo
+      ? "Fictional demonstration profile for the Novalyte AI clinic directory. Does not represent an operating clinic."
+      : description,
     alternates: { canonical },
+    robots: isDemo ? { index: false, follow: false } : undefined,
     openGraph: {
-      title: `${clinic.name} | Novalyte AI`,
-      description,
+      title: isDemo
+        ? `${clinic.name} (Demo) | Novalyte AI`
+        : `${clinic.name} | Novalyte AI`,
+      description: isDemo
+        ? "Fictional demonstration profile for directory preview only."
+        : description,
       type: "website",
       url: canonical,
     },
@@ -80,23 +89,28 @@ export default async function ClinicProfilePage({
   const canonical = canonicalPath(
     `/directory/${resolved.state}/${resolved.city}/${resolved.slug}`,
   );
-  const jsonLd = [
+  const jsonLd: Array<Record<string, unknown>> = [
     breadcrumbJsonLd([
       { label: "Home", url: canonicalPath("/") },
-      { label: "Directory", url: canonicalPath("/directory") },
+      { label: "Clinic Directory", url: canonicalPath("/directory") },
       { label: clinic.name, url: canonical },
     ]),
-    medicalClinicJsonLd({
-      name: clinic.name,
-      description: clinic.overview,
-      url: canonical,
-      phone: clinic.phone,
-      city: clinic.city,
-      state: clinic.state,
-      zip: clinic.zip,
-      website: clinic.website,
-    }),
   ];
+
+  if (clinic.listingStatus !== "demo" && clinic.verificationStatus !== "demo") {
+    jsonLd.push(
+      medicalClinicJsonLd({
+        name: clinic.name,
+        description: clinic.overview,
+        url: canonical,
+        phone: clinic.phone,
+        city: clinic.city,
+        state: clinic.state,
+        zip: clinic.zip,
+        website: clinic.website,
+      }),
+    );
+  }
 
   return (
     <>
@@ -107,6 +121,7 @@ export default async function ClinicProfilePage({
           clinic_slug: clinic.slug,
           state: clinic.state,
           city: clinic.city,
+          listing_status: clinic.listingStatus ?? clinic.claimStatus ?? "unclaimed",
         }}
       />
       <script

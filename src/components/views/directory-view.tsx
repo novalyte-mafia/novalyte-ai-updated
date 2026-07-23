@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { SectionShell } from "@/components/shared/section";
 import { SmartImage } from "@/components/shared/smart-image";
-import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
+import { StatusPill, ListingStatusBadge } from "@/components/shared/badges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   PremiumCard, CardSkeleton, EmptyState,
@@ -25,13 +24,28 @@ import type { ClinicT } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { captureSafeEvent } from "@/lib/analytics-client";
 import {
+  directorySortRank,
+  expandSearchTerms,
+  isClaimable,
+  isGenuinelyVerified,
+  resolveListingStatus,
+} from "@/lib/directory/listing-status";
+import {
+  confirmedAcceptingNewPatients,
+  confirmedHsaFsaAccepted,
+  confirmedInsuranceAccepted,
+  confirmedTelehealth,
+  showDirectoryDemos,
+} from "@/lib/directory/validate-clinic";
+import {
   Search, MapPin, Video, Building2, Phone, Star, ShieldCheck, Clock,
   ArrowRight, SlidersHorizontal, LayoutGrid, List, Map, X, Heart,
   GitCompare, Stethoscope, CheckCircle2, Navigation, Sparkles, ChevronRight,
   DollarSign, Check, HelpCircle, ShieldAlert, Award, Languages, Accessibility, Users,
+  ChevronDown, Info,
 } from "lucide-react";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 12;
 
 function clinicProfilePath(clinic: ClinicT): string {
   const segment = (value: string | null | undefined) =>
@@ -89,7 +103,8 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   const [onSiteLab, setOnSiteLab] = useState(false);
   const [acceptingNewPatients, setAcceptingNewPatients] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [claimedStatus, setClaimedStatus] = useState("all"); // all | claimed | unclaimed
+  const [claimedStatus, setClaimedStatus] = useState("all"); // all | claimed | unclaimed | demo
+  const [includeDemos, setIncludeDemos] = useState(() => showDirectoryDemos());
   const [distanceRadius, setDistanceRadius] = useState("all");
   const [consultationAvailability, setConsultationAvailability] = useState("all");
   const [language, setLanguage] = useState("all");
@@ -100,10 +115,18 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   const [page, setPage] = useState(1);
   const [loading, startTransition] = useTransition();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [guidedOpen, setGuidedOpen] = useState(false);
   const [locationNotice, setLocationNotice] = useState("");
   const searchStarted = useRef(false);
   const filtersMounted = useRef(false);
+
+  useEffect(() => {
+    captureSafeEvent("directory_viewed", {
+      result_count: clinics.length,
+      view_mode: view,
+    });
+  }, [clinics.length]);
 
   // Restore a shareable search when a directory URL is revisited.
   /* eslint-disable react-hooks/set-state-in-effect -- URL state is an external navigation source. */
@@ -229,32 +252,33 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
     let result = clinics.filter((c) => {
       // 1. Search Field 1: Care
       if (query) {
-        const q = query.toLowerCase();
-        const textMatch = `${c.name} ${c.city} ${c.state} ${c.overview} ${c.specialties} ${c.tagline ?? ""}`.toLowerCase().includes(q);
-        
-        // Match providers
-        const providerMatch = c.providers?.some((p) => p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) || p.credentials.toLowerCase().includes(q));
-        
-        // Match mapped specialties from patient concerns
-        const mappedSpecs = getSpecialtiesForConcern(q);
-        const specMatch = mappedSpecs.some((spec) => 
-          splitCsv(c.specialties).some((s) => s.toLowerCase().includes(spec.toLowerCase()))
+        const terms = expandSearchTerms(query);
+        const hay = `${c.name} ${c.city} ${c.state} ${c.overview} ${c.specialties} ${c.tagline ?? ""} ${c.providerTypes ?? ""} ${c.capabilities ?? ""} ${c.treatments?.map((t) => t.name).join(" ") ?? ""}`.toLowerCase();
+        const textMatch = terms.some((term) => hay.includes(term));
+        const providerMatch = c.providers?.some((p) =>
+          terms.some((term) =>
+            `${p.name} ${p.role} ${p.credentials}`.toLowerCase().includes(term),
+          ),
         );
-
+        const mappedSpecs = getSpecialtiesForConcern(query);
+        const specMatch = mappedSpecs.some((spec) =>
+          splitCsv(c.specialties).some((s) => s.toLowerCase().includes(spec.toLowerCase())),
+        );
         if (!textMatch && !providerMatch && !specMatch) return false;
       }
 
       // 2. Search Field 2: Location
       if (locationQuery) {
         const loc = locationQuery.toLowerCase();
-        if (loc === "telehealth" || loc === "remote") {
+        if (loc === "telehealth" || loc === "remote" || loc === "virtual") {
           if (!c.telehealth) return false;
         } else {
-          const stateMatch = c.state.toLowerCase() === loc;
+          const stateMatch = c.state.toLowerCase() === loc || c.state.toLowerCase().includes(loc);
           const cityMatch = c.city.toLowerCase().includes(loc);
           const zipMatch = c.zip.includes(loc);
           const serviceMatch = c.serviceArea?.toLowerCase().includes(loc);
-          if (!stateMatch && !cityMatch && !zipMatch && !serviceMatch) return false;
+          const addressMatch = c.locations?.some((l) => l.address.toLowerCase().includes(loc));
+          if (!stateMatch && !cityMatch && !zipMatch && !serviceMatch && !addressMatch) return false;
         }
       }
 
@@ -265,60 +289,65 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       // 4. Treatment specialty dropdown
       if (treatment !== "all") {
         const clinicSpecs = splitCsv(c.specialties);
-        const hasSpec = clinicSpecs.some((s) => s.toLowerCase() === treatment.toLowerCase()) || 
-                        c.treatments?.some((t) => t.name.toLowerCase() === treatment.toLowerCase());
+        const hasSpec = clinicSpecs.some((s) => s.toLowerCase() === treatment.toLowerCase()) ||
+                        c.treatments?.some((t) => t.name.toLowerCase() === treatment.toLowerCase()) ||
+                        expandSearchTerms(treatment).some((term) =>
+                          clinicSpecs.some((s) => s.toLowerCase().includes(term)) ||
+                          c.treatments?.some((t) => t.name.toLowerCase().includes(term)),
+                        );
         if (!hasSpec) return false;
       }
 
       // 5. Care format
       if (careFormat === "telehealth" && !c.telehealth) return false;
-      if (careFormat === "in-person" && c.telehealth && !c.locations?.length) return false; // purely telehealth
-      if (careFormat === "hybrid" && (!c.telehealth || !c.locations?.length)) return false;
+      if (careFormat === "in-person" && c.telehealth && !c.locations?.length && c.inPersonAvailable === false) return false;
+      if (careFormat === "hybrid" && (!c.telehealth || (!c.locations?.length && !c.inPersonAvailable))) return false;
 
       // 6. Provider Type
       if (providerType !== "all" && !splitCsv(c.providerTypes).some((p) => p.toLowerCase().includes(providerType.toLowerCase()))) return false;
 
       // 7. Clinic Type
       if (clinicType !== "all") {
-        const typeStr = c.overview.toLowerCase() + " " + c.name.toLowerCase();
+        const typeStr = c.overview.toLowerCase() + " " + c.name.toLowerCase() + " " + c.specialties.toLowerCase();
         if (clinicType === "longevity" && !typeStr.includes("longevity")) return false;
-        if (clinicType === "weight" && !typeStr.includes("weight") && !typeStr.includes("metabolic")) return false;
+        if (clinicType === "weight" && !typeStr.includes("weight") && !typeStr.includes("metabolic") && !typeStr.includes("glp")) return false;
         if (clinicType === "telehealth-provider" && !c.telehealth) return false;
-        if (clinicType === "independent" && typeStr.includes("hospital") || typeStr.includes("collective group")) return false;
+        if (clinicType === "independent" && (typeStr.includes("hospital") || typeStr.includes("collective group"))) return false;
       }
 
       // 8. Pricing status
       if (pricingStatus !== "all" && c.pricingStatus !== pricingStatus) return false;
 
-      // 9. Payment variables
-      if (insuranceAccepted && !c.insuranceAccepted) return false;
-      if (hsaFsaAccepted && !c.hsaFsaAccepted) return false;
+      // 9. Payment variables — only match when confirmed true (demo values omitted)
+      if (insuranceAccepted && confirmedInsuranceAccepted(c) !== true) return false;
+      if (hsaFsaAccepted && confirmedHsaFsaAccepted(c) !== true) return false;
       if (financingAvailable) {
+        const explicit = c.financingAvailable === true;
         const searchable = `${c.capabilities ?? ""} ${c.pricingStatus} ${c.overview}`.toLowerCase();
-        if (!searchable.includes("financ") && !c.hsaFsaAccepted) return false;
+        if (!explicit && !searchable.includes("financ")) return false;
       }
 
       // 10. Capabilities
       if (onSiteLab) {
-        const hasOnsiteLab = splitCsv(c.capabilities).some((cap) => cap.toLowerCase().includes("lab") || cap.toLowerCase().includes("phlebotomy")) || 
+        const hasOnsiteLab = splitCsv(c.capabilities).some((cap) => cap.toLowerCase().includes("lab") || cap.toLowerCase().includes("phlebotomy")) ||
                              c.locations?.some((l) => l.onSiteLab || l.phlebotomy);
         if (!hasOnsiteLab) return false;
       }
 
       // 11. Availability & claim status
-      if (acceptingNewPatients && !c.acceptingNewPatients) return false;
-      if (verifiedOnly && !c.verified) return false;
-      if (claimedStatus !== "all" && c.claimStatus !== claimedStatus) return false;
+      if (acceptingNewPatients && confirmedAcceptingNewPatients(c) !== true) return false;
+      if (verifiedOnly && !isGenuinelyVerified(c)) return false;
+      if (!includeDemos && resolveListingStatus(c) === "demo") return false;
+      if (claimedStatus === "claimed" && resolveListingStatus(c) !== "claimed" && resolveListingStatus(c) !== "verified") return false;
+      if (claimedStatus === "unclaimed" && resolveListingStatus(c) !== "unclaimed") return false;
+      if (claimedStatus === "demo" && resolveListingStatus(c) !== "demo") return false;
 
-      // These filters use the directory fields currently available in Supabase.
-      // A radius is only meaningful with an origin; physical locations are required
-      // until geocoded coordinates are added to the directory schema.
       if (distanceRadius !== "all") {
-        if (!locationQuery && !c.locations?.length) return false;
-        if (locationQuery && !c.locations?.length && !c.telehealth) return false;
+        if (!locationQuery && !c.locations?.length && c.latitude == null) return false;
+        if (locationQuery && !c.locations?.length && !c.telehealth && c.latitude == null) return false;
       }
       if (consultationAvailability !== "all") {
-        const availability = `${c.earliestAvailability ?? ""} ${c.locations?.map((l) => l.earliestAppt ?? "").join(" ")}`.toLowerCase();
+        const availability = `${c.earliestAvailability ?? ""} ${c.sameDayConsultations ? "same day" : ""} ${c.locations?.map((l) => l.earliestAppt ?? "").join(" ")}`.toLowerCase();
         if (consultationAvailability === "soon" && !/(today|tomorrow|same day|next day|this week|within 7|[1-7] day)/i.test(availability)) return false;
         if (consultationAvailability === "month" && !availability.trim()) return false;
       }
@@ -331,29 +360,25 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
     });
 
     // Sorting
-    if (sortBy === "verified") {
-      result = [...result].sort((a, b) => Number(b.verified) - Number(a.verified));
-    } else if (sortBy === "nearest") {
-      result = [...result].sort((a, b) => Number(Boolean(b.locations?.length)) - Number(Boolean(a.locations?.length)));
-    } else if (sortBy === "most-relevant") {
+    if (sortBy === "relevance" || sortBy === "most-relevant") {
+      result = [...result].sort((a, b) => directorySortRank(b) - directorySortRank(a));
+    } else if (sortBy === "recent") {
+      result = [...result].sort((a, b) =>
+        String((b as { lastReviewedAt?: string | null }).lastReviewedAt ?? "").localeCompare(
+          String((a as { lastReviewedAt?: string | null }).lastReviewedAt ?? ""),
+        ),
+      );
+    } else if (sortBy === "completeness") {
       result = [...result].sort((a, b) => b.profileCompleteness - a.profileCompleteness);
     } else if (sortBy === "az") {
       result = [...result].sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === "telehealth") {
-      result = [...result].sort((a, b) => Number(b.telehealth) - Number(a.telehealth));
-    } else if (sortBy === "accepting") {
-      result = [...result].sort((a, b) => Number(b.acceptingNewPatients) - Number(a.acceptingNewPatients));
-    } else if (sortBy === "completeness") {
-      result = [...result].sort((a, b) => b.profileCompleteness - a.profileCompleteness);
-    } else if (sortBy === "pricing") {
-      result = [...result].sort((a, b) => {
-        const aHasPrice = a.initialConsultPrice !== null ? 1 : 0;
-        const bHasPrice = b.initialConsultPrice !== null ? 1 : 0;
-        return bHasPrice - aHasPrice; // Price published first
-      });
+    } else if (sortBy === "za") {
+      result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortBy === "nearest") {
+      result = [...result].sort((a, b) => Number(Boolean(b.locations?.length || (b as { latitude?: number | null }).latitude != null)) - Number(Boolean(a.locations?.length || (a as { latitude?: number | null }).latitude != null)));
     }
     return result;
-  }, [clinics, query, locationQuery, state, city, treatment, careFormat, providerType, clinicType, pricingStatus, insuranceAccepted, hsaFsaAccepted, financingAvailable, onSiteLab, acceptingNewPatients, verifiedOnly, claimedStatus, distanceRadius, consultationAvailability, language, sortBy]);
+  }, [clinics, query, locationQuery, state, city, treatment, careFormat, providerType, clinicType, pricingStatus, insuranceAccepted, hsaFsaAccepted, financingAvailable, onSiteLab, acceptingNewPatients, verifiedOnly, claimedStatus, includeDemos, distanceRadius, consultationAvailability, language, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -390,6 +415,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   if (consultationAvailability !== "all") activeFilters.push({ label: consultationAvailability === "soon" ? "Consultation within 7 days" : "Consultation within 30 days", clear: () => setConsultationAvailability("all") });
   if (language !== "all") activeFilters.push({ label: `Language: ${language}`, clear: () => setLanguage("all") });
   if (claimedStatus !== "all") activeFilters.push({ label: `Profile: ${claimedStatus}`, clear: () => setClaimedStatus("all") });
+  if (!includeDemos) activeFilters.push({ label: "Demo profiles hidden", clear: () => setIncludeDemos(true) });
 
   function resetFilters() {
     startTransition(() => {
@@ -397,6 +423,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       setCareFormat("all"); setProviderType("all"); setClinicType("all"); setPricingStatus("all");
       setInsuranceAccepted(false); setHsaFsaAccepted(false); setOnSiteLab(false);
       setAcceptingNewPatients(false); setVerifiedOnly(false); setClaimedStatus("all");
+      setIncludeDemos(showDirectoryDemos());
       setFinancingAvailable(false); setDistanceRadius("all"); setConsultationAvailability("all"); setLanguage("all");
       setSortBy("relevance"); setPage(1);
     });
@@ -418,6 +445,18 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
       acceptingNewPatients={acceptingNewPatients} setAcceptingNewPatients={updateFilter(setAcceptingNewPatients)}
       verifiedOnly={verifiedOnly} setVerifiedOnly={updateFilter(setVerifiedOnly)}
       claimedStatus={claimedStatus} setClaimedStatus={updateFilter(setClaimedStatus)}
+      includeDemos={includeDemos}
+      setIncludeDemos={(v) => {
+        setIncludeDemos(v);
+        captureSafeEvent("directory_demo_filter_toggled", { include_demos: v, view_mode: view, sort_option: sortBy });
+        setPage(1);
+      }}
+      demosAvailable={showDirectoryDemos()}
+      moreFiltersOpen={moreFiltersOpen}
+      setMoreFiltersOpen={(open) => {
+        setMoreFiltersOpen(open);
+        if (open) captureSafeEvent("directory_more_filters_opened", { view_mode: view });
+      }}
       distanceRadius={distanceRadius} setDistanceRadius={updateFilter(setDistanceRadius)}
       consultationAvailability={consultationAvailability} setConsultationAvailability={updateFilter(setConsultationAvailability)}
       language={language} setLanguage={updateFilter(setLanguage)}
@@ -438,7 +477,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
           
           <div className="mt-6 max-w-4xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50/70 px-3 py-1 text-xs font-semibold text-teal-800 backdrop-blur">
-              <Building2 className="h-3.5 w-3.5 text-teal-600" /> Discover Trusted Men's Health Care
+              <Building2 className="h-3.5 w-3.5 text-teal-600" /> Men&apos;s Health Clinic Directory
             </div>
             
             <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
@@ -446,7 +485,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               <span className="text-teal-600">Clinic for Your Needs</span>
             </h1>
             <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg max-w-3xl">
-              Search and compare men’s health clinics by treatment, location, telehealth availability, provider expertise, pricing information, and clinic capabilities.
+              Search and compare men’s health clinics by location, treatment focus, care format, telehealth availability, and publicly available clinic information.
             </p>
           </div>
 
@@ -582,19 +621,42 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               { label: "Longevity", search: "longevity" },
               { label: "Preventive Care", search: "preventive" },
               { label: "Telehealth", locSearch: "telehealth" },
-            ].map((chip) => (
-              <button
-                key={chip.label}
-                onClick={() => {
-                  if (chip.search) setQuery(chip.search);
-                  if (chip.locSearch) setLocationQuery(chip.locSearch);
-                  setPage(1);
-                }}
-                className="inline-flex items-center rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-teal-300 hover:bg-teal-50/50 hover:text-teal-700 transition"
-              >
-                {chip.label}
-              </button>
-            ))}
+            ].map((chip) => {
+              const active = Boolean(
+                (chip.search && query.toLowerCase() === chip.search.toLowerCase()) ||
+                  (chip.locSearch && locationQuery.toLowerCase() === chip.locSearch.toLowerCase()),
+              );
+              return (
+                <button
+                  key={chip.label}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    startTransition(() => {
+                      if (chip.search) {
+                        setQuery(active ? "" : chip.search);
+                      }
+                      if (chip.locSearch) {
+                        setLocationQuery(active ? "" : chip.locSearch);
+                      }
+                      setPage(1);
+                    });
+                    captureSafeEvent("directory_quick_search_selected", {
+                      treatment: chip.label,
+                      result_count: clinics.length,
+                    });
+                  }}
+                  className={cn(
+                    "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                    active
+                      ? "border-teal-400 bg-teal-50 text-teal-800"
+                      : "border-border bg-card text-foreground/80 hover:border-teal-300 hover:bg-teal-50/50 hover:text-teal-700",
+                  )}
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
 
         </div>
@@ -629,28 +691,45 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             {/* Results Header Toolbar */}
             <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-semibold text-foreground">{filtered.length}</span>
-                <span className="text-muted-foreground">matching clinic{filtered.length !== 1 ? "s" : ""} found</span>
+                <span className="font-semibold text-foreground">
+                  {activeFilters.length > 0
+                    ? `Showing ${filtered.length} of ${clinics.length} clinics`
+                    : `Showing ${filtered.length} clinics`}
+                </span>
                 {loading && <span className="ml-1 text-xs text-teal-600">· updating…</span>}
               </div>
               <div className="flex items-center gap-2">
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="h-8.5 w-[160px] text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="relevance">Recommended</SelectItem>
-                    <SelectItem value="most-relevant">Most relevant</SelectItem>
-                    <SelectItem value="nearest">Nearest</SelectItem>
-                    <SelectItem value="verified">Verified first</SelectItem>
-                    <SelectItem value="telehealth">Telehealth available</SelectItem>
-                    <SelectItem value="accepting">Accepting new patients</SelectItem>
-                    <SelectItem value="completeness">Most complete profile</SelectItem>
-                    <SelectItem value="pricing">Pricing published first</SelectItem>
-                    <SelectItem value="az">A–Z</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col items-end gap-0.5">
+                  <Select
+                    value={sortBy}
+                    onValueChange={(value) => {
+                      setSortBy(value);
+                      captureSafeEvent("directory_sort_changed", { sort_option: value, view_mode: view });
+                    }}
+                  >
+                    <SelectTrigger className="h-8.5 w-[180px] text-xs" aria-label="Sort directory results">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="relevance">Relevance</SelectItem>
+                      <SelectItem value="recent">Recently reviewed</SelectItem>
+                      <SelectItem value="completeness">Profile completeness</SelectItem>
+                      <SelectItem value="az">Name A–Z</SelectItem>
+                      <SelectItem value="za">Name Z–A</SelectItem>
+                      <SelectItem value="nearest">Distance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="hidden text-[10px] text-muted-foreground sm:inline-flex items-center gap-1 max-w-[220px] text-right">
+                    <Info className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                    Ordered by search relevance and available profile information, not medical quality.
+                  </span>
+                </div>
                 <ViewToggle
                   value={view}
-                  onChange={setView}
+                  onChange={(next) => {
+                    setView(next);
+                    captureSafeEvent("directory_view_changed", { view_mode: next, result_count: filtered.length });
+                  }}
                   options={[
                     { value: "grid", label: "Grid", icon: LayoutGrid },
                     { value: "list", label: "List", icon: List },
@@ -659,6 +738,10 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
                 />
               </div>
             </div>
+
+            <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+              Novalyte AI is actively expanding this directory. Some profiles are publicly sourced and unclaimed, while demonstration profiles are clearly labeled. Clinic information may be incomplete or change over time.
+            </p>
 
             {/* Active Filter Chips */}
             {activeFilters.length > 0 && (
@@ -672,21 +755,6 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
               </div>
             )}
 
-            {/* Guided Discovery Pathway Banner */}
-            <div className="mb-6 flex flex-col items-start gap-4 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50/80 to-transparent p-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-teal-900 flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-teal-600 animate-pulse" /> Unsure what care fits your goals?</h3>
-                <p className="mt-1 text-xs text-teal-800/80">Use our guided clinic discovery assistant to narrow results based on concerns, care models, and coverage preferences.</p>
-              </div>
-              <Button 
-                onClick={() => setGuidedOpen(true)}
-                size="sm"
-                className="bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1.5 shrink-0"
-              >
-                Help Me Find the Right Clinic <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
             {/* Results Grid/List/Map */}
             {loading ? (
               <div className={cn("grid gap-4", view === "list" ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
@@ -695,16 +763,56 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             ) : filtered.length === 0 ? (
               <EmptyState
                 icon={Search}
-                title="No clinics match your criteria"
-                description="Try broadening your search query, selecting different states, or adjusting advanced filters."
-                action={<Button variant="outline" size="sm" onClick={resetFilters}><X className="mr-1.5 h-3.5 w-3.5" /> Clear all filters</Button>}
+                title={verifiedOnly ? "No verified clinics currently match these filters" : "No clinics match these filters"}
+                description={
+                  verifiedOnly
+                    ? "Browse all listings or adjust your search. Verified status is only shown for clinics that completed Novalyte verification."
+                    : "Try expanding your location, selecting additional treatment categories, increasing the distance radius, or clearing one or more filters."
+                }
+                action={
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button variant="outline" size="sm" onClick={resetFilters}>
+                      <X className="mr-1.5 h-3.5 w-3.5" /> Clear all filters
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        resetFilters();
+                        captureSafeEvent("directory_filters_cleared");
+                      }}
+                    >
+                      View all clinics
+                    </Button>
+                    <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => navigate("assessment")}>
+                      Complete the patient assessment
+                    </Button>
+                  </div>
+                }
               />
             ) : view === "map" ? (
               <MapView clinics={filtered} />
             ) : (
               <div className={cn("grid gap-4 novalyte-fade-up", view === "list" ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
-                {paged.map((c) => (
-                  <ClinicCard key={c.id} clinic={c} view={view} />
+                {paged.map((c, index) => (
+                  <div key={c.id} className="contents">
+                    <ClinicCard clinic={c} view={view} />
+                    {index === 5 && page === 1 && (
+                      <div className={cn(view === "list" ? "" : "md:col-span-2", "flex flex-col items-start gap-3 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50/80 to-transparent p-4 md:flex-row md:items-center md:justify-between")}>
+                        <div>
+                          <h3 className="text-sm font-semibold text-teal-900 flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-teal-600" aria-hidden /> Unsure what care fits your goals?</h3>
+                          <p className="mt-1 text-xs text-teal-800/80">Use our guided clinic discovery assistant to narrow results based on concerns, care models, and coverage preferences.</p>
+                        </div>
+                        <Button
+                          onClick={() => setGuidedOpen(true)}
+                          size="sm"
+                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1.5 shrink-0"
+                        >
+                          Help Me Find the Right Clinic <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -750,11 +858,6 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
                 Apply to List Your Clinic <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-
-            {/* Bottom Trusted Disclaimer */}
-            <DisclaimerBanner className="mt-6 font-medium text-xs leading-normal" tone="teal">
-              Novalyte AI is a healthcare technology facilitator and does not provide clinical care, diagnoses, or treatments. Directory listings, verification states, and profile completeness do not constitute medical endorsement, clinical accreditations, or outcome guarantees. Always confirm local clinician licensing, diagnostic procedures, and complete pricing directly with the clinic during consultation.
-            </DisclaimerBanner>
           </div>
         </div>
       </SectionShell>
@@ -787,6 +890,7 @@ function FiltersPanel({
   insuranceAccepted, setInsuranceAccepted, hsaFsaAccepted, setHsaFsaAccepted, financingAvailable, setFinancingAvailable,
   onSiteLab, setOnSiteLab, acceptingNewPatients, setAcceptingNewPatients,
   verifiedOnly, setVerifiedOnly, claimedStatus, setClaimedStatus,
+  includeDemos, setIncludeDemos, demosAvailable, moreFiltersOpen, setMoreFiltersOpen,
   distanceRadius, setDistanceRadius, consultationAvailability, setConsultationAvailability, language, setLanguage,
   allTreatments, allCities, onReset, onApply,
 }: {
@@ -804,6 +908,9 @@ function FiltersPanel({
   acceptingNewPatients: boolean; setAcceptingNewPatients: (v: boolean) => void;
   verifiedOnly: boolean; setVerifiedOnly: (v: boolean) => void;
   claimedStatus: string; setClaimedStatus: (v: string) => void;
+  includeDemos: boolean; setIncludeDemos: (v: boolean) => void;
+  demosAvailable: boolean;
+  moreFiltersOpen: boolean; setMoreFiltersOpen: (v: boolean) => void;
   distanceRadius: string; setDistanceRadius: (v: string) => void;
   consultationAvailability: string; setConsultationAvailability: (v: string) => void;
   language: string; setLanguage: (v: string) => void;
@@ -822,17 +929,16 @@ function FiltersPanel({
     <div className="rounded-2xl border border-border bg-card p-5 shadow-premium-sm space-y-5">
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <SlidersHorizontal className="h-4 w-4 text-teal-600" /> Advanced Filters
+          <SlidersHorizontal className="h-4 w-4 text-teal-600" /> Filters
         </h3>
-        <button onClick={onReset} className="text-xs font-semibold text-muted-foreground hover:text-foreground">
+        <button type="button" onClick={onReset} className="text-xs font-semibold text-muted-foreground hover:text-foreground">
           Clear All
         </button>
       </div>
 
       <div className="space-y-4">
-        {/* State */}
         <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">State Coverage</Label>
+          <Label className="text-xs font-semibold text-foreground/80">State</Label>
           <Select value={state} onValueChange={setState}>
             <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="All states" /></SelectTrigger>
             <SelectContent>
@@ -842,7 +948,6 @@ function FiltersPanel({
           </Select>
         </div>
 
-        {/* City */}
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold text-foreground/80">City</Label>
           <Select value={city} onValueChange={setCity}>
@@ -854,16 +959,13 @@ function FiltersPanel({
           </Select>
         </div>
 
-        <Separator />
-
-        {/* Treatment Specialty Searchable */}
         <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">Treatment specialty</Label>
+          <Label className="text-xs font-semibold text-foreground/80">Treatment</Label>
           <div className="relative mb-1">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input 
-              placeholder="Search treatments..." 
-              value={filterSearch} 
+            <Input
+              placeholder="Search treatments..."
+              value={filterSearch}
               onChange={(e) => setFilterSearch(e.target.value)}
               className="h-8 pl-8 text-xs bg-muted/20 border-0"
             />
@@ -877,9 +979,6 @@ function FiltersPanel({
           </Select>
         </div>
 
-        <Separator />
-
-        {/* Care Format */}
         <div className="grid gap-1.5">
           <Label className="text-xs font-semibold text-foreground/80">Care Format</Label>
           <Select value={careFormat} onValueChange={setCareFormat}>
@@ -893,146 +992,149 @@ function FiltersPanel({
           </Select>
         </div>
 
-        <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">Distance radius</Label>
-          <Select value={distanceRadius} onValueChange={setDistanceRadius}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any distance" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any distance</SelectItem>
-              <SelectItem value="10">Within 10 miles</SelectItem>
-              <SelectItem value="25">Within 25 miles</SelectItem>
-              <SelectItem value="50">Within 50 miles</SelectItem>
-              <SelectItem value="100">Within 100 miles</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-[10px] text-muted-foreground">Enter a city, state, or ZIP above to use a radius.</p>
-        </div>
+        {demosAvailable && (
+          <label className="flex items-center justify-between text-xs text-foreground/80">
+            <span>Include Demo Profiles</span>
+            <Switch checked={includeDemos} onCheckedChange={setIncludeDemos} className="scale-75" />
+          </label>
+        )}
 
-        <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">Consultation availability</Label>
-          <Select value={consultationAvailability} onValueChange={setConsultationAvailability}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any availability" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any availability</SelectItem>
-              <SelectItem value="soon">Within 7 days</SelectItem>
-              <SelectItem value="month">Within 30 days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground/80 hover:bg-muted/40"
+          aria-expanded={moreFiltersOpen}
+          onClick={() => setMoreFiltersOpen(!moreFiltersOpen)}
+        >
+          <span className="inline-flex items-center gap-1.5"><SlidersHorizontal className="h-3.5 w-3.5 text-teal-600" /> More Filters</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 transition", moreFiltersOpen && "rotate-180")} />
+        </button>
 
-        <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">Language</Label>
-          <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any language" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any language</SelectItem>
-              <SelectItem value="English">English</SelectItem>
-              <SelectItem value="Spanish">Spanish</SelectItem>
-              <SelectItem value="French">French</SelectItem>
-              <SelectItem value="Mandarin">Mandarin</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {moreFiltersOpen && (
+          <div className="space-y-4 border-t border-border pt-4">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Distance radius</Label>
+              <Select value={distanceRadius} onValueChange={setDistanceRadius}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any distance" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any distance</SelectItem>
+                  <SelectItem value="10">Within 10 miles</SelectItem>
+                  <SelectItem value="25">Within 25 miles</SelectItem>
+                  <SelectItem value="50">Within 50 miles</SelectItem>
+                  <SelectItem value="100">Within 100 miles</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Provider Type */}
-        <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">Provider Type</Label>
-          <Select value={providerType} onValueChange={setProviderType}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="Physician">Physician / MD / DO</SelectItem>
-              <SelectItem value="Nurse Practitioner">Nurse Practitioner (NP)</SelectItem>
-              <SelectItem value="Physician Assistant">Physician Assistant (PA)</SelectItem>
-              <SelectItem value="Registered Nurse">Registered Nurse (RN)</SelectItem>
-              <SelectItem value="Medical Director">Medical Director</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Consultation availability</Label>
+              <Select value={consultationAvailability} onValueChange={setConsultationAvailability}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any availability" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any availability</SelectItem>
+                  <SelectItem value="soon">Within 7 days</SelectItem>
+                  <SelectItem value="month">Within 30 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Clinic Model Type */}
-        <div className="grid gap-1.5">
-          <Label className="text-xs font-semibold text-foreground/80">Clinic Type</Label>
-          <Select value={clinicType} onValueChange={setClinicType}>
-            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Models</SelectItem>
-              <SelectItem value="longevity">Longevity Clinic</SelectItem>
-              <SelectItem value="weight">Medical Weight Loss</SelectItem>
-              <SelectItem value="telehealth-provider">Purely Telehealth</SelectItem>
-              <SelectItem value="independent">Independent Practice</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Language</Label>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Any language" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any language</SelectItem>
+                  <SelectItem value="English">English</SelectItem>
+                  <SelectItem value="Spanish">Spanish</SelectItem>
+                  <SelectItem value="French">French</SelectItem>
+                  <SelectItem value="Mandarin">Mandarin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <Separator />
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Provider Type</Label>
+              <Select value={providerType} onValueChange={setProviderType}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="Physician">Physician / MD / DO</SelectItem>
+                  <SelectItem value="Nurse Practitioner">Nurse Practitioner (NP)</SelectItem>
+                  <SelectItem value="Physician Assistant">Physician Assistant (PA)</SelectItem>
+                  <SelectItem value="Registered Nurse">Registered Nurse (RN)</SelectItem>
+                  <SelectItem value="Medical Director">Medical Director</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Pricing Status & Payment Mode */}
-        <div className="space-y-3">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pricing & Insurance</Label>
-          
-          <div className="grid gap-1.5">
-            <Select value={pricingStatus} onValueChange={setPricingStatus}>
-              <SelectTrigger className="h-8.5 text-xs"><SelectValue placeholder="Pricing transparency" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Any Pricing Status</SelectItem>
-                <SelectItem value="Full Pricing Published">Full Pricing Published</SelectItem>
-                <SelectItem value="Partial Pricing Published">Partial Pricing</SelectItem>
-                <SelectItem value="Consultation Pricing Available">Consultation Pricing</SelectItem>
-                <SelectItem value="Contact Clinic for Pricing">Contact Clinic</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold text-foreground/80">Clinic Type</Label>
+              <Select value={clinicType} onValueChange={setClinicType}>
+                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Models</SelectItem>
+                  <SelectItem value="longevity">Longevity Clinic</SelectItem>
+                  <SelectItem value="weight">Medical Weight Loss</SelectItem>
+                  <SelectItem value="telehealth-provider">Purely Telehealth</SelectItem>
+                  <SelectItem value="independent">Independent Practice</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pricing & Insurance</Label>
+              <Select value={pricingStatus} onValueChange={setPricingStatus}>
+                <SelectTrigger className="h-8.5 text-xs"><SelectValue placeholder="Pricing transparency" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Pricing Status</SelectItem>
+                  <SelectItem value="Full Pricing Published">Full Pricing Published</SelectItem>
+                  <SelectItem value="Partial Pricing Published">Partial Pricing</SelectItem>
+                  <SelectItem value="Consultation Pricing Available">Consultation Pricing</SelectItem>
+                  <SelectItem value="Contact Clinic for Pricing">Contact Clinic</SelectItem>
+                </SelectContent>
+              </Select>
+              <label className="flex items-center justify-between text-xs text-foreground/80">
+                <span>Accepts Insurance</span>
+                <Switch checked={insuranceAccepted} onCheckedChange={setInsuranceAccepted} className="scale-75" />
+              </label>
+              <label className="flex items-center justify-between text-xs text-foreground/80">
+                <span>Accepts HSA / FSA</span>
+                <Switch checked={hsaFsaAccepted} onCheckedChange={setHsaFsaAccepted} className="scale-75" />
+              </label>
+              <label className="flex items-center justify-between text-xs text-foreground/80">
+                <span>Financing available</span>
+                <Switch checked={financingAvailable} onCheckedChange={setFinancingAvailable} className="scale-75" />
+              </label>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Capabilities & Status</Label>
+              <label className="flex items-center justify-between text-xs text-foreground/80">
+                <span>On-site Lab / Phlebotomy</span>
+                <Switch checked={onSiteLab} onCheckedChange={setOnSiteLab} className="scale-75" />
+              </label>
+              <label className="flex items-center justify-between text-xs text-foreground/80">
+                <span>Accepting New Patients</span>
+                <Switch checked={acceptingNewPatients} onCheckedChange={setAcceptingNewPatients} className="scale-75" />
+              </label>
+              <label className="flex items-center justify-between text-xs text-foreground/80">
+                <span>Verified Only</span>
+                <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} className="scale-75" />
+              </label>
+              <div className="grid gap-1.5 pt-1">
+                <Label className="text-[10px] text-muted-foreground uppercase">Claim Status</Label>
+                <Select value={claimedStatus} onValueChange={setClaimedStatus}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Clinics</SelectItem>
+                    <SelectItem value="claimed">Claimed Profile</SelectItem>
+                    <SelectItem value="unclaimed">Unclaimed Listing</SelectItem>
+                    <SelectItem value="demo">Demo Profile</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-
-          <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-teal-600" /> Accepts Insurance</span>
-            <Switch checked={insuranceAccepted} onCheckedChange={setInsuranceAccepted} className="scale-75" />
-          </label>
-
-          <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-teal-600" /> Accepts HSA / FSA</span>
-            <Switch checked={hsaFsaAccepted} onCheckedChange={setHsaFsaAccepted} className="scale-75" />
-          </label>
-
-          <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span className="flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5 text-teal-600" /> Financing available</span>
-            <Switch checked={financingAvailable} onCheckedChange={setFinancingAvailable} className="scale-75" />
-          </label>
-        </div>
-
-        <Separator />
-
-        {/* Capabilities & Verification */}
-        <div className="space-y-3">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Capabilities & Status</Label>
-          
-          <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span className="flex items-center gap-1.5"><Stethoscope className="h-3.5 w-3.5 text-teal-600" /> On-site Lab / Phlebotomy</span>
-            <Switch checked={onSiteLab} onCheckedChange={setOnSiteLab} className="scale-75" />
-          </label>
-
-          <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-teal-600" /> Accepting New Patients</span>
-            <Switch checked={acceptingNewPatients} onCheckedChange={setAcceptingNewPatients} className="scale-75" />
-          </label>
-
-          <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-teal-600" /> Verified Only</span>
-            <Switch checked={verifiedOnly} onCheckedChange={setVerifiedOnly} className="scale-75" />
-          </label>
-
-          <div className="grid gap-1.5 pt-1">
-            <Label className="text-[10px] text-muted-foreground uppercase">Claim Status</Label>
-            <Select value={claimedStatus} onValueChange={setClaimedStatus}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Clinics</SelectItem>
-                <SelectItem value="claimed">Claimed Profile</SelectItem>
-                <SelectItem value="unclaimed">Unclaimed Profile</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        )}
 
         <Button type="button" className="w-full bg-teal-600 text-white hover:bg-teal-700" onClick={onApply}>
           Apply Filters
@@ -1049,32 +1151,61 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
   const compareHas = useCompare((s) => s.has("clinic", clinic.id));
   const compareToggle = useCompare((s) => s.toggle);
   const c = colorClasses(clinic.logoColor);
-  
+  const status = resolveListingStatus(clinic);
+  const isDemo = status === "demo";
+
   const allSpecs = useMemo(() => splitCsv(clinic.specialties), [clinic.specialties]);
-  const specs = allSpecs.slice(0, 4);
-  const caps = useMemo(() => splitCsv(clinic.capabilities), [clinic.capabilities]);
-  const providers = useMemo(() => splitCsv(clinic.providerTypes), [clinic.providerTypes]);
+  const specs = allSpecs.slice(0, 3);
 
   const profileHref = clinicProfilePath(clinic);
-  const open = () => {
-    window.location.href = profileHref;
+  const claimHref = `/clinics/apply?claim=1&clinicId=${encodeURIComponent(clinic.id)}&slug=${encodeURIComponent(clinic.slug)}&name=${encodeURIComponent(clinic.name)}`;
+  const canClaim = isClaimable(clinic);
+  const accepting = confirmedAcceptingNewPatients(clinic);
+  const insurance = confirmedInsuranceAccepted(clinic);
+  const hsa = confirmedHsaFsaAccepted(clinic);
+  const careFormat = confirmedTelehealth(clinic);
+  const description = clinic.tagline ?? clinic.overview;
+
+  const trackProfileClick = () => {
+    captureSafeEvent("directory_profile_clicked", {
+      clinic_id: clinic.id,
+      clinic_slug: clinic.slug,
+      listing_status: status,
+      verification_status: clinic.verificationStatus,
+      city: clinic.city,
+      state: clinic.state,
+      view_mode: view,
+    });
+    if (isDemo) {
+      captureSafeEvent("directory_demo_profile_viewed", {
+        clinic_id: clinic.id,
+        clinic_slug: clinic.slug,
+        listing_status: "demo",
+        city: clinic.city,
+        state: clinic.state,
+      });
+    } else if (status === "unclaimed") {
+      captureSafeEvent("directory_unclaimed_profile_viewed", {
+        clinic_id: clinic.id,
+        clinic_slug: clinic.slug,
+        listing_status: "unclaimed",
+        city: clinic.city,
+        state: clinic.state,
+      });
+    }
   };
 
-  // Render claimed vs unclaimed tags
-  const renderClaimBadge = () => {
-    if (clinic.claimStatus === "claimed") {
-      return (
-        <Badge variant="outline" className="border-emerald-300 bg-emerald-50/50 text-[10px] font-semibold text-emerald-800 flex items-center gap-1">
-          <Check className="h-2.5 w-2.5" /> Claimed
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="outline" className="border-amber-300 bg-amber-50/50 text-[10px] font-semibold text-amber-800">
-        Unclaimed
-      </Badge>
-    );
-  };
+  const metaPills = (
+    <div className="flex flex-wrap gap-1.5 text-[11px]">
+      {careFormat === "telehealth" && <StatusPill tone="teal"><Video className="h-3 w-3" /> Telehealth</StatusPill>}
+      {careFormat === "in-person" && <StatusPill tone="muted"><Building2 className="h-3 w-3" /> In-person</StatusPill>}
+      {careFormat === "hybrid" && <StatusPill tone="teal"><Video className="h-3 w-3" /> Hybrid care</StatusPill>}
+      {accepting === true && <StatusPill tone="emerald">Accepting new patients</StatusPill>}
+      {insurance === true && <StatusPill tone="sky">Insurance listed</StatusPill>}
+      {hsa === true && <StatusPill tone="sky">HSA/FSA</StatusPill>}
+      {clinic.financingAvailable === true && status !== "demo" && <StatusPill tone="sky">Financing</StatusPill>}
+    </div>
+  );
 
   const renderSpecs = () => (
     <div className="flex flex-wrap gap-1">
@@ -1091,23 +1222,36 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
     </div>
   );
 
-  const priceTag = () => {
-    if (clinic.initialConsultPrice !== null) {
-      if (clinic.initialConsultPrice === 0) return "Free Consult";
-      return `$${clinic.initialConsultPrice} Consult`;
-    }
-    return "Pricing Available";
-  };
+  const secondaryAction = isDemo ? (
+    <a href={profileHref} onClick={trackProfileClick} className="text-xs font-medium text-slate-600 underline-offset-2 hover:underline">
+      About this demo profile
+    </a>
+  ) : canClaim ? (
+    <a
+      href={claimHref}
+      className="text-xs font-medium text-amber-800 underline-offset-2 hover:underline"
+      onClick={() =>
+        captureSafeEvent("directory_claim_clicked", {
+          clinic_id: clinic.id,
+          clinic_slug: clinic.slug,
+          listing_status: status,
+          city: clinic.city,
+          state: clinic.state,
+        })
+      }
+    >
+      Own this clinic? Claim listing
+    </a>
+  ) : null;
 
   if (view === "list") {
     return (
       <PremiumCard hover className="overflow-hidden">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          {/* Card image/logo */}
-          <a href={profileHref} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-muted" aria-label={`View ${clinic.name}`}>
+          <a href={profileHref} onClick={trackProfileClick} className="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl bg-muted" aria-label={`View profile for ${clinic.name}`}>
             <SmartImage
               src={getClinicImage(clinic.slug)}
-              alt={`${clinic.name} clinic`}
+              alt=""
               fill
               sizes="112px"
               imgClassName="object-cover"
@@ -1118,64 +1262,42 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
               }
             />
           </a>
-          
-          {/* Main info */}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <a href={profileHref} className="text-base font-semibold text-foreground hover:text-teal-700 text-left">{clinic.name}</a>
-              <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
-              {renderClaimBadge()}
-              {clinic.telehealth && <StatusPill tone="teal"><Video className="h-3 w-3" /> Telehealth</StatusPill>}
+              <a href={profileHref} onClick={trackProfileClick} className="text-base font-semibold text-foreground hover:text-teal-700 text-left">{clinic.name}</a>
+              <ListingStatusBadge clinic={clinic} />
             </div>
-            
-            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" /> {clinic.city}, {clinic.state}
-              {clinic.serviceArea && <span className="text-muted-foreground/50">· {clinic.serviceArea}</span>}
             </p>
-            
-            <p className="mt-1.5 line-clamp-1 text-xs text-muted-foreground">{clinic.tagline ?? clinic.overview}</p>
-            
-            <div className="mt-2.5 flex flex-wrap items-center gap-3">
-              {renderSpecs()}
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">{priceTag()}</span>
-                {clinic.membershipPrice !== null && <span>· ${clinic.membershipPrice}/mo</span>}
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-              <span>{clinic.providers?.length || providers.length || 0} provider{(clinic.providers?.length || providers.length || 0) === 1 ? "" : "s"}</span>
-              <span>{clinic.acceptingNewPatients ? "Accepting new patients" : "Currently closed to new patients"}</span>
-              <span>{clinic.insuranceAccepted ? "Insurance" : "Self-pay"}{clinic.hsaFsaAccepted ? " · HSA/FSA" : ""}</span>
-            </div>
+            {description && <p className="line-clamp-2 text-xs text-muted-foreground">{description}</p>}
+            {renderSpecs()}
+            {metaPills}
           </div>
-          
-          {/* Right Action blocks */}
           <div className="flex shrink-0 flex-col gap-2 sm:items-end justify-between self-stretch">
             <div className="flex gap-1.5">
               <SaveButton
                 saved={saved}
                 onToggle={() => {
-                  if (!saved) {
-                    captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
-                  }
+                  if (!saved) captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
                   toggleSave("clinic", clinic.id);
                 }}
                 size="sm"
                 label="Save"
               />
               <button
+                type="button"
                 onClick={() => compareToggle("clinic", clinic.id)}
                 className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
-                title="Add to compare"
+                aria-label={compareHas ? `Remove ${clinic.name} from compare` : `Compare ${clinic.name}`}
               >
                 <GitCompare className="h-4 w-4" />
               </button>
             </div>
             <Button asChild size="sm" variant="outline" className="border-border hover:border-teal-200 font-semibold">
-              <a href={profileHref}>
-                View Clinic Profile <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
-              </a>
+              <a href={profileHref} onClick={trackProfileClick}>View Profile</a>
             </Button>
+            {secondaryAction}
           </div>
         </div>
       </PremiumCard>
@@ -1185,11 +1307,10 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
   return (
     <PremiumCard hover className="group overflow-hidden flex flex-col justify-between h-full">
       <div>
-        {/* Clinic image cover */}
-        <div className="relative h-40 overflow-hidden bg-muted">
+        <div className="relative h-36 overflow-hidden bg-muted">
           <SmartImage
             src={getClinicImage(clinic.slug)}
-            alt={`${clinic.name} clinic`}
+            alt=""
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
             className="transition duration-500 group-hover:scale-103"
@@ -1201,92 +1322,48 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
             }
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" aria-hidden />
-          
           <div className="absolute left-3 bottom-3 flex items-center gap-2">
             <span className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold text-white shadow-premium-sm ring-2 ring-background", c.bg)}>{initials(clinic.name)}</span>
-            <div className="flex flex-col gap-0.5">
-              <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
-            </div>
+            <ListingStatusBadge clinic={clinic} />
           </div>
-
           <div className="absolute right-3 top-3 flex gap-1.5">
             <SaveButton
               saved={saved}
               onToggle={() => {
-                if (!saved) {
-                  captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
-                }
+                if (!saved) captureSafeEvent("clinic_saved", { clinic_slug: clinic.slug });
                 toggleSave("clinic", clinic.id);
               }}
               size="sm"
             />
             <button
+              type="button"
               onClick={() => compareToggle("clinic", clinic.id)}
               className={cn("inline-flex h-7 w-7 items-center justify-center rounded-lg border transition", compareHas ? "border-teal-300 bg-teal-50 text-teal-700" : "border-border bg-card/80 text-muted-foreground hover:border-teal-200 hover:text-teal-700")}
-              title="Add to compare"
+              aria-label={compareHas ? `Remove ${clinic.name} from compare` : `Compare ${clinic.name}`}
             >
               <GitCompare className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Content body */}
         <div className="p-5 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <a href={profileHref} className="block text-left">
-              <h3 className="text-base font-semibold leading-tight text-foreground group-hover:text-teal-700 transition">{clinic.name}</h3>
-            </a>
-            {renderClaimBadge()}
-          </div>
-          
+          <a href={profileHref} onClick={trackProfileClick} className="block text-left">
+            <h3 className="text-base font-semibold leading-tight text-foreground group-hover:text-teal-700 transition">{clinic.name}</h3>
+          </a>
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {clinic.city}, {clinic.state}
           </p>
-
-          <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">{clinic.tagline ?? clinic.overview}</p>
-
+          {description && <p className="line-clamp-2 text-xs text-muted-foreground leading-relaxed">{description}</p>}
           {renderSpecs()}
-
-          {/* Expanded capabilities & pricing metrics */}
-          <div className="flex flex-col gap-1 text-[11px] text-muted-foreground border-t border-border/60 pt-2.5">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3 text-teal-600" /> Consultation Fee</span>
-              <span className="font-semibold text-foreground">{priceTag()}</span>
-            </div>
-            {clinic.telehealth && (
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1"><Video className="h-3 w-3 text-teal-600" /> States Covered</span>
-                <span className="font-medium text-foreground">{clinic.statesServed || clinic.state}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-teal-600" /> Next Appointment</span>
-              <span className="font-medium text-foreground">{clinic.earliestAvailability || "Contact Clinic"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1"><Users className="h-3 w-3 text-teal-600" /> Provider team</span>
-              <span className="font-medium text-foreground">{clinic.providers?.length || providers.length || "Contact clinic"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-teal-600" /> New patients</span>
-              <span className="font-medium text-foreground">{clinic.acceptingNewPatients ? "Accepting" : "Contact clinic"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1"><DollarSign className="h-3 w-3 text-teal-600" /> Payment</span>
-              <span className="font-medium text-foreground">{clinic.insuranceAccepted ? "Insurance" : "Self-pay"}{clinic.hsaFsaAccepted ? " · HSA/FSA" : ""}</span>
-            </div>
-          </div>
+          {metaPills}
         </div>
       </div>
 
-      {/* Button Actions */}
-      <div className="px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex gap-2">
-        <Button asChild size="sm" variant="outline" className="flex-1 font-semibold border-border hover:border-teal-200">
-          <a href={profileHref}>View Clinic Profile</a>
+      <div className="px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex flex-col gap-2">
+        <Button asChild size="sm" className="w-full bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold">
+          <a href={profileHref} onClick={trackProfileClick}>View Profile</a>
         </Button>
-        <Button size="sm" className="flex-1 bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={open}>
-          Request Consultation <ArrowRight className="ml-1 h-3.5 w-3.5" />
-        </Button>
+        {secondaryAction}
       </div>
     </PremiumCard>
   );
@@ -1305,26 +1382,47 @@ function MapView({ clinics }: { clinics: ClinicT[] }) {
           <div className="novalyte-grid absolute inset-0 opacity-50" aria-hidden />
           <div className="novalyte-dots absolute inset-0 opacity-30" aria-hidden />
           
-          {/* Simulated interactive pins */}
-          {clinics.slice(0, 10).map((c, i) => {
-            const pos = [
+          {/* Map pins — position by lat/lng when available */}
+          {clinics.map((c, i) => {
+            const fallback = [
               { top: "15%", left: "20%" }, { top: "30%", left: "65%" }, { top: "55%", left: "25%" },
               { top: "70%", left: "60%" }, { top: "40%", left: "45%" }, { top: "25%", left: "35%" },
               { top: "60%", left: "75%" }, { top: "80%", left: "40%" }, { top: "45%", left: "80%" },
-              { top: "85%", left: "20%" }
+              { top: "85%", left: "20%" },
             ][i % 10];
+            const pos =
+              c.latitude != null && c.longitude != null
+                ? {
+                    top: `${Math.min(88, Math.max(8, ((49 - c.latitude) / 24) * 100))}%`,
+                    left: `${Math.min(90, Math.max(8, ((c.longitude + 125) / 55) * 100))}%`,
+                  }
+                : fallback;
             const active = selected?.id === c.id;
-            
+            const demo = resolveListingStatus(c) === "demo";
+
             return (
               <button
                 key={c.id}
-                onClick={() => setSelected(c)}
+                type="button"
+                onClick={() => {
+                  setSelected(c);
+                  captureSafeEvent("directory_map_pin_opened", {
+                    clinic_id: c.id,
+                    clinic_slug: c.slug,
+                    listing_status: resolveListingStatus(c),
+                  });
+                }}
                 className="absolute -translate-x-1/2 -translate-y-1/2 group"
                 style={pos}
-                aria-label={`Select ${c.name}`}
+                aria-label={`Select ${c.name}${demo ? " (demo profile)" : ""}`}
               >
-                <span className={cn("flex items-center justify-center rounded-full border-2 border-white shadow-premium-sm transition duration-300", 
-                  active ? "h-9 w-9 bg-teal-600" : "h-7 w-7 bg-teal-500 hover:bg-teal-600 hover:scale-105")}>
+                <span
+                  className={cn(
+                    "flex items-center justify-center rounded-full border-2 border-white shadow-premium-sm transition duration-300",
+                    active ? "h-9 w-9" : "h-7 w-7 hover:scale-105",
+                    demo ? (active ? "bg-slate-600" : "bg-slate-500 hover:bg-slate-600") : active ? "bg-teal-600" : "bg-teal-500 hover:bg-teal-600",
+                  )}
+                >
                   <MapPin className={cn("text-white", active ? "h-4.5 w-4.5" : "h-3.5 w-3.5")} />
                 </span>
                 {active && <span className="novalyte-pulse-ring absolute inset-0 rounded-full bg-teal-400/40 animate-ping" />}
@@ -1333,7 +1431,7 @@ function MapView({ clinics }: { clinics: ClinicT[] }) {
           })}
           
           <div className="absolute bottom-3 left-3 rounded-lg border border-border bg-card/90 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground shadow-sm backdrop-blur">
-            Interactive Local & Telehealth Map view · {clinics.length} clinics plotted
+            Map view · {clinics.length} clinics plotted · slate pins = demo profiles
           </div>
         </div>
 
@@ -1354,17 +1452,17 @@ function MapView({ clinics }: { clinics: ClinicT[] }) {
               </div>
               
               <div className="flex flex-wrap gap-1.5">
-                <VerificationBadge verified={selected.verified} status={selected.verificationStatus} />
-                <Badge variant="outline" className="text-[10px] font-semibold border-border">{selected.claimStatus === "claimed" ? "Claimed" : "Unclaimed"}</Badge>
+                <ListingStatusBadge clinic={selected} />
                 {selected.telehealth && <Badge className="bg-teal-50 text-teal-700 text-[10px] font-medium border-teal-100 hover:bg-teal-50">Telehealth</Badge>}
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4">{selected.tagline ?? selected.overview}</p>
               
               <div className="space-y-1 text-xs border-t border-border/50 pt-3">
-                <div className="flex justify-between"><span className="text-muted-foreground">Consultation Fee</span><span className="font-semibold text-foreground">{selected.initialConsultPrice !== null ? `$${selected.initialConsultPrice}` : "Pricing Available"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Earliest Appt</span><span className="font-medium text-foreground">{selected.earliestAvailability || "Contact Clinic"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Provider Types</span><span className="font-medium text-foreground truncate max-w-[140px]">{selected.providerTypes || "N/A"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Care format</span><span className="font-medium text-foreground">{selected.telehealth ? "Telehealth listed" : "Confirm with clinic"}</span></div>
+                {selected.providerTypes ? (
+                  <div className="flex justify-between"><span className="text-muted-foreground">Provider Types</span><span className="font-medium text-foreground truncate max-w-[140px]">{selected.providerTypes}</span></div>
+                ) : null}
               </div>
 
               <Button asChild size="sm" className="w-full bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold mt-2">

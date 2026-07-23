@@ -6,8 +6,7 @@ import {
 } from "@/components/shared/enterprise";
 import { StickyTabNav } from "@/components/shared/sticky-tab-nav";
 import { SmartImage, ImageLightbox } from "@/components/shared/smart-image";
-import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
+import { StatusPill, ListingStatusBadge } from "@/components/shared/badges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { getClinicImage, getClinicGallery } from "@/lib/images";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ import { splitCsv, colorClasses, initials } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { captureSafeEvent } from "@/lib/analytics-client";
+import { resolveListingStatus } from "@/lib/directory/listing-status";
 import { toast } from "sonner";
 import {
   MapPin, Video, Phone, Mail, Globe, Clock, ShieldCheck, Stethoscope,
@@ -127,17 +127,36 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
         </div>
       </div>
 
-      {/* Unclaimed Profile Banner */}
-      {clinic.claimStatus === "unclaimed" && (
-        <div className="bg-amber-500 text-white font-medium text-xs sm:text-sm py-2.5 px-4 text-center flex items-center justify-center gap-2 relative">
-          <ShieldAlert className="h-4.5 w-4.5" />
-          <span>This is an unclaimed directory listing. Are you the practice owner?</span>
-          <button 
-            onClick={() => setClaimOpen(true)}
-            className="underline hover:text-amber-100 font-bold ml-1.5 focus:outline-none"
+      {/* Listing status banners */}
+      {resolveListingStatus(clinic) === "demo" && (
+        <div className="bg-slate-700 text-white font-medium text-xs sm:text-sm py-2.5 px-4 text-center flex items-center justify-center gap-2 relative" role="status">
+          <ShieldAlert className="h-4.5 w-4.5" aria-hidden />
+          <span>
+            This is a fictional demonstration profile created to preview Novalyte AI directory functionality. It does not represent an operating clinic.
+          </span>
+        </div>
+      )}
+      {resolveListingStatus(clinic) === "unclaimed" && (
+        <div className="bg-amber-500 text-white font-medium text-xs sm:text-sm py-2.5 px-4 text-center flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 relative" role="status">
+          <span className="inline-flex items-center gap-2">
+            <ShieldAlert className="h-4.5 w-4.5" aria-hidden />
+            This is an unclaimed profile compiled from publicly available information. Details may be incomplete or outdated. Clinic representatives can claim the listing to verify and manage the profile.
+          </span>
+          <a
+            href={`/clinics/apply?claim=1&clinicId=${encodeURIComponent(clinic.id)}&slug=${encodeURIComponent(clinic.slug)}&name=${encodeURIComponent(clinic.name)}`}
+            className="underline hover:text-amber-100 font-bold focus:outline-none"
+            onClick={() =>
+              captureSafeEvent("directory_claim_clicked", {
+                clinic_id: clinic.id,
+                clinic_slug: clinic.slug,
+                listing_status: "unclaimed",
+                city: clinic.city,
+                state: clinic.state,
+              })
+            }
           >
-            Claim This Profile & Manage Dashboard
-          </button>
+            Own or manage this clinic? Claim and update this listing.
+          </a>
         </div>
       )}
 
@@ -168,14 +187,7 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{clinic.name}</h1>
-                    <VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} />
-                    {clinic.claimStatus === "claimed" ? (
-                      <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800 text-[10px] font-semibold flex items-center gap-0.5">
-                        <CheckCircle2 className="h-3 w-3" /> Claimed
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 text-[10px] font-semibold">Unclaimed Profile</Badge>
-                    )}
+                    <ListingStatusBadge clinic={clinic} />
                   </div>
                   {clinic.tagline && <p className="mt-1 text-sm font-medium text-foreground/80">{clinic.tagline}</p>}
                   <div className="mt-2.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -195,27 +207,36 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
 
               {/* Trust signals */}
               <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-foreground/70">
-                <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-teal-600" /> {clinic.verified ? "Verified Clinic Identity" : "Verification In Progress"}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-teal-600" />
+                  {resolveListingStatus(clinic) === "verified"
+                    ? "Verified Clinic Identity"
+                    : resolveListingStatus(clinic) === "demo"
+                      ? "Demonstration profile"
+                      : "Not verified by Novalyte AI"}
+                </span>
                 <span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4 text-emerald-600" /> {clinic.providers?.length || providers.length} Provider{(clinic.providers?.length || providers.length) !== 1 ? "s" : ""}</span>
                 <span className="inline-flex items-center gap-1.5"><Stethoscope className="h-4 w-4 text-teal-600" /> {clinic.treatments?.length || 2} Active Treatment{(clinic.treatments?.length || 2) !== 1 ? "s" : ""}</span>
               </div>
 
               {/* Primary actions */}
               <div className="mt-6 flex flex-wrap gap-2">
-                <Button className="bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={() => scrollToTab("contact")}>
-                  <Calendar className="mr-1.5 h-4 w-4" /> Request Consultation
-                </Button>
-                {clinic.phone && (
+                {resolveListingStatus(clinic) !== "demo" && (
+                  <Button className="bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={() => scrollToTab("contact")}>
+                    <Calendar className="mr-1.5 h-4 w-4" /> Request Consultation
+                  </Button>
+                )}
+                {resolveListingStatus(clinic) !== "demo" && clinic.phone && (
                   <Button variant="outline" className="font-semibold border-border" asChild>
                     <a href={`tel:${clinic.phone}`} data-analytics-event="clinic_phone_clicked" data-analytics-label={clinic.slug}><Phone className="mr-1.5 h-4 w-4" /> Call Clinic</a>
                   </Button>
                 )}
-                {clinic.website && (
+                {resolveListingStatus(clinic) !== "demo" && clinic.website && (
                   <Button variant="outline" className="font-semibold border-border" asChild>
                     <a href={clinic.website} target="_blank" rel="noopener noreferrer" data-analytics-event="clinic_website_clicked" data-analytics-label={clinic.slug}><Globe className="mr-1.5 h-4 w-4" /> Visit Website</a>
                   </Button>
                 )}
-                {clinic.bookingUrl && (
+                {resolveListingStatus(clinic) !== "demo" && clinic.bookingUrl && (
                   <Button className="bg-teal-600 text-white hover:bg-teal-700" asChild>
                     <a href={clinic.bookingUrl} target="_blank" rel="noopener noreferrer" data-analytics-event="booking_link_clicked" data-analytics-label={clinic.slug}><Calendar className="mr-1.5 h-4 w-4" /> Book Online</a>
                   </Button>
@@ -243,9 +264,15 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
                 <SnapshotRow icon={Building2} label="Care Model" value="Men's Health Platform" />
                 <SnapshotRow icon={MapPin} label="Active locations" value={`${clinic.locations?.length || 1} Location${(clinic.locations?.length || 1) !== 1 ? "s" : ""}`} />
                 <SnapshotRow icon={Navigation} label="Service area" value={clinic.serviceArea ?? `${clinic.city} metro`} />
-                <SnapshotRow icon={Video} label="Telehealth" value={clinic.telehealth ? "Yes, Available" : "Not available"} />
-                <SnapshotRow icon={Users} label="Provider structures" value={clinic.providerTypes || "Staff"} />
-                <SnapshotRow icon={Clock} label="Clinic availability" value={clinic.earliestAvailability ?? "Same day / Next day"} />
+                <SnapshotRow icon={Video} label="Telehealth" value={clinic.telehealth ? (resolveListingStatus(clinic) === "demo" ? "Demo · Available" : "Yes, Available") : "Not publicly listed"} />
+                <SnapshotRow icon={Users} label="Provider structures" value={clinic.providerTypes || "Not publicly listed"} />
+                <SnapshotRow icon={Clock} label="Clinic availability" value={clinic.earliestAvailability ?? "Not publicly listed"} />
+                {resolveListingStatus(clinic) === "unclaimed" && clinic.sourceUrl && (
+                  <SnapshotRow icon={Globe} label="Public source" value={clinic.sourceUrl.replace(/^https?:\/\//, "").split("/")[0]} />
+                )}
+                {resolveListingStatus(clinic) === "unclaimed" && clinic.lastReviewedAt && (
+                  <SnapshotRow icon={Clock} label="Last reviewed" value={clinic.lastReviewedAt} />
+                )}
               </div>
               <Separator className="my-4" />
               <div className="space-y-1.5">
@@ -298,7 +325,7 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
               <Separator className="my-4" />
               <div className="space-y-2 text-xs">
                 <p className="font-semibold text-foreground">Verification status</p>
-                <div className="flex items-center gap-2"><VerificationBadge verified={clinic.verified} status={clinic.verificationStatus} /></div>
+                <div className="flex items-center gap-2"><ListingStatusBadge clinic={clinic} /></div>
                 <p className="text-muted-foreground">Verification indicates that business entity documents and medical director credentials have been reviewed by Novalyte.</p>
               </div>
             </PremiumCard>
@@ -339,10 +366,6 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
             )}
           </aside>
         </div>
-
-        <DisclaimerBanner className="mt-10 leading-normal" tone="muted">
-          Clinics are independent medical practices. Provider affiliations do not represent endorsements by Novalyte. All healthcare decisions remain between patients and licensed providers. Verify credential, payment, and treatment coverage details directly with the practice.
-        </DisclaimerBanner>
       </div>
 
       {/* Claim Profile Verification Dialog */}
@@ -526,7 +549,6 @@ function TreatmentsTab({ clinic }: { clinic: ClinicT }) {
           ))}
         </div>
       )}
-      <DisclaimerBanner tone="amber">Treatment protocols are subject to clinical evaluation and medical directives of the clinic's licensed providers. Novalyte does not prescribe medicines or determine medical eligibility.</DisclaimerBanner>
     </div>
   );
 }
@@ -597,7 +619,6 @@ function ProvidersTab({ clinic }: { clinic: ClinicT }) {
           })}
         </div>
       )}
-      <DisclaimerBanner tone="muted">Provider licensing and NPI numbers are self-reported by the practice. Direct questions about licensing to the clinic or check state registry resources.</DisclaimerBanner>
     </div>
   );
 }
@@ -721,8 +742,6 @@ function InsuranceTab({ clinic }: { clinic: ClinicT }) {
           </div>
         </div>
       </PremiumCard>
-      
-      <DisclaimerBanner tone="amber">Insurance coverage rules fluctuate. All financial agreements are direct transactions between the patient and the clinic. Novalyte AI does not collect patient medical payments or verify insurance eligibility.</DisclaimerBanner>
     </div>
   );
 }
@@ -927,12 +946,42 @@ function ReviewsTab({ clinic }: { clinic: ClinicT }) {
 }
 
 function FaqTab({ clinic }: { clinic: ClinicT }) {
-  const faqs = [
-    { q: `How do I book a consultation with ${clinic.name}?`, a: "Submit a consultation request through the Contact & Booking tab. The clinic coordinator will call or email you to confirm a scheduling slot." },
-    { q: "Does this clinic accept insurance?", a: clinic.insuranceAccepted ? "Yes, this clinic accepts select commercial insurance plans for consultations. Medication costs or memberships may require self-pay. Confirm details during check-in." : "This practice operates on a cash-pay direct care or membership model. Insurance claims are not filed by the clinic." },
-    { q: "Is telehealth available?", a: clinic.telehealth ? `Yes, this clinic provides remote consultations and telehealth therapy. Available states: ${clinic.statesServed || clinic.state}.` : "This clinic focuses on in-person care. Contact the clinic to confirm." },
-    { q: "What should I bring to my first appointment?", a: "Bring a government-issued photo ID, any recent laboratory or blood draw results from the past 6 months, and your active list of supplements and medications." },
-  ];
+  const status = resolveListingStatus(clinic);
+  const faqs =
+    status === "demo"
+      ? [
+          {
+            q: "Is this a real clinic?",
+            a: "No. This is a fictional demonstration profile created to preview Novalyte AI directory functionality. It does not represent an operating clinic.",
+          },
+          {
+            q: "Can I claim or book this profile?",
+            a: "Demo profiles are not claimable and do not accept real appointments. Browse other listings or apply to list your clinic through Novalyte AI.",
+          },
+        ]
+      : [
+          {
+            q: `How do I book a consultation with ${clinic.name}?`,
+            a: "Contact the clinic using the publicly listed phone or website when available, or submit a consultation request if the clinic has published booking options. Confirm details directly with the clinic.",
+          },
+          {
+            q: "Does this clinic accept insurance?",
+            a:
+              clinic.insuranceAccepted === true
+                ? "Public sources indicate insurance may be accepted. Confirm coverage, copays, and medication costs directly with the clinic."
+                : "Insurance acceptance is not confirmed in publicly available information. Confirm payment options directly with the clinic.",
+          },
+          {
+            q: "Is telehealth available?",
+            a: clinic.telehealth
+              ? `Public information indicates telehealth may be offered. Confirm coverage and states directly with the clinic${clinic.statesServed ? ` (listed states: ${clinic.statesServed})` : ""}.`
+              : "Telehealth availability is not confirmed in publicly available information. Contact the clinic to confirm.",
+          },
+          {
+            q: "What should I bring to my first appointment?",
+            a: "Ask the clinic directly. Common requests include a government-issued photo ID, recent labs when available, and a current medication list.",
+          },
+        ];
   
   return (
     <div className="space-y-6 novalyte-fade-up">

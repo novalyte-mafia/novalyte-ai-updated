@@ -77,6 +77,17 @@ export type ClinicT = {
   verified: boolean;
   verificationStatus: string;
 
+  // Directory classification (demo | unclaimed | claimed | verified)
+  listingStatus?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  dataSource?: string | null;
+  sourceUrl?: string | null;
+  lastReviewedAt?: string | null;
+  financingAvailable?: boolean | null;
+  inPersonAvailable?: boolean | null;
+  sameDayConsultations?: boolean | null;
+
   // New discovery & ownership fields
   acceptingNewPatients: boolean;
   claimStatus: string;

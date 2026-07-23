@@ -1,32 +1,115 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ShieldCheck, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Clock, AlertCircle, FlaskConical, Building2 } from "lucide-react";
+import { resolveListingStatus, type ListingStatus } from "@/lib/directory/listing-status";
+
+export function ListingStatusBadge({
+  clinic,
+  className,
+}: {
+  clinic: {
+    listingStatus?: string | null;
+    claimStatus?: string | null;
+    verified?: boolean | null;
+    verificationStatus?: string | null;
+  };
+  className?: string;
+}) {
+  const status: ListingStatus = resolveListingStatus(clinic);
+
+  if (status === "demo") {
+    return (
+      <Badge
+        variant="outline"
+        className={cn("gap-1 border-slate-300 bg-slate-100 text-[10px] font-semibold text-slate-700", className)}
+        aria-label="Demo Profile — fictional demonstration listing, not a real clinic"
+      >
+        <FlaskConical className="h-2.5 w-2.5" aria-hidden />
+        <span>Demo Profile</span>
+      </Badge>
+    );
+  }
+
+  if (status === "verified") {
+    return (
+      <Badge
+        className={cn("gap-1 border-teal-200 bg-teal-50 text-[10px] font-semibold text-teal-700 hover:bg-teal-50", className)}
+        aria-label="Verified by Novalyte AI"
+      >
+        <ShieldCheck className="h-2.5 w-2.5" aria-hidden />
+        <span>Verified by Novalyte AI</span>
+      </Badge>
+    );
+  }
+
+  if (status === "claimed") {
+    return (
+      <Badge
+        variant="outline"
+        className={cn("gap-1 border-sky-300 bg-sky-50/60 text-[10px] font-semibold text-sky-900", className)}
+        aria-label="Claimed listing — ownership confirmed, details may still be under review"
+      >
+        <CheckCircle2 className="h-2.5 w-2.5" aria-hidden />
+        <span>Claimed</span>
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn("gap-1 border-amber-300/80 bg-amber-50/40 text-[10px] font-semibold text-amber-900", className)}
+      aria-label="Unclaimed Listing — compiled from public sources, not yet verified by the clinic"
+    >
+      <Building2 className="h-2.5 w-2.5" aria-hidden />
+      <span>Unclaimed Listing</span>
+    </Badge>
+  );
+}
 
 export function VerificationBadge({ verified, status, className }: { verified: boolean; status?: string; className?: string }) {
-  if (verified || status === "verified") {
+  if (status === "demo") {
     return (
-      <Badge className={cn("gap-1 border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-50", className)}>
-        <ShieldCheck className="h-3 w-3" /> Verified
+      <Badge
+        variant="outline"
+        className={cn("gap-1 border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-100", className)}
+        aria-label="Demo Profile — fictional demonstration listing"
+      >
+        <FlaskConical className="h-3 w-3" aria-hidden /> Demo Profile
+      </Badge>
+    );
+  }
+  if (verified || status === "verified" || status === "approved") {
+    return (
+      <Badge className={cn("gap-1 border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-50", className)} aria-label="Verified by Novalyte AI">
+        <ShieldCheck className="h-3 w-3" aria-hidden /> Verified
       </Badge>
     );
   }
   if (status === "under_review") {
     return (
       <Badge variant="outline" className={cn("gap-1 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50", className)}>
-        <Clock className="h-3 w-3" /> Under Review
+        <Clock className="h-3 w-3" aria-hidden /> Under Review
       </Badge>
     );
   }
   if (status === "pending") {
     return (
       <Badge variant="outline" className={cn("gap-1 border-muted-foreground/20 text-muted-foreground", className)}>
-        <AlertCircle className="h-3 w-3" /> Pending
+        <AlertCircle className="h-3 w-3" aria-hidden /> Pending
+      </Badge>
+    );
+  }
+  if (status === "not_verified") {
+    return (
+      <Badge variant="outline" className={cn("gap-1 border-amber-300/80 bg-amber-50/40 text-amber-900", className)} aria-label="Unclaimed Listing">
+        <AlertCircle className="h-3 w-3" aria-hidden /> Unclaimed Listing
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className={cn("gap-1 text-muted-foreground", className)}>
-      <AlertCircle className="h-3 w-3" /> Unverified
+      <AlertCircle className="h-3 w-3" aria-hidden /> Unverified
     </Badge>
   );
 }

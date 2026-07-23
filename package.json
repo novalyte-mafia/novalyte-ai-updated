@@ -13,6 +13,7 @@
     "db:migrate:list": "supabase migration list --linked",
     "db:types": "supabase gen types typescript --linked > src/types/database.types.ts",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
+    "db:seed:directory": "tsx --env-file=.env.local scripts/seed-directory-preview.ts",
     "db:generate": "supabase gen types typescript --linked > src/types/database.types.ts"
   },
   "dependencies": {
