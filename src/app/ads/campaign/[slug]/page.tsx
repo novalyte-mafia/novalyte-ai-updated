@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import { CampaignLandingPage } from "@/components/campaign/landing-page";
 import { CampaignAdsShell } from "@/components/campaign/campaign-shell";
 import { campaignMetadata } from "@/lib/campaigns/metadata";
-import { adsCanonicalUrl, getPublishedPageByAdsSlug } from "@/lib/campaigns/public-pages";
+import {
+  adsCanonicalUrl,
+  getPublishedPageByCampaignSlug,
+} from "@/lib/campaigns/public-pages";
 import { buildDirectoryUrl, parseLocationSlug } from "@/lib/campaigns/directory-url";
 import { listPublishedClinics } from "@/lib/public-clinics";
 import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
@@ -16,11 +19,13 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  if (slug.includes("/")) {
-    return { title: "Not found", robots: NOINDEX_ROBOTS };
+  const data = await getPublishedPageByCampaignSlug(slug);
+  if (!data) {
+    return {
+      title: "Campaign unavailable | Novalyte AI",
+      robots: NOINDEX_ROBOTS,
+    };
   }
-  const data = await getPublishedPageByAdsSlug(slug);
-  if (!data) return { title: "Not found", robots: NOINDEX_ROBOTS };
   const meta = campaignMetadata(data);
   const canonical = data.page.canonical_url || adsCanonicalUrl(data.page.path);
   return {
@@ -37,16 +42,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function AdsLegacySlugPage({ params }: PageProps) {
+export default async function AdsNamedCampaignPage({ params }: PageProps) {
   const { slug } = await params;
-  if (slug.includes("/")) notFound();
-
   const [data, fallbackClinics] = await Promise.all([
-    getPublishedPageByAdsSlug(slug),
+    getPublishedPageByCampaignSlug(slug),
     listPublishedClinics(),
   ]);
 
-  if (!data) notFound();
+  if (!data) {
+    const directoryUrl = buildDirectoryUrl();
+    return (
+      <CampaignAdsShell variant="hub" directoryUrl={directoryUrl} showAssessmentCta={false}>
+        <div className="mx-auto max-w-lg px-4 py-20 text-center">
+          <h1 className="text-2xl font-semibold text-foreground">This campaign is unavailable</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            The campaign <span className="font-medium text-foreground">{slug}</span> is paused,
+            expired, not published, or does not exist.
+          </p>
+          <Link href="/" className="mt-8 inline-block text-sm font-medium text-teal-700 hover:underline">
+            Campaign home
+          </Link>
+        </div>
+      </CampaignAdsShell>
+    );
+  }
 
   const directoryUrl = buildDirectoryUrl({
     treatmentSlug: data.page.service_slug,

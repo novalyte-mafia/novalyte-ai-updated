@@ -8,10 +8,44 @@ export type IndexingPolicy =
   | "noindex_nofollow"
   | "draft_inaccessible";
 
+export type CampaignAnswerIntent =
+  | "cost"
+  | "provider-search"
+  | "insurance"
+  | "telehealth"
+  | "eligibility"
+  | "consultation"
+  | "testing"
+  | "treatment-process"
+  | "comparison";
+
+export type CampaignAnswerCardItem = {
+  id?: string;
+  question?: string;
+  answer?: string;
+  title?: string;
+  description?: string;
+  label?: string;
+  intent?: CampaignAnswerIntent | string;
+  relatedKeyword?: string;
+  ctaLabel?: string;
+  ctaType?: "assessment" | "directory" | "resource";
+  resourceUrl?: string;
+  lastReviewed?: string;
+  /** Only `approved` (or omitted) cards render publicly. */
+  status?: "draft" | "review" | "approved";
+};
+
+export type CampaignCostFactorItem = {
+  title?: string;
+  description?: string;
+  label?: string;
+};
+
 export type CampaignPageBlock = {
   type: string;
   title?: string;
-  items?: { question?: string; answer?: string; title?: string; description?: string }[];
+  items?: CampaignAnswerCardItem[];
   props?: Record<string, unknown>;
 };
 

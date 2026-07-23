@@ -9,6 +9,7 @@ import type {
   CsPageRow,
   PublicCampaignPage,
 } from "@/lib/campaigns/types";
+import { parseLocationSlug } from "@/lib/campaigns/directory-url";
 
 export const CAMPAIGN_PAGES_TAG = "campaign-pages";
 export const CAMPAIGN_CACHE_SECONDS = 300;
@@ -247,10 +248,13 @@ async function fetchPublishedPageByPath(path: string): Promise<PublicCampaignPag
     assessmentPlacement: pageRow.assessment_placement?.length
       ? pageRow.assessment_placement
       : ["below_hero"],
-    prefill: {
-      state: stateCodeFromSlug(pageRow.state_slug),
-      city: titleCaseSlug(pageRow.city_slug),
-    },
+    prefill: (() => {
+      const fromCitySlug = parseLocationSlug(pageRow.city_slug);
+      return {
+        state: stateCodeFromSlug(pageRow.state_slug) ?? fromCitySlug.state,
+        city: fromCitySlug.city ?? titleCaseSlug(pageRow.city_slug),
+      };
+    })(),
   };
 }
 
@@ -279,6 +283,15 @@ export async function getPublishedPageByTreatmentLocation(
   const loc = location.trim().toLowerCase();
   if (!t || !loc) return null;
   return getPublishedPageByPath(`/ads/${t}/${loc}`);
+}
+
+/** Named non-geo campaign: /ads/campaign/{slug} → ads.novalyte.io/campaign/{slug} */
+export async function getPublishedPageByCampaignSlug(
+  slug: string,
+): Promise<PublicCampaignPage | null> {
+  const normalizedSlug = slug.trim().toLowerCase().replace(/^\/+/, "");
+  if (!normalizedSlug || normalizedSlug.includes("/")) return null;
+  return getPublishedPageByPath(`/ads/campaign/${normalizedSlug}`);
 }
 
 /** Public browser path on ads.novalyte.io (no /ads prefix). */

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { CampaignAdsShell } from "@/components/campaign/campaign-shell";
+import { buildDirectoryUrl } from "@/lib/campaigns/directory-url";
 import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 
 export const metadata = {
-  title: "Novalyte AI campaign landers",
+  title: "Novalyte AI campaign pages",
   description:
-    "Patient-acquisition landing pages for Novalyte AI care navigation campaigns.",
+    "Focused patient-acquisition landing pages for Novalyte AI care navigation campaigns.",
   robots: INDEXABLE_ROBOTS,
   alternates: { canonical: "https://ads.novalyte.io/" },
 };
@@ -17,13 +18,17 @@ const EXAMPLES = [
 ];
 
 export default function AdsIndexPage() {
+  const directoryUrl = buildDirectoryUrl();
+
   return (
-    <CampaignAdsShell>
+    <CampaignAdsShell variant="hub" directoryUrl={directoryUrl} showAssessmentCta={false}>
       <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
-        <h1 className="text-2xl font-semibold text-foreground">Novalyte AI campaign pages</h1>
+        <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Novalyte AI</p>
+        <h1 className="mt-2 text-2xl font-semibold text-foreground">Campaign landing pages</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Paid landers use treatment × location URLs on this host, for example{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">/trt/phoenix-az</code>.
+          This host serves focused treatment and location campaigns. Each page includes an
+          informational assessment and a path to explore verified clinics — Novalyte AI does not
+          provide medical care.
         </p>
         <ul className="mt-8 space-y-2 text-left text-sm">
           {EXAMPLES.map((ex) => (
@@ -35,12 +40,14 @@ export default function AdsIndexPage() {
             </li>
           ))}
         </ul>
-        <Link
-          href="https://novalyte.io"
+        <a
+          href={directoryUrl}
+          target="_blank"
+          rel="noopener noreferrer"
           className="mt-10 inline-block text-sm font-medium text-teal-700 hover:underline"
         >
-          Go to novalyte.io
-        </Link>
+          Find clinics on Novalyte
+        </a>
       </div>
     </CampaignAdsShell>
   );

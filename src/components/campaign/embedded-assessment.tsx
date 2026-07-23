@@ -27,6 +27,8 @@ export type EmbeddedAssessmentProps = {
   mode?: "full" | "short";
   assessmentTemplateId?: string | null;
   assessmentVersion?: number | null;
+  /** Absolute directory URL for ads-host handoffs (new tab). */
+  directoryUrl?: string;
 };
 
 function EmbeddedAssessmentInner(props: EmbeddedAssessmentProps) {
@@ -83,6 +85,7 @@ function EmbeddedAssessmentInner(props: EmbeddedAssessmentProps) {
       variant="embedded"
       attribution={attribution}
       initialAnswers={initialAnswers}
+      directoryUrl={props.directoryUrl}
       onExit={() => {
         // Stay on the landing page — scroll back to hero.
         document.getElementById("campaign-hero")?.scrollIntoView({ behavior: "smooth" });

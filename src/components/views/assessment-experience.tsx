@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { Logo } from "@/components/site/logo";
 import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
 import type { AssessmentConfig, Question } from "@/lib/assessment-config";
 import { navigate } from "@/lib/nav";
 import { captureSafeEvent } from "@/lib/analytics-client";
+import { buildDirectoryUrl, clinicProfileUrl, mainSitePath } from "@/lib/campaigns/directory-url";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -58,7 +58,8 @@ function fireCampaignAssessmentEvent(
   });
 }
 
-function clinicDirectoryHref(clinic: ClinicT): string {
+function clinicDirectoryHref(clinic: ClinicT, absolute: boolean): string {
+  if (absolute) return clinicProfileUrl(clinic);
   const state = clinic.state?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const city = clinic.city?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   if (state && city && clinic.slug) {
@@ -74,6 +75,7 @@ export function AssessmentExperience({
   variant = "fullscreen",
   attribution,
   initialAnswers,
+  directoryUrl,
 }: {
   config: AssessmentConfig;
   clinics: ClinicT[];
@@ -81,8 +83,14 @@ export function AssessmentExperience({
   variant?: "fullscreen" | "embedded";
   attribution?: AssessmentAttribution;
   initialAnswers?: Answers;
+  /** When set (ads landers), directory CTAs open this absolute URL in a new tab. */
+  directoryUrl?: string;
 }) {
   const isEmbedded = variant === "embedded";
+  const useAbsoluteDirectory = Boolean(directoryUrl) || attribution?.host === "ads";
+  const resolvedDirectoryUrl =
+    directoryUrl ??
+    (useAbsoluteDirectory ? buildDirectoryUrl() : "/directory");
   const startTimeRef = useRef<string>(new Date().toISOString());
   const [phase, setPhase] = useState<"intro" | "questions" | "review" | "results">("intro");
   const [stepIndex, setStepIndex] = useState(0);
@@ -544,6 +552,8 @@ export function AssessmentExperience({
                   readiness={results.readiness}
                   matchedClinics={matchedClinics}
                   embedded={isEmbedded}
+                  directoryUrl={resolvedDirectoryUrl}
+                  absoluteLinks={useAbsoluteDirectory}
                   onRetake={() => { setPhase("intro"); setStepIndex(0); setAnswers({}); setResults(null); }}
                   onExit={exitAssessment}
                 />
@@ -635,11 +645,6 @@ function IntroScreen({
           <p className="mt-1 text-sm text-foreground/80">{config.intro.whatHappensNext}</p>
         </div>
       </div>
-
-      <DisclaimerBanner tone="amber" className="mt-5">
-        Novalyte AI does not diagnose medical conditions or determine medical eligibility. A licensed provider determines whether any treatment is appropriate.
-      </DisclaimerBanner>
-
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700" onClick={onBegin}>
           Begin Assessment <ArrowRight className="ml-1 h-4 w-4" />
@@ -949,6 +954,8 @@ function ResultsScreen({
   onRetake,
   onExit,
   embedded = false,
+  directoryUrl = "/directory",
+  absoluteLinks = false,
 }: {
   config: AssessmentConfig;
   answers: Answers;
@@ -957,6 +964,8 @@ function ResultsScreen({
   onRetake: () => void;
   onExit: () => void;
   embedded?: boolean;
+  directoryUrl?: string;
+  absoluteLinks?: boolean;
 }) {
   const isReady = readiness === "consultation-ready" || readiness === "high-intent";
   const isInsurance = readiness === "insurance-dependent";
@@ -966,29 +975,24 @@ function ResultsScreen({
   const goalLabel = Array.isArray(goal) ? goal.join(", ") : goal as string;
   const timeline = answers["timeline"] as string | undefined;
   const careFormat = answers["care_format"] as string | undefined;
+  const directoryLinkProps = absoluteLinks
+    ? ({ target: "_blank", rel: "noopener noreferrer" } as const)
+    : {};
+  const journalHref = absoluteLinks ? mainSitePath("/journal") : "/journal";
+  const patientsHref = absoluteLinks ? mainSitePath("/patients") : "/patients";
 
   return (
     <div className="novalyte-fade-up py-4">
-      {/* Success header */}
-      <div className="flex items-center gap-3">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-600">
-          <CheckCircle2 className="h-6 w-6" />
-        </span>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Assessment complete</p>
-          <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-        </div>
+      <div className="flex items-center gap-2">
+        <CheckCircle2 className="h-5 w-5 text-teal-600" />
+        <p className="text-xs font-semibold uppercase tracking-wider text-teal-700">Assessment complete</p>
       </div>
-      <p className="mt-4 text-pretty text-base leading-relaxed text-muted-foreground">{desc}</p>
+      <h1 className="mt-2 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
+      <p className="mt-3 text-base text-muted-foreground">{desc}</p>
 
-      {/* Summary */}
-      <div className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-premium-xs">
-        <h3 className="text-sm font-semibold text-foreground">Your summary</h3>
-        <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-          <div className="flex items-start gap-2">
-            <Sparkles className="mt-0.5 h-4 w-4 text-teal-600" />
-            <div><span className="text-muted-foreground">Treatment: </span><span className="font-medium text-foreground">{config.treatmentLabel}</span></div>
-          </div>
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+        <h3 className="text-sm font-semibold text-foreground">Your preferences summary</h3>
+        <div className="mt-3 space-y-2 text-sm">
           {goalLabel && (
             <div className="flex items-start gap-2">
               <Sparkles className="mt-0.5 h-4 w-4 text-teal-600" />
@@ -1010,7 +1014,6 @@ function ResultsScreen({
         </div>
       </div>
 
-      {/* High-intent: clinic matches */}
       {isReady && (
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-foreground">Clinics that match your preferences</h3>
@@ -1019,7 +1022,11 @@ function ResultsScreen({
               No clinics matched your exact preferences yet. Browse the full directory.
               <div className="mt-3">
                 {embedded ? (
-                  <Button variant="outline" size="sm" asChild><Link href="/directory">Browse directory</Link></Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={directoryUrl} {...directoryLinkProps}>
+                      Browse directory
+                    </Link>
+                  </Button>
                 ) : (
                   <Button variant="outline" size="sm" onClick={() => navigate("directory")}>Browse directory</Button>
                 )}
@@ -1042,7 +1049,8 @@ function ResultsScreen({
                 return embedded ? (
                   <Link
                     key={c.id}
-                    href={clinicDirectoryHref(c)}
+                    href={clinicDirectoryHref(c, absoluteLinks)}
+                    {...directoryLinkProps}
                     className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition hover:border-teal-200 hover:shadow-sm"
                   >
                     {card}
@@ -1062,7 +1070,6 @@ function ResultsScreen({
         </div>
       )}
 
-      {/* Research-stage: educational resources */}
       {!isReady && (
         <div className="mt-6 rounded-2xl border border-border bg-card p-5">
           <h3 className="text-sm font-semibold text-foreground">Recommended next steps</h3>
@@ -1070,8 +1077,16 @@ function ResultsScreen({
           <div className="mt-3 flex flex-wrap gap-2">
             {embedded ? (
               <>
-                <Button size="sm" variant="outline" asChild><Link href="/journal"><BookOpen className="mr-1 h-3.5 w-3.5" /> Read Journal articles</Link></Button>
-                <Button size="sm" variant="outline" asChild><Link href="/patients"><FileText className="mr-1 h-3.5 w-3.5" /> View treatment guide</Link></Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={journalHref} {...directoryLinkProps}>
+                    <BookOpen className="mr-1 h-3.5 w-3.5" /> Read Journal articles
+                  </Link>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={patientsHref} {...directoryLinkProps}>
+                    <FileText className="mr-1 h-3.5 w-3.5" /> View treatment guide
+                  </Link>
+                </Button>
               </>
             ) : (
               <>
@@ -1083,17 +1098,21 @@ function ResultsScreen({
         </div>
       )}
 
-      {/* Next steps */}
       <div className="mt-6 flex flex-wrap gap-2">
         {isReady && (
           embedded ? (
             <Button className="bg-teal-600 text-white hover:bg-teal-700" asChild>
               <Link
-                href="/directory"
+                href={directoryUrl}
+                {...directoryLinkProps}
                 onClick={() => {
                   captureSafeEvent("directory_handoff_clicked", {
                     source: "assessment_results",
                     recommendation_count: matchedClinics.length,
+                  });
+                  captureSafeEvent("campaign_find_clinics_clicked", {
+                    source: "assessment_results",
+                    directory_destination: directoryUrl,
                   });
                 }}
               >
