@@ -415,7 +415,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
   if (consultationAvailability !== "all") activeFilters.push({ label: consultationAvailability === "soon" ? "Consultation within 7 days" : "Consultation within 30 days", clear: () => setConsultationAvailability("all") });
   if (language !== "all") activeFilters.push({ label: `Language: ${language}`, clear: () => setLanguage("all") });
   if (claimedStatus !== "all") activeFilters.push({ label: `Profile: ${claimedStatus}`, clear: () => setClaimedStatus("all") });
-  if (!includeDemos) activeFilters.push({ label: "Demo profiles hidden", clear: () => setIncludeDemos(true) });
+  if (!includeDemos) activeFilters.push({ label: "Preview profiles hidden", clear: () => setIncludeDemos(true) });
 
   function resetFilters() {
     startTransition(() => {
@@ -688,6 +688,13 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
                 <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5 text-teal-600" /> More Filters
               </Button>
             </div>
+            <div className="mb-4 rounded-xl border border-border/80 bg-slate-50/80 px-4 py-3" role="status">
+              <p className="text-sm font-semibold text-foreground">Novalyte Directory Preview</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                Explore sample clinic profiles while our founding clinics complete verification and onboarding.
+              </p>
+            </div>
+
             {/* Results Header Toolbar */}
             <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -740,7 +747,7 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             </div>
 
             <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
-              Novalyte AI is actively expanding this directory. Some profiles are publicly sourced and unclaimed, while demonstration profiles are clearly labeled. Clinic information may be incomplete or change over time.
+              Novalyte AI is actively expanding this directory. Preview profiles are clearly labeled and do not represent verified clinic partnerships. Clinic information may be incomplete or change over time.
             </p>
 
             {/* Active Filter Chips */}
@@ -994,7 +1001,7 @@ function FiltersPanel({
 
         {demosAvailable && (
           <label className="flex items-center justify-between text-xs text-foreground/80">
-            <span>Include Demo Profiles</span>
+            <span>Include Preview Profiles</span>
             <Switch checked={includeDemos} onCheckedChange={setIncludeDemos} className="scale-75" />
           </label>
         )}
@@ -1128,7 +1135,7 @@ function FiltersPanel({
                     <SelectItem value="all">All Clinics</SelectItem>
                     <SelectItem value="claimed">Claimed Profile</SelectItem>
                     <SelectItem value="unclaimed">Unclaimed Listing</SelectItem>
-                    <SelectItem value="demo">Demo Profile</SelectItem>
+                    <SelectItem value="demo">Preview Profile</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1200,6 +1207,7 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
       {careFormat === "telehealth" && <StatusPill tone="teal"><Video className="h-3 w-3" /> Telehealth</StatusPill>}
       {careFormat === "in-person" && <StatusPill tone="muted"><Building2 className="h-3 w-3" /> In-person</StatusPill>}
       {careFormat === "hybrid" && <StatusPill tone="teal"><Video className="h-3 w-3" /> Hybrid care</StatusPill>}
+      {clinic.locations?.some((loc) => loc.onSiteLab) && <StatusPill tone="muted">On-site lab</StatusPill>}
       {accepting === true && <StatusPill tone="emerald">Accepting new patients</StatusPill>}
       {insurance === true && <StatusPill tone="sky">Insurance listed</StatusPill>}
       {hsa === true && <StatusPill tone="sky">HSA/FSA</StatusPill>}

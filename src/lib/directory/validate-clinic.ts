@@ -45,8 +45,10 @@ export function isValidPublicSourceUrl(url: string | null | undefined): boolean 
 export function showDirectoryDemos(): boolean {
   const flag = process.env.NEXT_PUBLIC_SHOW_DIRECTORY_DEMOS;
   if (flag === undefined || flag === "") {
-    // Default on in non-production so local/preview stays usable.
-    return process.env.NODE_ENV !== "production";
+    // Preview profiles stay visible by default so the directory remains usable
+    // while founding clinics complete verification. Set the env flag to false
+    // to hide them.
+    return true;
   }
   return flag === "1" || flag.toLowerCase() === "true";
 }

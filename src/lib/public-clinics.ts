@@ -38,6 +38,8 @@ function filterByDemoFlag(clinics: ClinicT[]): ClinicT[] {
 
 function mergeDirectoryClinics(published: ClinicT[], preview: ClinicT[]): ClinicT[] {
   const bySlug = new Map<string, ClinicT>();
+  const previewSlugs = new Set(preview.map((clinic) => clinic.slug));
+  const previewIds = new Set(preview.map((clinic) => clinic.id));
 
   for (const clinic of preview.map(normalizeClinic)) {
     bySlug.set(clinic.slug, clinic);
@@ -46,6 +48,17 @@ function mergeDirectoryClinics(published: ClinicT[], preview: ClinicT[]): Clinic
   // Published / claimed / verified DB rows win over preview seeds with the same slug.
   for (const clinic of published.map(normalizeClinic)) {
     const status = resolveListingStatus(clinic);
+
+    // Ignore obsolete seeded demos that are no longer in the preview catalog.
+    // Preview TS seed remains the source of truth for fictional listings.
+    if (
+      status === "demo" &&
+      !previewSlugs.has(clinic.slug) &&
+      !previewIds.has(clinic.id)
+    ) {
+      continue;
+    }
+
     if (status === "verified" || status === "claimed") {
       bySlug.set(clinic.slug, clinic);
       continue;

@@ -50,18 +50,18 @@ export async function generateMetadata({
     clinic.listingStatus === "demo" || clinic.verificationStatus === "demo";
 
   return {
-    title: isDemo ? `${clinic.name} (Demo Profile)` : clinic.name,
+    title: isDemo ? `${clinic.name} (Preview Profile)` : clinic.name,
     description: isDemo
-      ? "Fictional demonstration profile for the Novalyte AI clinic directory. Does not represent an operating clinic."
+      ? "Fictional preview profile for the Novalyte AI clinic directory. Does not represent an active clinic partnership."
       : description,
     alternates: { canonical },
     robots: isDemo ? { index: false, follow: false } : undefined,
     openGraph: {
       title: isDemo
-        ? `${clinic.name} (Demo) | Novalyte AI`
+        ? `${clinic.name} (Preview) | Novalyte AI`
         : `${clinic.name} | Novalyte AI`,
       description: isDemo
-        ? "Fictional demonstration profile for directory preview only."
+        ? "Fictional preview profile for directory demonstration only."
         : description,
       type: "website",
       url: canonical,

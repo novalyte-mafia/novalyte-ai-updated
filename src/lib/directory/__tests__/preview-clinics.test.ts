@@ -18,34 +18,47 @@ import {
   confirmedHsaFsaAccepted,
   isValidPublicSourceUrl,
   sanitizePreviewClinic,
+  showDirectoryDemos,
   validateDirectoryClinic,
 } from "@/lib/directory/validate-clinic";
 
+const REQUIRED_MARKETS = [
+  { city: "San Francisco", state: "CA" },
+  { city: "Redwood City", state: "CA" },
+  { city: "Palo Alto", state: "CA" },
+  { city: "Los Angeles", state: "CA" },
+  { city: "Phoenix", state: "AZ" },
+  { city: "Scottsdale", state: "AZ" },
+  { city: "Denver", state: "CO" },
+  { city: "Austin", state: "TX" },
+  { city: "Dallas", state: "TX" },
+  { city: "Portland", state: "OR" },
+  { city: "New York", state: "NY" },
+  { city: "Miami", state: "FL" },
+  { city: "Honolulu", state: "HI" },
+  { city: "Chicago", state: "IL" },
+];
+
 describe("directory preview dataset integrity", () => {
-  it("keeps original rich demos and demotes unsourced placeholders", () => {
-    expect(PREVIEW_DEMO_CLINICS).toHaveLength(6);
-    expect(PREVIEW_UNCLAIMED_CLINICS.length).toBeGreaterThanOrEqual(24);
-    expect(PREVIEW_EFFECTIVE_DEMO_CLINICS.length).toBe(
-      PREVIEW_DEMO_CLINICS.length + PREVIEW_UNCLAIMED_CLINICS.length,
-    );
+  it("ships approximately 16 polished preview clinics", () => {
+    expect(PREVIEW_DEMO_CLINICS).toHaveLength(16);
+    expect(PREVIEW_DIRECTORY_CLINICS).toHaveLength(16);
+    expect(PREVIEW_EFFECTIVE_DEMO_CLINICS).toHaveLength(16);
+    expect(PREVIEW_UNCLAIMED_CLINICS).toHaveLength(0);
     expect(PREVIEW_CONFIRMED_UNCLAIMED_CLINICS).toHaveLength(0);
   });
 
-  it("uses unique slugs", () => {
+  it("uses unique slugs and ids", () => {
     const slugs = PREVIEW_DIRECTORY_CLINICS.map((c) => c.slug);
+    const ids = PREVIEW_DIRECTORY_CLINICS.map((c) => c.id);
     expect(new Set(slugs).size).toBe(slugs.length);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("never marks preview clinics as verified", () => {
+  it("never marks preview clinics as verified or claimable", () => {
     for (const clinic of PREVIEW_DIRECTORY_CLINICS) {
       expect(clinic.verified).toBe(false);
       expect(isGenuinelyVerified(clinic)).toBe(false);
-      expect(resolveListingStatus(clinic)).not.toBe("verified");
-    }
-  });
-
-  it("marks all current preview clinics as demo and not claimable", () => {
-    for (const clinic of PREVIEW_DIRECTORY_CLINICS) {
       expect(resolveListingStatus(clinic)).toBe("demo");
       expect(clinic.listingStatus).toBe("demo");
       expect(clinic.claimStatus).toBe("not_claimable");
@@ -53,27 +66,45 @@ describe("directory preview dataset integrity", () => {
       expect(clinic.verificationStatus).toBe("demo");
       expect(clinic.dataSource).toBe("demo");
       expect(clinic.sourceUrl).toBeNull();
+      expect(clinic.bookingUrl).toBeNull();
+      expect(clinic.website).toBeNull();
+      expect(clinic.reviews).toEqual([]);
     }
   });
 
-  it("excludes demos from verified-only semantics", () => {
+  it("covers the required preview markets", () => {
+    for (const market of REQUIRED_MARKETS) {
+      expect(
+        PREVIEW_DIRECTORY_CLINICS.some(
+          (c) => c.city === market.city && c.state === market.state,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("uses fictional 555 phone placeholders", () => {
     for (const clinic of PREVIEW_DIRECTORY_CLINICS) {
-      expect(isGenuinelyVerified(clinic)).toBe(false);
+      expect(clinic.phone).toMatch(/555/);
     }
   });
 
-  it("covers priority markets", () => {
-    const states = new Set(PREVIEW_DIRECTORY_CLINICS.map((c) => c.state));
-    for (const state of ["CA", "TX", "FL", "NY", "AZ", "NV", "IL", "GA"]) {
-      expect(states.has(state)).toBe(true);
+  it("includes the required demonstration disclaimer", () => {
+    for (const clinic of PREVIEW_DIRECTORY_CLINICS) {
+      expect(clinic.overview).toContain(
+        "This is a fictional preview profile created to demonstrate the Novalyte directory experience",
+      );
     }
   });
 
-  it("omits unconfirmed accepting and HSA claims on demoted cards", () => {
+  it("omits unconfirmed accepting and HSA claims on preview cards", () => {
     for (const clinic of PREVIEW_EFFECTIVE_DEMO_CLINICS) {
       expect(confirmedAcceptingNewPatients(clinic)).toBeNull();
       expect(confirmedHsaFsaAccepted(clinic)).toBeNull();
     }
+  });
+
+  it("keeps preview profiles visible by default", () => {
+    expect(showDirectoryDemos()).toBe(true);
   });
 });
 
@@ -84,7 +115,15 @@ describe("directory validation", () => {
   });
 
   it("demotes unsourced unclaimed records to demo", () => {
-    const sample = sanitizePreviewClinic(PREVIEW_UNCLAIMED_CLINICS[0]);
+    const sample = sanitizePreviewClinic({
+      ...PREVIEW_DEMO_CLINICS[0],
+      listingStatus: "unclaimed",
+      claimStatus: "unclaimed",
+      verificationStatus: "not_verified",
+      dataSource: "public_web",
+      sourceUrl: null,
+      website: null,
+    });
     expect(sample.listingStatus).toBe("demo");
     expect(sample.claimStatus).toBe("not_claimable");
     expect(isClaimable(sample)).toBe(false);
@@ -92,7 +131,7 @@ describe("directory validation", () => {
 
   it("flags unclaimed records without source URLs", () => {
     const issues = validateDirectoryClinic({
-      ...PREVIEW_UNCLAIMED_CLINICS[0],
+      ...PREVIEW_DEMO_CLINICS[0],
       listingStatus: "unclaimed",
       claimStatus: "unclaimed",
       verificationStatus: "not_verified",

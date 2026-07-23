@@ -22,10 +22,10 @@ export function ListingStatusBadge({
       <Badge
         variant="outline"
         className={cn("gap-1 border-slate-300 bg-slate-100 text-[10px] font-semibold text-slate-700", className)}
-        aria-label="Demo Profile — fictional demonstration listing, not a real clinic"
+        aria-label="Preview Profile — fictional sample listing, not a real clinic partnership"
       >
         <FlaskConical className="h-2.5 w-2.5" aria-hidden />
-        <span>Demo Profile</span>
+        <span>Preview Profile</span>
       </Badge>
     );
   }
@@ -73,9 +73,9 @@ export function VerificationBadge({ verified, status, className }: { verified: b
       <Badge
         variant="outline"
         className={cn("gap-1 border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-100", className)}
-        aria-label="Demo Profile — fictional demonstration listing"
+        aria-label="Preview Profile — fictional sample listing"
       >
-        <FlaskConical className="h-3 w-3" aria-hidden /> Demo Profile
+        <FlaskConical className="h-3 w-3" aria-hidden /> Preview Profile
       </Badge>
     );
   }

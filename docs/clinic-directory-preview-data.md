@@ -2,22 +2,25 @@
 
 ## Audit summary (2026-07-23)
 
-Every preview record was reviewed against source-URL and status rules.
+Preview listings are fictional sample clinics used to demonstrate the directory while founding clinics complete verification.
 
 | Classification | Count | Notes |
 | --- | --- | --- |
-| Rich demo profiles | 6 | Explicit fictional UI demos (`preview-demo-*`) |
-| Demoted placeholders | 26 | Former “unclaimed” rows used `example.com` sources — **not** valid public listings |
+| Preview / demo profiles | 16 | Explicit fictional UI previews (`preview-01` … `preview-16`) |
 | Confirmed unclaimed | 0 | None until a real public `sourceUrl` + website are attached |
 | Claimed / verified | 0 | Never seeded |
 
-After sanitization, `PREVIEW_DIRECTORY_CLINICS` contains **32 demo** profiles. Fictional clinics are never labeled Unclaimed Listing.
+`PREVIEW_DIRECTORY_CLINICS` contains **16 preview** profiles. Fictional clinics are never labeled Unclaimed Listing and never pass Verified Only.
+
+## Markets covered
+
+San Francisco (2), Redwood City, Palo Alto, Los Angeles (2), Phoenix, Scottsdale, Denver, Austin, Dallas, Portland, New York, Miami, Honolulu, Chicago.
 
 ## Listing statuses
 
 | Status | Meaning | Badge | Claimable | Verified Only |
 | --- | --- | --- | --- | --- |
-| `demo` | Fictional preview profile | Demo Profile | No | No |
+| `demo` | Fictional preview profile | Preview Profile | No | No |
 | `unclaimed` | Confirmed real business with public source | Unclaimed Listing | Yes | No |
 | `claimed` | Ownership confirmed; may still be under review | Claimed | No | No |
 | `verified` | Novalyte-approved | Verified by Novalyte AI | No | Yes |
@@ -38,19 +41,20 @@ Without a valid source URL, records are demoted to demo by `sanitizePreviewClini
 
 ## Unsupported-field rules
 
-Do not display as confirmed unless sourced:
+Do not display as confirmed on cards unless sourced:
 
 - Accepting new patients
 - Insurance / HSA-FSA / financing
 - Same-day / next appointment
-- Consultation fee (except clearly labeled demo pricing on profile detail)
+- Consultation fee (except clearly labeled preview pricing on profile detail)
 - Provider credentials, outcomes, awards
+- Fake patient reviews / ratings
 
 Card UI omits unknown values instead of repeating “Not publicly listed.”
 
 Display helpers live in `src/lib/directory/validate-clinic.ts`.
 
-## Demo feature flag
+## Preview feature flag
 
 ```bash
 NEXT_PUBLIC_SHOW_DIRECTORY_DEMOS=true
@@ -58,12 +62,12 @@ NEXT_PUBLIC_SHOW_DIRECTORY_DEMOS=true
 
 | Environment | Default |
 | --- | --- |
-| Non-production | Demos shown (`true`) |
-| Production | Demos hidden unless flag is `true` |
+| Any (unset) | Preview profiles shown (`true`) |
+| Explicit `false` | Preview profiles hidden |
 
-When demos are hidden, they are filtered in `listPublishedClinics()` and are not keyboard-focusable in results.
+When previews are hidden, they are filtered in `listPublishedClinics()` and are not keyboard-focusable in results.
 
-Users can also toggle **Include Demo Profiles** in directory filters when demos are available.
+Users can also toggle **Include Preview Profiles** in directory filters when demos are available.
 
 ## Sorting rules
 
@@ -75,17 +79,27 @@ Helper copy: results are ordered by search relevance and available profile infor
 
 ## Badge rules
 
-- Demo Profile — slate, fictional aria-label, never claimable
+- Preview Profile — slate, fictional aria-label, never claimable
 - Unclaimed Listing — muted amber, public-source disclaimer on profile
 - Claimed — sky (not green-verified)
 - Verified by Novalyte AI — teal/green, only after real approval
 
 ## Claim & verification eligibility
 
-- Demo → never claimable
+- Demo / preview → never claimable; booking disabled
 - Unclaimed → claim CTA allowed
 - Claimed → ownership confirmed; details may still be under review
 - Verified → only after Novalyte verification process (do not seed)
+
+## Seed / cleanup
+
+```bash
+npx tsx --env-file=.env.local scripts/seed-directory-preview.ts
+```
+
+Upserts by stable preview id / slug. Skips claimed or verified DB rows. Safe to re-run.
+
+To remove preview listings later, delete rows where `listingStatus = 'demo'` and `id` like `preview-%`, or remove from `src/lib/directory/preview-clinics.ts` and redeploy (in-memory merge path).
 
 ## Convert demo → unclaimed
 
@@ -98,35 +112,3 @@ Helper copy: results are ordered by search relevance and available profile infor
 ## Convert unclaimed → claimed
 
 1. Complete ownership verification via claim flow / org claim API.
-2. Set `listingStatus: "claimed"`, `claimStatus: "claimed"`.
-3. Do **not** set verified until clinical review completes.
-
-## Approve verified listing
-
-1. Complete Novalyte verification workflow.
-2. Set `listingStatus: "verified"`, `verified: true`, `verificationStatus: "approved"` (or `verified`).
-3. Publish through `prospect_directory_profiles` gate when applicable.
-
-## How listings load
-
-`listPublishedClinics()`:
-
-1. Loads verified published clinics from Supabase.
-2. Soft-loads seeded `demo` / `unclaimed` rows.
-3. Merges sanitized preview dataset.
-4. Filters demos when `NEXT_PUBLIC_SHOW_DIRECTORY_DEMOS` is false in production.
-5. DB claimed/verified rows win over preview seeds with the same slug.
-
-## Seed commands
-
-```bash
-supabase db query --linked -f supabase/migrations/20260723120000_clinic_directory_listing_status.sql
-npm run db:seed:directory
-```
-
-Requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-
-## Metadata
-
-Directory page title: **Men’s Health Clinic Directory | Novalyte AI**  
-Do not use “Verified Directory” in titles, OG, Twitter, or SEO copy.

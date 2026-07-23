@@ -11,11 +11,12 @@ import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
 export const revalidate = 300;
 
 type PageProps = {
-  params: Promise<{ slug: string }>;
+  /** Named `treatment` to match ads/[treatment]/[location] first-segment convention. */
+  params: Promise<{ treatment: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { treatment: slug } = await params;
   if (slug.includes("/")) {
     return { title: "Not found", robots: NOINDEX_ROBOTS };
   }
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function AdsLegacySlugPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { treatment: slug } = await params;
   if (slug.includes("/")) notFound();
 
   const [data, fallbackClinics] = await Promise.all([

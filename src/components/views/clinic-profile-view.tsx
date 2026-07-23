@@ -132,7 +132,7 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
         <div className="bg-slate-700 text-white font-medium text-xs sm:text-sm py-2.5 px-4 text-center flex items-center justify-center gap-2 relative" role="status">
           <ShieldAlert className="h-4.5 w-4.5" aria-hidden />
           <span>
-            This is a fictional demonstration profile created to preview Novalyte AI directory functionality. It does not represent an operating clinic.
+            This is a fictional preview profile created to demonstrate the Novalyte directory experience. It does not represent an active clinic partnership.
           </span>
         </div>
       )}
@@ -212,7 +212,7 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
                   {resolveListingStatus(clinic) === "verified"
                     ? "Verified Clinic Identity"
                     : resolveListingStatus(clinic) === "demo"
-                      ? "Demonstration profile"
+                      ? "Preview profile"
                       : "Not verified by Novalyte AI"}
                 </span>
                 <span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4 text-emerald-600" /> {clinic.providers?.length || providers.length} Provider{(clinic.providers?.length || providers.length) !== 1 ? "s" : ""}</span>
@@ -221,7 +221,11 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
 
               {/* Primary actions */}
               <div className="mt-6 flex flex-wrap gap-2">
-                {resolveListingStatus(clinic) !== "demo" && (
+                {resolveListingStatus(clinic) === "demo" ? (
+                  <Button disabled className="font-semibold" variant="outline">
+                    <Calendar className="mr-1.5 h-4 w-4" /> Booking will become available after clinic verification
+                  </Button>
+                ) : (
                   <Button className="bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold" onClick={() => scrollToTab("contact")}>
                     <Calendar className="mr-1.5 h-4 w-4" /> Request Consultation
                   </Button>
@@ -264,7 +268,7 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
                 <SnapshotRow icon={Building2} label="Care Model" value="Men's Health Platform" />
                 <SnapshotRow icon={MapPin} label="Active locations" value={`${clinic.locations?.length || 1} Location${(clinic.locations?.length || 1) !== 1 ? "s" : ""}`} />
                 <SnapshotRow icon={Navigation} label="Service area" value={clinic.serviceArea ?? `${clinic.city} metro`} />
-                <SnapshotRow icon={Video} label="Telehealth" value={clinic.telehealth ? (resolveListingStatus(clinic) === "demo" ? "Demo · Available" : "Yes, Available") : "Not publicly listed"} />
+                <SnapshotRow icon={Video} label="Telehealth" value={clinic.telehealth ? (resolveListingStatus(clinic) === "demo" ? "Preview · Available" : "Yes, Available") : "Not publicly listed"} />
                 <SnapshotRow icon={Users} label="Provider structures" value={clinic.providerTypes || "Not publicly listed"} />
                 <SnapshotRow icon={Clock} label="Clinic availability" value={clinic.earliestAvailability ?? "Not publicly listed"} />
                 {resolveListingStatus(clinic) === "unclaimed" && clinic.sourceUrl && (
@@ -276,9 +280,24 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
               </div>
               <Separator className="my-4" />
               <div className="space-y-1.5">
-                {clinic.phone && <a href={`tel:${clinic.phone}`} data-analytics-event="clinic_phone_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> {clinic.phone}</a>}
-                {clinic.email && <a href={`mailto:${clinic.email}`} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.email}</span></a>}
-                {clinic.website && <a href={clinic.website} target="_blank" rel="noopener noreferrer" data-analytics-event="clinic_website_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.website.replace(/^https?:\/\//, "")}</span></a>}
+                {resolveListingStatus(clinic) === "demo" ? (
+                  <>
+                    {clinic.phone && (
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5 shrink-0" /> {clinic.phone} <span className="text-[10px]">(preview)</span>
+                      </p>
+                    )}
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      Booking will become available after clinic verification.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    {clinic.phone && <a href={`tel:${clinic.phone}`} data-analytics-event="clinic_phone_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700"><Phone className="h-3.5 w-3.5 text-muted-foreground" /> {clinic.phone}</a>}
+                    {clinic.email && <a href={`mailto:${clinic.email}`} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.email}</span></a>}
+                    {clinic.website && <a href={clinic.website} target="_blank" rel="noopener noreferrer" data-analytics-event="clinic_website_clicked" data-analytics-label={clinic.slug} className="flex items-center gap-2 text-sm text-foreground hover:text-teal-700 truncate"><Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" /> <span className="truncate">{clinic.website.replace(/^https?:\/\//, "")}</span></a>}
+                  </>
+                )}
               </div>
             </PremiumCard>
           </div>
@@ -291,9 +310,15 @@ export function ClinicProfileView({ clinic, allClinics }: { clinic: ClinicT; all
         active={activeTab}
         onChange={setActiveTab}
         rightSlot={
-          <Button size="sm" className="hidden bg-teal-600 text-white hover:bg-teal-700 sm:inline-flex shadow-premium-sm font-semibold" onClick={() => scrollToTab("contact")}>
-            <Calendar className="mr-1 h-3.5 w-3.5" /> Book consult
-          </Button>
+          resolveListingStatus(clinic) === "demo" ? (
+            <Button size="sm" variant="outline" disabled className="hidden sm:inline-flex font-semibold">
+              Booking unavailable
+            </Button>
+          ) : (
+            <Button size="sm" className="hidden bg-teal-600 text-white hover:bg-teal-700 sm:inline-flex shadow-premium-sm font-semibold" onClick={() => scrollToTab("contact")}>
+              <Calendar className="mr-1 h-3.5 w-3.5" /> Book consult
+            </Button>
+          )
         }
       />
 
@@ -952,11 +977,11 @@ function FaqTab({ clinic }: { clinic: ClinicT }) {
       ? [
           {
             q: "Is this a real clinic?",
-            a: "No. This is a fictional demonstration profile created to preview Novalyte AI directory functionality. It does not represent an operating clinic.",
+            a: "No. This is a fictional preview profile created to demonstrate the Novalyte directory experience. It does not represent an active clinic partnership.",
           },
           {
             q: "Can I claim or book this profile?",
-            a: "Demo profiles are not claimable and do not accept real appointments. Browse other listings or apply to list your clinic through Novalyte AI.",
+            a: "Preview profiles are not claimable and do not accept real appointments. Booking will become available after clinic verification. Browse other listings or apply to list your clinic through Novalyte AI.",
           },
         ]
       : [
@@ -1004,9 +1029,11 @@ function ContactTab({ clinic }: { clinic: ClinicT }) {
   const [form, setForm] = useState({ patientName: "", patientEmail: "", patientPhone: "", preferredTime: "", notes: "" });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const isPreview = resolveListingStatus(clinic) === "demo";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (isPreview) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/consultation", {
@@ -1027,6 +1054,22 @@ function ContactTab({ clinic }: { clinic: ClinicT }) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (isPreview) {
+    return (
+      <div className="space-y-6 novalyte-fade-up">
+        <SectionTitle icon={Calendar} title="Contact & Booking" desc="Preview profiles do not accept appointment requests." />
+        <PremiumCard className="p-6 border-border">
+          <p className="text-sm text-foreground/80 leading-relaxed">
+            Booking will become available after clinic verification. This fictional preview profile is for directory demonstration only and does not represent an active clinic partnership.
+          </p>
+          <Button disabled className="mt-4 font-semibold" variant="outline">
+            <Calendar className="mr-1.5 h-4 w-4" /> Booking available after clinic verification
+          </Button>
+        </PremiumCard>
+      </div>
+    );
   }
 
   return (
