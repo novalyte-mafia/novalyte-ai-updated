@@ -7,6 +7,7 @@ import {
   type AssessmentAttribution,
 } from "@/components/views/assessment-experience";
 import { getAssessment } from "@/lib/assessment-config";
+import { applyDeclarativeQuestions } from "@/lib/campaigns/assessment-overrides";
 import type { ClinicT } from "@/lib/types";
 import type { PageHost } from "@/lib/campaigns/types";
 
@@ -29,14 +30,17 @@ export type EmbeddedAssessmentProps = {
   assessmentVersion?: number | null;
   /** Absolute directory URL for ads-host handoffs (new tab). */
   directoryUrl?: string;
+  /** Optional Studio-published declarative questions override. */
+  assessmentQuestions?: import("@/lib/campaigns/assessment-overrides").DeclarativeQuestion[];
 };
 
 function EmbeddedAssessmentInner(props: EmbeddedAssessmentProps) {
   const searchParams = useSearchParams();
   const startTimeRef = useRef(new Date().toISOString());
 
-  const config = getAssessment(props.assessmentSlug);
-  if (!config) return null;
+  const base = getAssessment(props.assessmentSlug);
+  if (!base) return null;
+  const config = applyDeclarativeQuestions(base, props.assessmentQuestions);
 
   const attribution = useMemo<AssessmentAttribution>(() => {
     const deviceType =

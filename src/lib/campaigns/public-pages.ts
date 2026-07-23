@@ -235,6 +235,20 @@ async function fetchPublishedPageByPath(path: string): Promise<PublicCampaignPag
   const formConfig = (pageRow.form_config ?? {}) as CampaignFormConfig;
   const clinics = await loadClinicsForPage(pageRow.id);
 
+  let assessmentQuestions: PublicCampaignPage["assessmentQuestions"];
+  if (pageRow.assessment_version_id) {
+    const { data: assessmentVersion } = await supabase
+      .from("cs_assessment_template_versions")
+      .select("config, status")
+      .eq("id", pageRow.assessment_version_id)
+      .maybeSingle();
+    const config = (assessmentVersion as { config?: Record<string, unknown>; status?: string } | null)?.config;
+    const status = (assessmentVersion as { status?: string } | null)?.status;
+    if (status === "published" && Array.isArray(config?.questions) && config.questions.length > 0) {
+      assessmentQuestions = config.questions as PublicCampaignPage["assessmentQuestions"];
+    }
+  }
+
   return {
     page: pageRow,
     blocks: Array.isArray((version as PageVersionRow | null)?.blocks)
@@ -248,6 +262,7 @@ async function fetchPublishedPageByPath(path: string): Promise<PublicCampaignPag
     assessmentPlacement: pageRow.assessment_placement?.length
       ? pageRow.assessment_placement
       : ["below_hero"],
+    assessmentQuestions,
     prefill: (() => {
       const fromCitySlug = parseLocationSlug(pageRow.city_slug);
       return {

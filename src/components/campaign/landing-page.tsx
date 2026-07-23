@@ -76,6 +76,7 @@ function AssessmentSlot({
       assessmentTemplateId={data.page.assessment_template_id}
       assessmentVersion={data.page.current_version}
       directoryUrl={directoryUrl}
+      assessmentQuestions={data.assessmentQuestions}
     />
   );
 }

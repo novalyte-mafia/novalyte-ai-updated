@@ -107,6 +107,8 @@ export type PublicCampaignPage = {
   assessmentSlug: string;
   assessmentMode: "full" | "short";
   assessmentPlacement: string[];
+  /** Declarative questions from published cs_assessment_template_versions.config.questions */
+  assessmentQuestions?: import("@/lib/campaigns/assessment-overrides").DeclarativeQuestion[];
   prefill: {
     state?: string;
     city?: string;
