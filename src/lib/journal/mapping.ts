@@ -164,12 +164,20 @@ export function mapRowToJournalRecord(row: unknown): JournalRecord | null {
 }
 
 export function wrapHardcodedArticle(article: ArticleContent): JournalRecord {
+  const listed = (article.editorialStatus ?? "published") === "published"
+    || article.editorialStatus === "approved"
+    || article.editorialStatus === "medically_reviewed";
   return {
     id: null,
     source: "hardcoded",
-    status: "published",
+    status: listed ? "published" : "review",
     article,
-    seo: { title: null, description: null, canonicalUrl: null, noIndex: false },
+    seo: {
+      title: article.seo?.title ?? null,
+      description: article.seo?.description ?? null,
+      canonicalUrl: article.seo?.canonicalUrl ?? null,
+      noIndex: article.seo?.noIndex ?? !listed,
+    },
   };
 }
 

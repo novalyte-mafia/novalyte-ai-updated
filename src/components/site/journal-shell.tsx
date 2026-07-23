@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { useNav } from "@/lib/nav";
@@ -10,7 +10,7 @@ import { useNav } from "@/lib/nav";
  * shell used by /about and /clinics.
  */
 export function JournalShell({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     useNav.getState().setView("journal");
   }, []);
 

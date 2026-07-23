@@ -17,6 +17,7 @@
  */
 
 import type { JournalArticleBlock } from "@/lib/journal-article-v1";
+import { lowTestosteroneEdFatiguePillarArticle } from "@/lib/journal/articles/low-testosterone-ed-fatigue-pillar";
 
 export type ArticleBlock = JournalArticleBlock;
 
@@ -28,6 +29,9 @@ export type ArticleContent = {
   tags: string[];
   author: { name: string; role: string; bio: string };
   medicalReviewer: { name: string; role: string } | null;
+  /** Editorial/medical workflow status. Defaults to published for legacy hardcoded articles. */
+  editorialStatus?: "draft" | "editorial_review" | "medical_review_required" | "medically_reviewed" | "approved" | "published";
+  medicalReviewStatus?: "draft" | "editorial_review" | "medical_review_required" | "medically_reviewed" | "approved" | "published";
   publishedAt: string;
   updatedAt: string;
   readingTime: number;
@@ -39,7 +43,19 @@ export type ArticleContent = {
   references: { label: string; source: string; url?: string | null }[];
   faqs: { question: string; answer: string }[];
   relatedTreatment: string | null;
+  /** Optional SEO overrides for hardcoded / draft articles. */
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    canonicalUrl?: string | null;
+    noIndex?: boolean;
+  };
 };
+
+export function isPubliclyListedArticle(article: ArticleContent): boolean {
+  const status = article.editorialStatus ?? "published";
+  return status === "published" || status === "approved" || status === "medically_reviewed";
+}
 
 // Build table of contents from level-2 headings
 function tocFromBlocks(blocks: ArticleBlock[]): { id: string; title: string }[] {
@@ -998,6 +1014,7 @@ const healthcareTechnologyAccessArticle: ArticleContent = {
 };
 
 export const ARTICLES: ArticleContent[] = [
+  lowTestosteroneEdFatiguePillarArticle,
   healthcareTechnologyAccessArticle,
   trtArticle,
   glp1Article,
@@ -1006,6 +1023,11 @@ export const ARTICLES: ArticleContent[] = [
   longevityArticle,
   telehealthArticle,
 ];
+
+/** Articles excluded from hub/sitemap until editorialStatus is published. */
+export const DRAFT_OR_REVIEW_ARTICLES: ArticleContent[] = ARTICLES.filter(
+  (article) => !isPubliclyListedArticle(article),
+);
 
 export function getArticleBySlug(slug: string | undefined): ArticleContent | undefined {
   if (!slug) return undefined;

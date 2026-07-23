@@ -3,7 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { ARTICLES } from "@/lib/article-content";
+import { ARTICLES, isPubliclyListedArticle } from "@/lib/article-content";
 import {
   JOURNAL_ARTICLE_COLUMNS,
   categorySlug,
@@ -61,7 +61,7 @@ async function fetchSupabaseRecords(): Promise<JournalRecord[]> {
 }
 
 async function loadJournalRecords(): Promise<JournalRecord[]> {
-  const hardcoded = ARTICLES.map(wrapHardcodedArticle);
+  const hardcoded = ARTICLES.filter(isPubliclyListedArticle).map(wrapHardcodedArticle);
   const source = journalSource();
 
   if (source === "hardcoded" || !supabaseConfigured()) {
@@ -103,7 +103,13 @@ export const getJournalRecords = unstable_cache(
 export async function getJournalRecordBySlug(slug: string): Promise<JournalRecord | null> {
   const normalized = normalizeJournalSlug(slug);
   const records = await getJournalRecords();
-  return records.find((r) => r.article.slug === normalized) ?? null;
+  const found = records.find((r) => r.article.slug === normalized);
+  if (found) return found;
+
+  // Hardcoded drafts remain reachable by direct URL for editorial review, with
+  // seo.noIndex=true and exclusion from hub/sitemap via isPubliclyListedArticle.
+  const draft = ARTICLES.find((a) => a.slug === normalized);
+  return draft ? wrapHardcodedArticle(draft) : null;
 }
 
 export type JournalCategory = { name: string; slug: string };

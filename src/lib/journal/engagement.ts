@@ -93,6 +93,20 @@ export const ARTICLE_PEER_LINKS: Record<
       label: "how men find and access care online",
     },
   ],
+  "low-testosterone-ed-fatigue-weight-gain-mens-health-clinic": [
+    {
+      slug: "understanding-trt-overview",
+      label: "TRT: a complete guide for men",
+    },
+    {
+      slug: "glp-1-medical-weight-loss",
+      label: "GLP-1 and medical weight loss",
+    },
+    {
+      slug: "healthcare-technology-mens-health-access",
+      label: "how men find and access care online",
+    },
+  ],
   "glp-1-medical-weight-loss": [
     {
       slug: "understanding-trt-overview",

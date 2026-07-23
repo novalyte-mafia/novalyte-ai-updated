@@ -7,7 +7,6 @@ import {
   Breadcrumbs,
   SectionDivider,
 } from "@/components/shared/enterprise";
-import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -286,7 +285,7 @@ function VideoBlock({
             type="button"
             className="absolute inset-0 flex h-full w-full items-center justify-center bg-slate-950 px-6 text-center text-base font-semibold text-white hover:bg-slate-900"
             onClick={() => {
-              captureSafeEvent("video_played", {
+              captureSafeEvent("journal_video_played", {
                 article_path: window.location.pathname,
                 video_host: new URL(url).hostname,
               });
@@ -365,6 +364,64 @@ function BlockRenderer({ block }: { block: ArticleBlock }) {
       );
     case "callout":
       return <CalloutBlock tone={block.tone} text={block.text} />;
+    case "pullquote":
+      return (
+        <blockquote className="my-10 border-l-4 border-teal-600 bg-teal-50/40 px-6 py-5">
+          <p className="text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl">
+            “{block.text}”
+          </p>
+          {block.attribution ? (
+            <cite className="mt-3 block text-sm not-italic text-muted-foreground">— {block.attribution}</cite>
+          ) : null}
+        </blockquote>
+      );
+    case "cta":
+      return (
+        <div className="my-8 rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/90 to-background p-6 shadow-premium-sm">
+          <h3 className="text-lg font-semibold text-foreground">{block.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{block.body}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button asChild className="bg-teal-700 text-white hover:bg-teal-800">
+              <a
+                href={block.primaryHref}
+                data-analytics-event="journal_cta_clicked"
+                data-analytics-label={block.primaryLabel}
+                onClick={() =>
+                  captureSafeEvent("journal_cta_clicked", {
+                    cta_label: block.primaryLabel,
+                    cta_href: block.primaryHref,
+                    cta_variant: block.variant,
+                  })
+                }
+              >
+                {block.primaryLabel} <ArrowRight className="ml-1.5 h-4 w-4" />
+              </a>
+            </Button>
+            {block.secondaryLabel && block.secondaryHref ? (
+              <Button asChild variant="outline" className="border-teal-200">
+                <a
+                  href={block.secondaryHref}
+                  data-analytics-event="journal_directory_clicked"
+                  data-analytics-label={block.secondaryLabel}
+                  onClick={() =>
+                    captureSafeEvent(
+                      block.secondaryHref?.includes("directory")
+                        ? "journal_directory_clicked"
+                        : "journal_cta_clicked",
+                      {
+                        cta_label: block.secondaryLabel,
+                        cta_href: block.secondaryHref,
+                      },
+                    )
+                  }
+                >
+                  {block.secondaryLabel}
+                </a>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      );
     case "table":
       return <TableBlock headers={block.headers} rows={block.rows} />;
     default:
@@ -701,8 +758,14 @@ function SoftAssessmentNudge({
           <a
             href={href}
             className="font-semibold text-teal-800 underline decoration-teal-400 underline-offset-2"
-            data-analytics-event="journal_assessment_nudge_clicked"
+            data-analytics-event="journal_assessment_started"
             data-analytics-label={`${assessmentSlug}:inline`}
+            onClick={() =>
+              captureSafeEvent("journal_assessment_started", {
+                assessment_slug: assessmentSlug,
+                source: "soft_nudge_inline",
+              })
+            }
           >
             {copy.cta} →
           </a>
@@ -724,11 +787,15 @@ function SoftAssessmentNudge({
       </div>
       <Button
         className="shrink-0 bg-teal-600 text-white hover:bg-teal-700"
-        data-analytics-event="journal_assessment_nudge_clicked"
+        data-analytics-event="journal_assessment_started"
         data-analytics-label={`${assessmentSlug}:card`}
-        onClick={() =>
-          navigate("assessment", undefined, { slug: assessmentSlug })
-        }
+        onClick={() => {
+          captureSafeEvent("journal_assessment_started", {
+            assessment_slug: assessmentSlug,
+            source: "soft_nudge_card",
+          });
+          navigate("assessment", undefined, { slug: assessmentSlug });
+        }}
       >
         {copy.cta} <ArrowRight className="ml-1 h-4 w-4" />
       </Button>
@@ -882,6 +949,12 @@ export function ArticleView({
   );
 
   useEffect(() => {
+    captureSafeEvent("journal_article_viewed", {
+      article_slug: article.slug,
+      category: article.category,
+      reading_time_minutes: article.readingTime,
+    });
+    // Retain legacy event name during analytics cutover.
     captureSafeEvent("article_viewed", {
       article_slug: article.slug,
       category: article.category,
@@ -894,16 +967,19 @@ export function ArticleView({
         document.documentElement.scrollHeight - window.innerHeight;
       if (scrollable <= 0) return;
       const percent = Math.round((window.scrollY / scrollable) * 100);
-      for (const threshold of [50, 90]) {
+      for (const threshold of [25, 50, 75, 90]) {
         if (percent >= threshold && !reached.has(threshold)) {
           reached.add(threshold);
-          captureSafeEvent(
-            threshold === 50 ? "article_50_percent_read" : "article_90_percent_read",
-            {
-              article_slug: article.slug,
-              category: article.category,
-            },
-          );
+          captureSafeEvent(`journal_scroll_${threshold}`, {
+            article_slug: article.slug,
+            category: article.category,
+          });
+          if (threshold === 50 || threshold === 90) {
+            captureSafeEvent(
+              threshold === 50 ? "article_50_percent_read" : "article_90_percent_read",
+              { article_slug: article.slug, category: article.category },
+            );
+          }
         }
       }
     };
@@ -1043,16 +1119,6 @@ export function ArticleView({
               )}
 
               {readNext && <ReadNextCard article={readNext} />}
-
-              {/* Educational disclaimer immediately after body */}
-              <DisclaimerBanner tone="teal" className="mt-8">
-                <strong className="font-semibold">Education, not clinical advice.</strong> This
-                article is intended to inform and educate. It does not constitute a medical diagnosis,
-                treatment plan, or professional clinical opinion. Decisions about diagnosis,
-                prescribing, and treatment must be made by a licensed healthcare professional in the
-                context of an individual clinical relationship.
-              </DisclaimerBanner>
-
               {/* FAQ */}
               {article.faqs.length > 0 && (
                 <section className="mt-12" aria-label="Frequently asked questions">
@@ -1112,12 +1178,6 @@ export function ArticleView({
                   </ol>
                 </section>
               )}
-
-              {/* Medical disclaimer */}
-              <div className="mt-10">
-                <MedicalDisclaimer />
-              </div>
-
               {/* Author / reviewer block */}
               <section className="mt-12" aria-label="About the author and reviewer">
                 <SectionDivider label="Author & review" />

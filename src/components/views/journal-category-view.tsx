@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { Breadcrumbs, EmptyState } from "@/components/shared/enterprise";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,13 +177,6 @@ export function JournalCategoryView({
             ))}
           </div>
         )}
-
-        <DisclaimerBanner tone="teal" className="mt-10">
-          The Novalyte Journal is educational content for the men's health economy. It is not a
-          substitute for professional medical advice, diagnosis, or treatment. Always consult a
-          licensed healthcare professional regarding any medical condition or treatment decision.
-        </DisclaimerBanner>
-
         <div className="mt-8">
           <Button variant="ghost" size="sm" onClick={() => navigate("journal")} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Back to Journal

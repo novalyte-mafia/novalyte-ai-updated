@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { Breadcrumbs } from "@/components/shared/enterprise";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
@@ -417,12 +416,6 @@ export function JournalView({
             <EditorialPolicySection />
           </div>
         </div>
-
-        <DisclaimerBanner tone="teal" className="mt-10">
-          The Novalyte Journal is educational content for the men's health economy. It is not a
-          substitute for professional medical advice, diagnosis, or treatment. Always consult a
-          licensed healthcare professional regarding any medical condition or treatment decision.
-        </DisclaimerBanner>
       </SectionShell>
     </div>
   );
