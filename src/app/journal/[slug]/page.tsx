@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
+import { getJournalRecordBySlug, getJournalRecords, getJournalRedirectTarget } from "@/lib/journal/data";
+import { normalizeJournalSlug } from "@/lib/journal-article-v1";
+import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { ArticleView } from "@/components/views/article-view";
-import {
-  getJournalRecordBySlug,
-  getJournalRecords,
-  getJournalRedirectTarget,
-} from "@/lib/journal/data";
-import { normalizeJournalSlug } from "@/lib/journal-article-v1";
 
 export const revalidate = 300;
 
@@ -39,10 +36,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const canonical = seo.canonicalUrl ?? `/journal/${article.slug}`;
 
   return {
-    title,
+    // absolute avoids "| Novalyte Journal" stacking on SEO titles that already brand Novalyte
+    title: { absolute: title },
     description,
     alternates: { canonical },
-    robots: seo.noIndex ? { index: false, follow: false } : undefined,
+    robots: seo.noIndex
+      ? { index: false, follow: false, googleBot: { index: false, follow: false } }
+      : INDEXABLE_ROBOTS,
     openGraph: {
       title,
       description,

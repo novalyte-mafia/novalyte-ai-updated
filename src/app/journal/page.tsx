@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JournalView } from "@/components/views/journal-view";
 import { getJournalCategories, getJournalRecords } from "@/lib/journal/data";
+import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 
 export const revalidate = 300;
 
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   description:
     "The Novalyte Journal publishes educational material on men's health treatments, clinic operations, workforce trends, and the broader healthcare ecosystem.",
   alternates: { canonical: "/journal" },
+  robots: INDEXABLE_ROBOTS,
   openGraph: {
     title: "Novalyte Journal — Men's Health Education",
     description:

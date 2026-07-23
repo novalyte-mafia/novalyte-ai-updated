@@ -24,17 +24,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to fetch clinics for sitemap", e);
   }
 
+  // Public marketing surfaces only. Auth, clinic portals, investor, ads, and
+  // preview routes stay out of the sitemap (and are disallowed in robots.txt).
   const mainRoutes: MetadataRoute.Sitemap = [
     { url: canonicalPath("/"), lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: canonicalPath("/patients"), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: canonicalPath("/clinics"), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: canonicalPath("/patients"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: canonicalPath("/clinics"), lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: canonicalPath("/clinics/apply"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: canonicalPath("/directory"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: canonicalPath("/workforce"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: canonicalPath("/marketplace"), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: canonicalPath("/journal"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: canonicalPath("/about"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: canonicalPath("/contact"), lastModified: now, changeFrequency: "yearly", priority: 0.5 },
+    { url: canonicalPath("/directory"), lastModified: now, changeFrequency: "daily", priority: 0.95 },
+    { url: canonicalPath("/workforce"), lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: canonicalPath("/marketplace"), lastModified: now, changeFrequency: "weekly", priority: 0.75 },
+    { url: canonicalPath("/journal"), lastModified: now, changeFrequency: "daily", priority: 0.95 },
+    { url: canonicalPath("/about"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: canonicalPath("/contact"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: canonicalPath("/privacy"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: canonicalPath("/terms"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: canonicalPath("/medical-disclaimer"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },

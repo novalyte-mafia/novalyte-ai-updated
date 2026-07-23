@@ -11,6 +11,7 @@ import {
   SITE_URL,
 } from "@/lib/site-config";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { INDEXABLE_ROBOTS } from "@/lib/seo-robots";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,7 +57,7 @@ export const metadata: Metadata = {
     images: [DEFAULT_SOCIAL_IMAGE],
   },
   alternates: { canonical: SITE_URL },
-  robots: { index: true, follow: true },
+  robots: INDEXABLE_ROBOTS,
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
