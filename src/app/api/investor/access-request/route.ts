@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       event: "investor_access_requested",
       properties: {
         investor_type: parsed.investorType,
-        discovery_source: parsed.discoverySource,
+        discovery_source: parsed.discoverySource ?? null,
         has_firm: Boolean(parsed.firm),
       },
     }).catch(() => undefined);
