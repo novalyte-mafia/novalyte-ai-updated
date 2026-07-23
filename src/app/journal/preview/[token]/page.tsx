@@ -3,6 +3,7 @@ import { AlertTriangle, Eye } from "lucide-react";
 import { ArticleView } from "@/components/views/article-view";
 import { getJournalPreviewRecord, getJournalRecords } from "@/lib/journal/data";
 import { verifyJournalPreviewToken } from "@/lib/journal/preview-token";
+import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
 
 // Never cache or index previews: drafts are rendered with privileged access
 // and only a valid short-lived signed token may see them.
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Article preview",
-  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+  robots: NOINDEX_ROBOTS,
 };
 
 type PageProps = { params: Promise<{ token: string }> };

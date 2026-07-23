@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lora } from "next/font/google";
+import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
 
 const investorSerif = Lora({
   subsets: ["latin"],
@@ -15,12 +16,7 @@ export const metadata: Metadata = {
   },
   description:
     "Confidential Novalyte AI investor portal. Invitation and access code required.",
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: { index: false, follow: false },
-  },
+  robots: NOINDEX_ROBOTS,
 };
 
 export default function InvestorLayout({

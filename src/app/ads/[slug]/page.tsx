@@ -5,6 +5,7 @@ import { CampaignAdsShell } from "@/components/campaign/campaign-shell";
 import { campaignMetadata } from "@/lib/campaigns/metadata";
 import { getPublishedPageByAdsSlug } from "@/lib/campaigns/public-pages";
 import { listPublishedClinics } from "@/lib/public-clinics";
+import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
 
 export const revalidate = 300;
 
@@ -15,8 +16,9 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const data = await getPublishedPageByAdsSlug(slug);
-  if (!data) return { title: "Not found", robots: { index: false, follow: false } };
-  return campaignMetadata(data);
+  if (!data) return { title: "Not found", robots: NOINDEX_ROBOTS };
+  // Paid /ads landers must never appear in organic SERPs.
+  return { ...campaignMetadata(data), robots: NOINDEX_ROBOTS };
 }
 
 export default async function AdsCampaignPage({ params }: PageProps) {

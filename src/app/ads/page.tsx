@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { CampaignAdsShell } from "@/components/campaign/campaign-shell";
+import { NOINDEX_ROBOTS } from "@/lib/seo-robots";
 
 export const metadata = {
   title: "Campaign landing pages",
-  robots: { index: false, follow: false },
+  robots: NOINDEX_ROBOTS,
 };
 
 export default function AdsIndexPage() {

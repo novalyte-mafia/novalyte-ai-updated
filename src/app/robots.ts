@@ -3,10 +3,10 @@ import type { MetadataRoute } from "next";
 const SITE_URL = "https://novalyte.io";
 
 /**
- * robots.txt configuration.
+ * robots.txt — public marketing only.
  *
- * Public marketing, Journal, and approved directory pages are crawlable.
- * Authentication, previews, APIs, and private account areas are excluded.
+ * Backend portals, auth, APIs, ads landers, investor surfaces, and account
+ * dashboards are disallowed so they do not appear in Google.
  */
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -18,23 +18,17 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/admin/",
           "/auth/",
+          "/ads/",
+          "/ads",
           "/journal/preview/",
-          "/workforce/professional/dashboard",
-          "/workforce/professional/settings",
-          "/workforce/professional/onboarding",
-          "/workforce/professional/account-status",
-          "/workforce/professional/verification-pending",
-          "/workforce/professional/forgot-password",
-          "/workforce/professional/reset-password",
-          "/workforce/professional/sign-in",
-          "/workforce/professional/sign-up",
-          "/workforce/employer/dashboard",
-          "/workforce/employer/onboarding",
-          "/workforce/employer/sign-in",
           "/clinic/",
           "/clinic",
-          "/investor",
           "/investor/",
+          "/investor",
+          "/workforce/professional/",
+          "/workforce/professional",
+          "/workforce/employer/",
+          "/workforce/employer",
         ],
       },
     ],
