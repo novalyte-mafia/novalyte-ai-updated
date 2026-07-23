@@ -42,7 +42,7 @@ import {
   ArrowRight, SlidersHorizontal, LayoutGrid, List, Map, X, Heart,
   GitCompare, Stethoscope, CheckCircle2, Navigation, Sparkles, ChevronRight,
   DollarSign, Check, HelpCircle, ShieldAlert, Award, Languages, Accessibility, Users,
-  ChevronDown, Info,
+  ChevronDown,
 } from "lucide-react";
 
 const PAGE_SIZE = 12;
@@ -361,7 +361,13 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
 
     // Sorting
     if (sortBy === "relevance" || sortBy === "most-relevant") {
-      result = [...result].sort((a, b) => directorySortRank(b) - directorySortRank(a));
+      result = [...result].sort((a, b) => {
+        const rank = directorySortRank(b) - directorySortRank(a);
+        if (rank !== 0) return rank;
+        const completeness = (b.profileCompleteness ?? 0) - (a.profileCompleteness ?? 0);
+        if (completeness !== 0) return completeness;
+        return a.name.localeCompare(b.name);
+      });
     } else if (sortBy === "recent") {
       result = [...result].sort((a, b) =>
         String((b as { lastReviewedAt?: string | null }).lastReviewedAt ?? "").localeCompare(
@@ -375,7 +381,12 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
     } else if (sortBy === "za") {
       result = [...result].sort((a, b) => b.name.localeCompare(a.name));
     } else if (sortBy === "nearest") {
-      result = [...result].sort((a, b) => Number(Boolean(b.locations?.length || (b as { latitude?: number | null }).latitude != null)) - Number(Boolean(a.locations?.length || (a as { latitude?: number | null }).latitude != null)));
+      result = [...result].sort((a, b) => {
+        const aHas = Number(Boolean(a.locations?.length || (a as { latitude?: number | null }).latitude != null));
+        const bHas = Number(Boolean(b.locations?.length || (b as { latitude?: number | null }).latitude != null));
+        if (bHas !== aHas) return bHas - aHas;
+        return a.name.localeCompare(b.name);
+      });
     }
     return result;
   }, [clinics, query, locationQuery, state, city, treatment, careFormat, providerType, clinicType, pricingStatus, insuranceAccepted, hsaFsaAccepted, financingAvailable, onSiteLab, acceptingNewPatients, verifiedOnly, claimedStatus, includeDemos, distanceRadius, consultationAvailability, language, sortBy]);
@@ -696,58 +707,57 @@ export function DirectoryView({ clinics }: { clinics: ClinicT[] }) {
             </div>
 
             {/* Results Header Toolbar */}
-            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-xs sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-semibold text-foreground">
+            <div className="mb-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-premium-xs">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-foreground tabular-nums">
                   {activeFilters.length > 0
                     ? `Showing ${filtered.length} of ${clinics.length} clinics`
                     : `Showing ${filtered.length} clinics`}
-                </span>
-                {loading && <span className="ml-1 text-xs text-teal-600">· updating…</span>}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col items-end gap-0.5">
-                  <Select
-                    value={sortBy}
-                    onValueChange={(value) => {
-                      setSortBy(value);
-                      captureSafeEvent("directory_sort_changed", { sort_option: value, view_mode: view });
+                  {loading ? <span className="ml-1.5 text-xs font-medium text-teal-600">· updating…</span> : null}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="directory-sort" className="whitespace-nowrap text-xs font-medium text-muted-foreground">
+                      Sort
+                    </Label>
+                    <Select
+                      value={sortBy}
+                      onValueChange={(value) => {
+                        setSortBy(value);
+                        captureSafeEvent("directory_sort_changed", { sort_option: value, view_mode: view });
+                      }}
+                    >
+                      <SelectTrigger id="directory-sort" className="h-9 w-[160px] text-xs" aria-label="Sort directory results">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="relevance">Relevance</SelectItem>
+                        <SelectItem value="recent">Recently reviewed</SelectItem>
+                        <SelectItem value="completeness">Profile completeness</SelectItem>
+                        <SelectItem value="az">Name A–Z</SelectItem>
+                        <SelectItem value="za">Name Z–A</SelectItem>
+                        <SelectItem value="nearest">Distance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <ViewToggle
+                    value={view}
+                    onChange={(next) => {
+                      setView(next);
+                      captureSafeEvent("directory_view_changed", { view_mode: next, result_count: filtered.length });
                     }}
-                  >
-                    <SelectTrigger className="h-8.5 w-[180px] text-xs" aria-label="Sort directory results">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="relevance">Relevance</SelectItem>
-                      <SelectItem value="recent">Recently reviewed</SelectItem>
-                      <SelectItem value="completeness">Profile completeness</SelectItem>
-                      <SelectItem value="az">Name A–Z</SelectItem>
-                      <SelectItem value="za">Name Z–A</SelectItem>
-                      <SelectItem value="nearest">Distance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="hidden text-[10px] text-muted-foreground sm:inline-flex items-center gap-1 max-w-[220px] text-right">
-                    <Info className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                    Ordered by search relevance and available profile information, not medical quality.
-                  </span>
+                    options={[
+                      { value: "grid", label: "Grid", icon: LayoutGrid },
+                      { value: "list", label: "List", icon: List },
+                      { value: "map", label: "Map", icon: Map },
+                    ]}
+                  />
                 </div>
-                <ViewToggle
-                  value={view}
-                  onChange={(next) => {
-                    setView(next);
-                    captureSafeEvent("directory_view_changed", { view_mode: next, result_count: filtered.length });
-                  }}
-                  options={[
-                    { value: "grid", label: "Grid", icon: LayoutGrid },
-                    { value: "list", label: "List", icon: List },
-                    { value: "map", label: "Map", icon: Map },
-                  ]}
-                />
               </div>
             </div>
 
             <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
-              Novalyte AI is actively expanding this directory. Preview profiles are clearly labeled and do not represent verified clinic partnerships. Clinic information may be incomplete or change over time.
+              Novalyte AI is actively expanding this directory. Preview profiles are clearly labeled and do not represent verified clinic partnerships. Results are ordered by available profile information, not medical quality.
             </p>
 
             {/* Active Filter Chips */}
@@ -1230,11 +1240,8 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
     </div>
   );
 
-  const secondaryAction = isDemo ? (
-    <a href={profileHref} onClick={trackProfileClick} className="text-xs font-medium text-slate-600 underline-offset-2 hover:underline">
-      About this demo profile
-    </a>
-  ) : canClaim ? (
+  // Preview cards already show the Preview Profile badge — no extra footer link.
+  const secondaryAction = isDemo ? null : canClaim ? (
     <a
       href={claimHref}
       className="text-xs font-medium text-amber-800 underline-offset-2 hover:underline"
@@ -1367,7 +1374,7 @@ function ClinicCard({ clinic, view }: { clinic: ClinicT; view: string }) {
         </div>
       </div>
 
-      <div className="px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex flex-col gap-2">
+      <div className={cn("px-5 pb-5 pt-1 border-t border-border/40 mt-auto flex flex-col", secondaryAction ? "gap-2" : "")}>
         <Button asChild size="sm" className="w-full bg-teal-600 text-white hover:bg-teal-700 shadow-premium-sm font-semibold">
           <a href={profileHref} onClick={trackProfileClick}>View Profile</a>
         </Button>
@@ -1422,7 +1429,7 @@ function MapView({ clinics }: { clinics: ClinicT[] }) {
                 }}
                 className="absolute -translate-x-1/2 -translate-y-1/2 group"
                 style={pos}
-                aria-label={`Select ${c.name}${demo ? " (demo profile)" : ""}`}
+                aria-label={`Select ${c.name}${demo ? " (preview profile)" : ""}`}
               >
                 <span
                   className={cn(
@@ -1439,7 +1446,7 @@ function MapView({ clinics }: { clinics: ClinicT[] }) {
           })}
           
           <div className="absolute bottom-3 left-3 rounded-lg border border-border bg-card/90 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground shadow-sm backdrop-blur">
-            Map view · {clinics.length} clinics plotted · slate pins = demo profiles
+            Map view · {clinics.length} clinics plotted · slate pins = preview profiles
           </div>
         </div>
 
