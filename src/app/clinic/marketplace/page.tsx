@@ -18,8 +18,8 @@ export default function ClinicMarketplacePage() {
             <Store className="h-5 w-5 text-teal-700" /> Marketplace
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            The Novalyte catalog is shared across the public site and clinic portal. Browse supplies and equipment on
-            the public marketplace — orders will use the same account once in-portal checkout ships.
+            Browse the curated clinic catalog on the public marketplace — request quotes for supplies, equipment, and
+            ops services. In-portal ordering comes later; for now quotes are the primary path.
           </p>
         </div>
 

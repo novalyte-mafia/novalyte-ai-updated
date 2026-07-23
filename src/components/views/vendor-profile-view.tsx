@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import {
   PremiumCard,
   MetaRow,
@@ -29,6 +28,8 @@ import { colorClasses } from "@/lib/constants";
 import type { MarketplaceListingT, VendorT } from "@/lib/types";
 import { navigate, useSaved, useCompare } from "@/lib/nav";
 import { useCart } from "@/lib/cart";
+import { SmartImage } from "@/components/shared/smart-image";
+import { getSupplierImage } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import {
   ArrowRight,
@@ -158,8 +159,6 @@ export function VendorProfileView({
   const [activeTab, setActiveTab] = useState("catalog");
   const [contactOpen, setContactOpen] = useState(false);
 
-  const c = colorClasses("teal");
-
   // Load static snap defaults
   const snap = useMemo(() => {
     return VENDOR_SNAP_DEFAULTS[vendor.slug] ?? {
@@ -208,9 +207,15 @@ export function VendorProfileView({
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-              {/* Supplier Logo placeholder */}
-              <div className={cn("flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl text-3xl font-extrabold text-white shadow-premium-md", c.bg)}>
-                {vendor.name.slice(0, 1)}
+              {/* Supplier storefront image */}
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-3xl border border-border shadow-premium-md">
+                <SmartImage
+                  src={getSupplierImage(vendor.slug || vendor.name)}
+                  alt={`${vendor.name} storefront`}
+                  fill
+                  sizes="96px"
+                  imgClassName="object-cover"
+                />
               </div>
               
               <div className="min-w-0 flex-1 space-y-2">
@@ -437,17 +442,6 @@ export function VendorProfileView({
 
         </div>
       </SectionShell>
-
-      {/* Bottom disclaimer */}
-      <SectionShell className="!py-10">
-        <div className="mx-auto w-full max-w-5xl space-y-4">
-          <DisclaimerBanner tone="amber">
-            <strong className="font-semibold">Independent Supplier.</strong> {vendor.name} is an independently operated healthcare supplier. Novalyte AI is a technology platform coordinating logistics discovery, not a reseller. Complete independent diligence on all licenses and certifications.
-          </DisclaimerBanner>
-          <MedicalDisclaimer />
-        </div>
-      </SectionShell>
-
       {/* Contact modal dialog */}
       <Dialog open={contactOpen} onOpenChange={setContactOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">

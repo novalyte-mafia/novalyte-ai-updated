@@ -66,12 +66,66 @@ export const IMAGES = {
     "/images/professionals/pro-8.jpg",
   ],
 
-  // Marketplace product images by category keyword
+  // Marketplace product images by category keyword (photoreal first)
   marketplace: {
-    lab: ["/images/marketplace/lab-1.jpg", "/images/marketplace/lab-2.jpg", "/images/marketplace/lab-3.jpg", "/images/marketplace/lab-4.jpg"],
-    injection: ["/images/marketplace/inject-1.jpg", "/images/marketplace/inject-2.jpg", "/images/marketplace/inject-3.jpg", "/images/marketplace/inject-4.jpg"],
-    recovery: ["/images/marketplace/recovery-1.jpg", "/images/marketplace/recovery-2.png", "/images/marketplace/recovery-3.jpg", "/images/marketplace/recovery-4.jpg"],
-    general: ["/images/marketplace/product-1.jpg", "/images/marketplace/product-2.jpg", "/images/marketplace/product-3.jpg", "/images/marketplace/product-4.jpg", "/images/marketplace/product-5.jpg", "/images/marketplace/product-6.jpg"],
+    lab: [
+      "/images/marketplace/blood-tubes.jpg",
+      "/images/marketplace/lab-2.jpg",
+      "/images/marketplace/lab-1.jpg",
+      "/images/marketplace/lab-3.jpg",
+      "/images/marketplace/lab-4.jpg",
+    ],
+    injection: [
+      "/images/marketplace/injection-kit.jpg",
+      "/images/marketplace/gloves-nitrile.jpg",
+      "/images/marketplace/inject-1.jpg",
+      "/images/marketplace/inject-2.jpg",
+      "/images/marketplace/inject-3.jpg",
+      "/images/marketplace/inject-4.jpg",
+    ],
+    equipment: [
+      "/images/marketplace/medical-equipment.jpg",
+      "/images/pillars/services-marketplace.jpg",
+      "/images/marketplace/lab-1.jpg",
+      "/images/marketplace/product-4.jpg",
+    ],
+    software: [
+      "/images/marketplace/clinic-software.jpg",
+      "/images/marketplace/product-5.jpg",
+      "/images/marketplace/product-3.jpg",
+    ],
+    apparel: [
+      "/images/marketplace/clinic-apparel.jpg",
+      "/images/treatments/preventive-3.jpg",
+      "/images/marketplace/product-6.jpg",
+    ],
+    recovery: [
+      "/images/marketplace/recovery-3.jpg",
+      "/images/marketplace/recovery-2.png",
+      "/images/marketplace/recovery-4.jpg",
+      "/images/marketplace/recovery-1.jpg",
+    ],
+    general: [
+      "/images/marketplace/gloves-nitrile.jpg",
+      "/images/marketplace/injection-kit.jpg",
+      "/images/marketplace/medical-equipment.jpg",
+      "/images/marketplace/clinic-software.jpg",
+      "/images/marketplace/blood-tubes.jpg",
+      "/images/marketplace/clinic-apparel.jpg",
+      "/images/pillars/services-marketplace.jpg",
+      "/images/marketplace/product-2.jpg",
+      "/images/marketplace/product-4.jpg",
+      "/images/marketplace/product-5.jpg",
+      "/images/marketplace/product-6.jpg",
+    ],
+    suppliers: [
+      "/images/marketplace/suppliers/storefront.jpg",
+      "/images/marketplace/suppliers/warehouse.jpg",
+      "/images/marketplace/suppliers/office.jpg",
+      "/images/pillars/services-marketplace.jpg",
+      "/images/clinics/clinic-2.jpg",
+      "/images/clinics/clinic-4.jpg",
+    ],
   },
 
   // Article hero images
@@ -151,16 +205,39 @@ export function getProfessionalImage(name: string): string {
 }
 
 /**
- * Get a marketplace product image by category.
+ * Get a marketplace product image by category (and optional slug for variety).
  */
-export function getMarketplaceImage(category: string, index = 0): string {
+export function getMarketplaceImage(category: string, index = 0, slug = ""): string {
   const cat = category.toLowerCase();
+  const key = `${slug} ${cat}`.toLowerCase();
   let pool: readonly string[];
-  if (cat.includes("lab")) pool = IMAGES.marketplace.lab;
-  else if (cat.includes("injection") || cat.includes("phlebotomy")) pool = IMAGES.marketplace.injection;
-  else if (cat.includes("recovery") || cat.includes("body-composition")) pool = IMAGES.marketplace.recovery;
-  else pool = IMAGES.marketplace.general;
-  return pool[index % pool.length];
+  if (key.includes("glove") || key.includes("ppe") || key.includes("gown")) pool = IMAGES.marketplace.injection;
+  else if (key.includes("scrub") || key.includes("coat") || key.includes("clog") || key.includes("apparel") || key.includes("uniform")) {
+    pool = IMAGES.marketplace.apparel;
+  } else if (key.includes("ehr") || key.includes("software") || key.includes("platform") || key.includes("saas") || key.includes("billing") || key.includes("crm")) {
+    pool = IMAGES.marketplace.software;
+  } else if (key.includes("equip") || key.includes("monitor") || key.includes("ultrasound") || key.includes("device") || key.includes("chair") || key.includes("table")) {
+    pool = IMAGES.marketplace.equipment;
+  } else if (cat.includes("lab") || cat.includes("diagnost") || key.includes("tube") || key.includes("phlebotomy")) {
+    pool = IMAGES.marketplace.lab;
+  } else if (cat.includes("injection") || cat.includes("clinical") || cat.includes("supply") || key.includes("syringe") || key.includes("needle")) {
+    pool = IMAGES.marketplace.injection;
+  } else if (cat.includes("recovery") || cat.includes("body-composition") || cat.includes("wellness")) {
+    pool = IMAGES.marketplace.recovery;
+  } else {
+    pool = IMAGES.marketplace.general;
+  }
+  const hash = (slug || category).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return pool[(hash + index) % pool.length];
+}
+
+/**
+ * Deterministic supplier / storefront image for marketplace vendor cards.
+ */
+export function getSupplierImage(nameOrSlug: string, index = 0): string {
+  const imgs = IMAGES.marketplace.suppliers;
+  const hash = nameOrSlug.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return imgs[(hash + index) % imgs.length];
 }
 
 /**

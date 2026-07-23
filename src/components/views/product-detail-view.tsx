@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import {
   PremiumCard,
   EmptyState,
@@ -30,6 +29,9 @@ import { navigate, useSaved, useCompare } from "@/lib/nav";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import { captureSafeEvent } from "@/lib/analytics-client";
+import { featuredImageFor, getFeaturedSku } from "@/lib/marketplace/featured-catalog";
+import { SmartImage } from "@/components/shared/smart-image";
+import { getSupplierImage } from "@/lib/images";
 import {
   ArrowRight,
   Globe,
@@ -151,6 +153,7 @@ export function ProductDetailView({
   const isComparing = compareProducts.includes(listing.id);
   
   const addItem = useCart((s) => s.addItem);
+  const featured = getFeaturedSku(listing.slug);
 
   const c = colorClasses(listing.imageColor);
   const avail = availabilityMeta(listing.availability);
@@ -169,8 +172,9 @@ export function ProductDetailView({
     [vendors, listing.vendorName],
   );
 
-  // Derive direct purchase capability
-  const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
+  // Featured SKUs are quote-first (no fake checkout).
+  const isDirectPurchase =
+    !featured && listing.listingType === "product" && listing.pricingModel !== "quote";
 
   // Mock variants for direct-purchase products
   const variants = useMemo(() => {
@@ -201,8 +205,21 @@ export function ProductDetailView({
     return variants.find(v => v.id === selectedVariant)?.name || "Standard";
   }, [selectedVariant, variants]);
 
-  // Specifications mock based on categories
+  // Specifications — prefer curated featured specs when present
   const specifications = useMemo(() => {
+    if (featured) {
+      return [
+        { name: "Pack size", value: featured.packSize },
+        { name: "Minimum order", value: featured.moq },
+        { name: "Lead time", value: featured.leadTime },
+        { name: "Guide price", value: featured.guidePrice },
+        { name: "Best for", value: featured.audience },
+        ...featured.specs.map((spec) => ({ name: "Spec", value: spec })),
+        { name: "Supplier", value: listing.vendorName },
+        { name: "Category", value: listing.category },
+      ];
+    }
+
     const baseSpecs = [
       { name: "Brand / Manufacturer", value: listing.vendorName },
       { name: "Category Taxonomy", value: listing.category },
@@ -234,7 +251,7 @@ export function ProductDetailView({
       { name: "System Requirements", value: "Any modern browser" },
       { name: "Security Standards", value: "HIPAA Compliant Data Hosting" }
     ];
-  }, [listing]);
+  }, [featured, listing]);
 
   // Deliverables & Scope list (for services/software)
   const deliverables = useMemo(() => {
@@ -250,19 +267,23 @@ export function ProductDetailView({
 
   // Availability restrictions description
   const availabilityRestrictions = useMemo(() => {
+    if (featured) {
+      return `Typical lead time: ${featured.leadTime}. MOQ: ${featured.moq}. Quote confirms freight and final pricing.`;
+    }
     if (listing.listingType === "product") {
-      return "Fulfillment regions cover the continental United States. Standard freight routing applied at checkout.";
+      return "Fulfillment regions cover the continental United States. Final freight confirmed on quote.";
     }
     return "Service contracts available for providers in all 50 states. Local diagnostic feeds depend on partner lab locations.";
-  }, [listing.listingType]);
+  }, [featured, listing.listingType]);
 
   // Implementation / Setup timelines
   const setupTimeline = useMemo(() => {
+    if (featured) return featured.leadTime;
     if (listing.category === "Healthcare Software") return "Immediate provision upon signup approval.";
     if (listing.category === "Staffing and Workforce Services") return "Matches sourced in 7-14 business days.";
     if (listing.category === "Credentialing and Compliance") return "Applications completed in 10-30 days.";
     return "3-5 days dispatch shipping.";
-  }, [listing.category]);
+  }, [featured, listing.category]);
 
   const handleAddCart = () => {
     if (isDirectPurchase) {
@@ -308,13 +329,23 @@ export function ProductDetailView({
           
           {/* Left Column: Product Banner & Details */}
           <div className="space-y-6">
-            <div className={cn("flex h-64 sm:h-80 w-full items-center justify-center rounded-3xl shadow-premium-md", c.bg)}>
-              <CategoryIcon category={listing.category} className="h-16 w-16 text-white/95" />
+            <div className={cn("relative flex h-64 sm:h-80 w-full items-center justify-center overflow-hidden rounded-3xl shadow-premium-md", !featured && c.bg)}>
+              {featured ? (
+                <SmartImage
+                  src={featuredImageFor(listing)}
+                  alt={featured.headline}
+                  fill
+                  imgClassName="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 55vw"
+                />
+              ) : (
+                <CategoryIcon category={listing.category} className="h-16 w-16 text-white/95" />
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill tone="muted">{listing.category}</StatusPill>
-              <StatusPill tone="teal">{listing.listingType}</StatusPill>
+              <StatusPill tone="teal">{featured ? "Featured" : listing.listingType}</StatusPill>
               <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
               {listing.verified && (
                 <StatusPill tone="emerald">Verified Listing</StatusPill>
@@ -322,7 +353,7 @@ export function ProductDetailView({
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              {listing.title}
+              {featured?.headline || listing.title}
             </h1>
 
             <div className="flex items-center gap-4 text-sm">
@@ -336,7 +367,12 @@ export function ProductDetailView({
             </div>
 
             <div className="text-sm leading-relaxed text-muted-foreground space-y-4">
-              <p>{listing.description}</p>
+              <p>{featured?.summary || listing.description}</p>
+              {featured && (
+                <p className="rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-2 text-xs text-sky-950">
+                  Preview catalog item — request a quote for confirmed pricing, freight, and availability. Guide price: {featured.guidePrice}.
+                </p>
+              )}
             </div>
           </div>
 
@@ -421,9 +457,11 @@ export function ProductDetailView({
                 <div className="space-y-4">
                   <div>
                     <span className="text-xl font-bold text-foreground">
-                      {listing.priceNote || "Request Quote"}
+                      {featured?.guidePrice || listing.priceNote || "Request Quote"}
                     </span>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">{listing.pricingModel || "Custom"}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
+                      {featured ? "Quote-first catalog" : listing.pricingModel || "Custom"}
+                    </p>
                   </div>
                   
                   <div className="space-y-3 pt-4 border-t border-neutral-100">
@@ -535,9 +573,15 @@ export function ProductDetailView({
               {vendor ? (
                 <PremiumCard className="p-6 bg-white space-y-4">
                   <div className="flex items-center gap-4">
-                    <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-premium-sm", c.bg)}>
-                      {vendor.name.slice(0, 1)}
-                    </div>
+                  <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-border shadow-premium-sm">
+                    <SmartImage
+                      src={getSupplierImage(vendor.slug || vendor.name)}
+                      alt={`${vendor.name} storefront`}
+                      fill
+                      sizes="56px"
+                      imgClassName="object-cover"
+                    />
+                  </div>
                     <div>
                       <h4 className="font-bold text-base text-foreground flex items-center gap-1.5">
                         {vendor.name} <VerificationBadge verified={vendor.verified} />
@@ -588,17 +632,6 @@ export function ProductDetailView({
 
         </div>
       </SectionShell>
-
-      {/* Safeguards footer */}
-      <SectionShell className="!py-10">
-        <div className="mx-auto w-full max-w-5xl space-y-4">
-          <DisclaimerBanner tone="amber">
-            <strong className="font-semibold">B2B Platform Safeguard.</strong> Novalyte AI does not sell, ship, or warranty any marketplace items directly. All transactions are routed directly to qualified third-party suppliers. No prescription medications are sold on this platform.
-          </DisclaimerBanner>
-          <MedicalDisclaimer />
-        </div>
-      </SectionShell>
-
       {/* Quote request dialog */}
       <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">

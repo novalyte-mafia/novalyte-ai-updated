@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
-import { IMAGES } from "@/lib/images";
+import { IMAGES, getSupplierImage } from "@/lib/images";
 import {
   PremiumCard,
   EmptyState,
@@ -56,18 +55,22 @@ import { navigate, useSaved, useCompare } from "@/lib/nav";
 import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import {
+  featuredImageFor,
+  getFeaturedSku,
+  listFeaturedFromCatalog,
+} from "@/lib/marketplace/featured-catalog";
+import {
   Search,
   ArrowRight,
-  ArrowDown,
   CheckCircle2,
   Package,
+  Sparkles,
   LayoutGrid,
   List,
   SlidersHorizontal,
   ShieldCheck,
   Quote,
   Store,
-  Inbox,
   MessageSquare,
   Users,
   Megaphone,
@@ -89,28 +92,14 @@ import {
   Boxes,
   Eye,
   ShieldAlert,
-  Sparkles
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const PAGE_SIZE = 12;
 
 function getListingImage(listing: MarketplaceListingT): string {
-  const slug = listing.slug;
-  const cat = listing.category.toLowerCase();
-  
-  if (slug.includes("scrubs") || slug.includes("lab-coat") || slug.includes("clogs") || slug.includes("gown") || slug.includes("badge")) {
-    return "/images/treatments/preventive-3.jpg"; // Clinical apparel visual
-  }
-  if (cat.includes("lab") || cat.includes("diagnost")) {
-    return "/images/marketplace/lab-1.jpg";
-  }
-  if (cat.includes("inject") || cat.includes("supply") || cat.includes("phlebotomy") || cat.includes("clinical-supplies")) {
-    return "/images/marketplace/inject-1.jpg";
-  }
-  if (cat.includes("recovery") || cat.includes("wellness") || cat.includes("equipment")) {
-    return "/images/marketplace/recovery-1.jpg";
-  }
-  return "/images/marketplace/product-1.jpg";
+  return featuredImageFor(listing);
 }
 
 function CategoryIcon({ category, className }: { category: string; className?: string }) {
@@ -172,7 +161,7 @@ function availabilityMeta(av: string): { tone: "teal" | "amber" | "sky" | "viole
 export function MarketplaceView({
   listings,
   vendors,
-  onGetStarted,
+  onGetStarted: _onGetStarted,
 }: {
   listings: MarketplaceListingT[];
   vendors: VendorT[];
@@ -210,14 +199,31 @@ export function MarketplaceView({
     const q = query.trim().toLowerCase();
     let out = listings.filter((l) => {
       if (q) {
-        const hay = `${l.title} ${l.vendorName} ${l.description} ${l.category}`.toLowerCase();
+        const featuredMeta = getFeaturedSku(l.slug);
+        const hay = [
+          l.title,
+          l.vendorName,
+          l.description,
+          l.category,
+          l.listingType,
+          l.pricingModel,
+          l.priceNote,
+          featuredMeta?.headline,
+          featuredMeta?.summary,
+          featuredMeta?.audience,
+          featuredMeta?.packSize,
+          ...(featuredMeta?.specs ?? []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
         if (!hay.includes(q)) return false;
       }
       if (category !== "all" && l.category !== category) return false;
-      
-      // Procurement type filters (Direct vs Quote)
+
       if (procurementType !== "all") {
-        const isDirect = l.listingType === "product" && l.pricingModel !== "quote";
+        const isDirect =
+          l.listingType === "product" && l.pricingModel !== "quote" && !getFeaturedSku(l.slug);
         if (procurementType === "direct" && !isDirect) return false;
         if (procurementType === "quote" && isDirect) return false;
       }
@@ -251,6 +257,10 @@ export function MarketplaceView({
         const pb = parseFloat(b.priceNote?.replace(/[^0-9.]/g, "") || "0");
         return pb - pa;
       });
+    } else {
+      out = [...out].sort(
+        (a, b) => Number(Boolean(getFeaturedSku(b.slug))) - Number(Boolean(getFeaturedSku(a.slug))),
+      );
     }
     return out;
   }, [listings, query, category, procurementType, vendorName, verifiedOnly, availability, sort]);
@@ -271,18 +281,19 @@ export function MarketplaceView({
     document.getElementById("listings-catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function handleExploreServices() {
-    setProcurementType("quote");
-    setCategory("all");
-    scrollToCatalog();
-  }
-
   const chips: { label: string; onRemove: () => void }[] = [];
   if (query.trim()) chips.push({ label: `“${query.trim()}”`, onRemove: () => setQuery("") });
   if (category !== "all") chips.push({ label: category, onRemove: () => setCategory("all") });
-  if (procurementType !== "all") chips.push({ label: procurementType === "direct" ? "Direct Purchase" : "Quote Required", onRemove: () => setProcurementType("all") });
+  if (procurementType !== "all") {
+    chips.push({
+      label: procurementType === "direct" ? "Direct Purchase" : "Quote Required",
+      onRemove: () => setProcurementType("all"),
+    });
+  }
   if (vendorName !== "all") chips.push({ label: vendorName, onRemove: () => setVendorName("all") });
-  if (availability !== "all") chips.push({ label: availability.replace("-", " "), onRemove: () => setAvailability("all") });
+  if (availability !== "all") {
+    chips.push({ label: availability.replace("-", " "), onRemove: () => setAvailability("all") });
+  }
   if (verifiedOnly) chips.push({ label: "Verified Only", onRemove: () => setVerifiedOnly(false) });
 
   const verifiedVendors = useMemo(() => vendors.filter((v) => v.verified), [vendors]);
@@ -291,84 +302,185 @@ export function MarketplaceView({
     for (const l of listings) m[l.vendorName] = (m[l.vendorName] ?? 0) + 1;
     return m;
   }, [listings]);
+  const featuredRows = useMemo(() => listFeaturedFromCatalog(listings), [listings]);
+
+  const inventoryLabel = useMemo(() => {
+    if (query.trim() && filtered.length !== listings.length) {
+      return `Showing ${filtered.length} result${filtered.length === 1 ? "" : "s"} for “${query.trim()}”`;
+    }
+    if (category !== "all" && chips.length === 1) {
+      return `Showing ${filtered.length} ${category} listing${filtered.length === 1 ? "" : "s"}`;
+    }
+    if (verifiedOnly && chips.length === 1) {
+      return `Showing ${filtered.length} verified listing${filtered.length === 1 ? "" : "s"}`;
+    }
+    if (chips.length > 0) {
+      return `Showing ${filtered.length} of ${listings.length} listings`;
+    }
+    return `${listings.length} marketplace listings`;
+  }, [category, chips.length, filtered.length, listings.length, query, verifiedOnly]);
 
   return (
     <>
-      {/* ── 1. COMPACT HERO WITH TYPOGRAPHY & IMAGERY ──────────── */}
       <section className="border-b border-border bg-gradient-to-b from-teal-50/40 to-background">
-        <div className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-2 lg:gap-12 lg:px-8 lg:py-16">
-          {/* Left Side: Copy + CTAs */}
+        <div className="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10 lg:px-8 lg:py-12">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white/70 px-3 py-1 text-xs font-semibold text-teal-700 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-teal-600 animate-pulse" /> B2B Health-Tech Commerce Marketplace
+              <Store className="h-3.5 w-3.5 text-teal-600" /> B2B clinic marketplace
             </div>
-            
-            <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[56px]">
-              Healthcare Products, Technology, and Services <br />
-              <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
-                Built for Modern Care Teams
-              </span>
+            <h1 className="mt-3 text-balance text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl lg:text-[44px]">
+              Clinic supplies, equipment, software, and ops services
             </h1>
-
-            <p className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Discover healthcare supplies, equipment, technology, software, and operational services from specialized suppliers. Purchase everyday essentials directly or request quotes for larger and more configurable solutions.
+            <p className="mt-3 max-w-xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Search {listings.length}+ listings from specialized suppliers. Quote-first procurement for modern care
+              teams — no prescription medications or restricted controlled products.
             </p>
-
-            <div className="mt-5 text-[11px] text-amber-800 bg-amber-50/60 border border-amber-200/50 p-3 rounded-xl max-w-lg flex items-start gap-2">
-              <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="mt-4 flex max-w-xl items-start gap-2 rounded-xl border border-amber-200/50 bg-amber-50/60 p-2.5 text-[11px] text-amber-800">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               <p className="text-left font-medium leading-normal">
-                <strong>Safety Safeguard:</strong> Novalyte AI coordinates discovery and inquiry routing. We do not sell or list prescription medications or restricted medical products.
+                Novalyte routes discovery and inquiries. We do not sell or list prescription medications or restricted
+                controlled products.
               </p>
             </div>
-
-            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              <Button size="lg" className="bg-teal-600 text-white hover:bg-teal-700 font-bold" onClick={scrollToCatalog}>
-                Browse Products
+            <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <Button size="lg" className="bg-teal-600 font-bold text-white hover:bg-teal-700" onClick={scrollToCatalog}>
+                Search catalog
               </Button>
-              <Button size="lg" variant="outline" className="font-bold border-neutral-300 hover:border-teal-300 hover:text-teal-700" onClick={handleExploreServices}>
-                Explore Healthcare Services
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-neutral-300 font-bold hover:border-teal-300 hover:text-teal-700"
+                onClick={scrollToCatalog}
+              >
+                Browse all {listings.length} listings
               </Button>
             </div>
           </div>
-
-          {/* Right Side: Visual Asset Composition */}
-          <div className="relative">
-            <div className="relative aspect-[5/4] overflow-hidden rounded-2xl shadow-premium-lg border border-neutral-200/60">
+          <div className="relative hidden sm:block">
+            <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-neutral-200/60 shadow-premium-lg">
               <SmartImage
                 src={IMAGES.pillars.marketplace}
-                alt="Novalyte B2B Healthcare Commerce Platform"
+                alt="Novalyte clinic marketplace catalog"
                 fill
                 priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1024px) 100vw, 40vw"
                 imgClassName="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/15 to-transparent" aria-hidden />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent" aria-hidden />
             </div>
-            
-            {/* Floating details badge */}
-            <div className="absolute -bottom-4 -left-4 hidden items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-premium-lg sm:flex">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white">
-                <Store className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xs font-semibold text-foreground">Verified Suppliers</p>
-                <p className="text-[10px] text-muted-foreground">Audited catalog &amp; SLA support</p>
-              </div>
+            <div className="absolute -bottom-3 left-4 rounded-xl border border-border bg-card px-3 py-2 shadow-premium-md">
+              <p className="text-xs font-bold text-foreground">{listings.length} marketplace listings</p>
+              <p className="text-[10px] text-muted-foreground">Search · filter · request quote</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── 3. Listings section ───────────────────────────────── */}
-      <SectionShell id="listings-catalog" className="!pt-10 !pb-16 bg-neutral-50/10">
-        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-          
-          {/* Desktop Filter Panel with Category Dropdown */}
+      <SectionShell id="listings-catalog" className="!pt-8 !pb-12 bg-neutral-50/20">
+        <div className="mb-6 space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-premium-sm sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search products, equipment, services, or suppliers"
+                className="h-11 border-neutral-200 bg-white pl-10 text-sm"
+                aria-label="Search marketplace catalog"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="h-11 border-neutral-200 lg:hidden">
+                    <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Filters
+                    {chips.length > 0 && (
+                      <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1 text-[11px] font-semibold text-white">
+                        {chips.length}
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-sm">
+                  <SheetHeader>
+                    <SheetTitle>Filter catalog</SheetTitle>
+                    <SheetDescription>Refine the {listings.length} marketplace listings.</SheetDescription>
+                  </SheetHeader>
+                  <div className="p-4">
+                    <FiltersPanel
+                      category={category}
+                      setCategory={setCategory}
+                      procurementType={procurementType}
+                      setProcurementType={setProcurementType}
+                      vendorName={vendorName}
+                      setVendorName={setVendorName}
+                      verifiedOnly={verifiedOnly}
+                      setVerifiedOnly={setVerifiedOnly}
+                      availability={availability}
+                      setAvailability={setAvailability}
+                      uniqueVendors={uniqueVendors}
+                      onReset={resetFilters}
+                    />
+                    <Button
+                      className="mt-4 w-full bg-teal-600 font-bold text-white hover:bg-teal-700"
+                      onClick={() => setMobileFiltersOpen(false)}
+                    >
+                      Show {filtered.length} results
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              <div className="flex items-center gap-2">
+                <Label className="hidden text-xs font-semibold text-muted-foreground sm:inline">Sort</Label>
+                <Select value={sort} onValueChange={setSort}>
+                  <SelectTrigger className="h-11 w-[150px] border-neutral-200 sm:w-[170px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="relevant">Featured / Relevant</SelectItem>
+                    <SelectItem value="az">A–Z</SelectItem>
+                    <SelectItem value="za">Z–A</SelectItem>
+                    <SelectItem value="verified">Verified First</SelectItem>
+                    <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                    <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <ViewToggle
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: "grid", label: "Grid", icon: LayoutGrid },
+                  { value: "list", label: "List", icon: List },
+                ]}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-foreground">{inventoryLabel}</p>
+            {chips.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {chips.map((c, i) => (
+                  <FilterChip key={i} label={c.label} onRemove={c.onRemove} />
+                ))}
+                <button
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-rose-600"
+                >
+                  <X className="h-3.5 w-3.5" /> Reset all
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
           <aside className="hidden lg:block">
-            <div className="sticky top-32">
+            <div className="sticky top-28">
               <FiltersPanel
-                query={query}
-                setQuery={setQuery}
                 category={category}
                 setCategory={setCategory}
                 procurementType={procurementType}
@@ -385,120 +497,9 @@ export function MarketplaceView({
             </div>
           </aside>
 
-          {/* Main Listings Grid */}
           <div>
-            {/* Mobile Filters and Layout toggles */}
-            <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
-              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="border-neutral-200">
-                    <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Filters
-                    {chips.length > 0 && (
-                      <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1 text-[11px] font-semibold text-white">
-                        {chips.length}
-                      </span>
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-sm">
-                  <SheetHeader>
-                    <SheetTitle>Filter catalog</SheetTitle>
-                    <SheetDescription>Refine the marketplace listings.</SheetDescription>
-                  </SheetHeader>
-                  <div className="p-4">
-                    <FiltersPanel
-                      query={query}
-                      setQuery={setQuery}
-                      category={category}
-                      setCategory={setCategory}
-                      procurementType={procurementType}
-                      setProcurementType={setProcurementType}
-                      vendorName={vendorName}
-                      setVendorName={setVendorName}
-                      verifiedOnly={verifiedOnly}
-                      setVerifiedOnly={setVerifiedOnly}
-                      availability={availability}
-                      setAvailability={setAvailability}
-                      uniqueVendors={uniqueVendors}
-                      onReset={resetFilters}
-                    />
-                    <Button className="mt-4 w-full bg-teal-600 text-white hover:bg-teal-700 font-bold" onClick={() => setMobileFiltersOpen(false)}>
-                      Show {filtered.length} results
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
-
-              <ViewToggle
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: "grid", label: "Grid", icon: LayoutGrid },
-                  { value: "list", label: "List", icon: List },
-                ]}
-              />
-            </div>
-
-            {/* Results counts & chips */}
-            <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-premium-sm sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Showing <span className="font-bold text-foreground">{filtered.length}</span> of <span className="font-bold text-foreground">{listings.length}</span> listings
-                </p>
-                {chips.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                    {chips.map((c, i) => (
-                      <FilterChip key={i} label={c.label} onRemove={c.onRemove} />
-                    ))}
-                    <button
-                      onClick={resetFilters}
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-muted-foreground transition hover:text-rose-600"
-                    >
-                      <X className="h-3.5 w-3.5" /> Clear all
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Sorting and layouts */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground font-semibold">Sort</Label>
-                  <Select value={sort} onValueChange={setSort}>
-                    <SelectTrigger size="sm" className="w-[170px] h-9 border-neutral-200">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="relevant">Featured / Relevant</SelectItem>
-                      <SelectItem value="az">A–Z</SelectItem>
-                      <SelectItem value="za">Z-A</SelectItem>
-                      <SelectItem value="verified">Verified First</SelectItem>
-                      <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                      <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="hidden lg:block">
-                  <ViewToggle
-                    value={view}
-                    onChange={setView}
-                    options={[
-                      { value: "grid", label: "Grid", icon: LayoutGrid },
-                      { value: "list", label: "List", icon: List },
-                    ]}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Catalog Grid */}
             {loading ? (
-              <div
-                className={cn(
-                  "grid gap-5",
-                  view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
-                )}
-              >
+              <div className={cn("grid gap-5", view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1")}>
                 {Array.from({ length: 6 }).map((_, i) => (
                   <CardSkeleton key={i} />
                 ))}
@@ -507,10 +508,10 @@ export function MarketplaceView({
               <EmptyState
                 icon={Package}
                 title="No listings found"
-                description="We couldn't find matches for your current catalog filters. Try widening search inputs."
+                description="Try another search term or adjust your filters."
                 action={
                   <Button variant="outline" size="sm" onClick={resetFilters}>
-                    Clear filters
+                    Reset filters
                   </Button>
                 }
               />
@@ -518,7 +519,7 @@ export function MarketplaceView({
               <div
                 className={cn(
                   "novalyte-fade-up grid gap-5",
-                  view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
+                  view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1",
                 )}
               >
                 {paged.map((l) => (
@@ -534,7 +535,6 @@ export function MarketplaceView({
               </div>
             )}
 
-            {/* Pagination Controls */}
             {!loading && filtered.length > PAGE_SIZE && (
               <div className="mt-10 flex justify-center">
                 <Pagination>
@@ -575,49 +575,73 @@ export function MarketplaceView({
                 </Pagination>
               </div>
             )}
-
           </div>
         </div>
       </SectionShell>
 
-      {/* ── 4. Supplier Storefronts Directory ──────────────────── */}
+      {featuredRows.length > 0 && (
+        <SectionShell id="featured-catalog" className="!pt-4 !pb-10">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-teal-700">Recommendations</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                Featured marketplace picks
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                A small selection from the full catalog — not the entire inventory.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" className="w-fit font-semibold" onClick={scrollToCatalog}>
+              View all {listings.length} listings <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <FeaturedCarousel rows={featuredRows} onQuote={(listing) => setQuoteListing(listing)} />
+        </SectionShell>
+      )}
+
       <SectionShell tone="muted">
         <SectionHeading
           eyebrow="Supplier Directory"
           title="Verified healthcare suppliers on Novalyte"
-          description="Each partner undergoes structured registration verification. Review catalogs, credentials, policies, and timelines on their storefront profiles."
+          description="Each partner completes structured registration. Review catalogs and timelines on storefront profiles. External vendor websites are not required to request a quote."
         />
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {verifiedVendors.map((v) => {
             const count = listingCountByVendor[v.name] ?? 0;
             return (
-              <PremiumCard key={v.id} hover className="flex flex-col p-6 bg-white">
-                <div className="flex items-start gap-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-base font-extrabold text-white">
-                    {v.name.slice(0, 1)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="truncate text-base font-semibold text-foreground">{v.name}</h3>
-                      <VerificationBadge verified={v.verified} />
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground leading-normal">
-                      {v.overview || "Fulfillment and licensing logs available."}
-                    </p>
+              <PremiumCard key={v.id} hover className="flex flex-col overflow-hidden bg-white p-0">
+                <div className="relative h-36 w-full overflow-hidden border-b border-neutral-100 bg-neutral-50">
+                  <SmartImage
+                    src={getSupplierImage(v.slug || v.name)}
+                    alt={`${v.name} storefront`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    imgClassName="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/35 via-transparent to-transparent" aria-hidden />
+                  <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between gap-2">
+                    <h3 className="truncate text-sm font-semibold text-white drop-shadow-sm">{v.name}</h3>
+                    <VerificationBadge verified={v.verified} />
                   </div>
                 </div>
-                <div className="mt-6 flex items-center justify-between border-t border-neutral-100 pt-4">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    <span className="font-bold text-foreground">{count}</span> active listing{count === 1 ? "" : "s"}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="font-semibold text-xs border-neutral-200 hover:border-teal-200 hover:text-teal-700"
-                    onClick={() => navigate("vendor-profile", undefined, { id: v.id })}
-                  >
-                    View Storefront <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
+                <div className="flex flex-1 flex-col p-5">
+                  <p className="line-clamp-2 text-xs leading-normal text-muted-foreground">
+                    {v.overview || "Fulfillment and licensing logs available."}
+                  </p>
+                  <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-4">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      <span className="font-bold text-foreground">{count}</span> active listing
+                      {count === 1 ? "" : "s"}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-neutral-200 text-xs font-semibold hover:border-teal-200 hover:text-teal-700"
+                      onClick={() => navigate("vendor-profile", undefined, { id: v.id })}
+                    >
+                      View Storefront <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </PremiumCard>
             );
@@ -660,7 +684,9 @@ export function MarketplaceView({
 function QuickViewDetails({ listing, onClose }: { listing: MarketplaceListingT; onClose: () => void }) {
   const [quantity, setQuantity] = useState(1);
   const addItem = useCart((s) => s.addItem);
-  const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
+  const featured = getFeaturedSku(listing.slug);
+  const isDirectPurchase =
+    !featured && listing.listingType === "product" && listing.pricingModel !== "quote";
   const avail = availabilityMeta(listing.availability);
   const img = getListingImage(listing);
 
@@ -700,16 +726,27 @@ function QuickViewDetails({ listing, onClose }: { listing: MarketplaceListingT; 
           <div className="flex items-center gap-2">
             <StatusPill tone="muted">{listing.category}</StatusPill>
             <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+            {featured && <StatusPill tone="teal">Featured</StatusPill>}
           </div>
-          <h2 className="text-xl font-bold text-foreground leading-tight">{listing.title}</h2>
+          <h2 className="text-xl font-bold text-foreground leading-tight">{featured?.headline || listing.title}</h2>
           <p className="text-xs text-teal-700 font-semibold">{listing.vendorName}</p>
-          <p className="text-xs text-muted-foreground leading-relaxed pt-1">{listing.description}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed pt-1">{featured?.summary || listing.description}</p>
+          {featured && (
+            <ul className="space-y-1 pt-1">
+              {featured.specs.slice(0, 4).map((spec) => (
+                <li key={spec} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                  <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-teal-600" />
+                  {spec}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="space-y-4 pt-3 border-t border-neutral-100">
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-muted-foreground">Price Note</span>
-            <span className="text-lg font-extrabold text-foreground">{listing.priceNote || "Quote Required"}</span>
+            <span className="text-xs text-muted-foreground">{featured ? "Guide price" : "Price Note"}</span>
+            <span className="text-lg font-extrabold text-foreground">{featured?.guidePrice || listing.priceNote || "Quote Required"}</span>
           </div>
 
           <div className="flex gap-2">
@@ -942,10 +979,110 @@ Additional Notes: ${form.notes}
   );
 }
 
+function FeaturedCarousel({
+  rows,
+  onQuote,
+}: {
+  rows: Array<MarketplaceListingT & { featured: { guidePrice?: string; headline?: string } }>;
+  onQuote: (listing: MarketplaceListingT) => void;
+}) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+
+  function scrollByDir(dir: -1 | 1) {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const amount = Math.max(260, Math.floor(el.clientWidth * 0.85));
+    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+  }
+
+  return (
+    <div className="relative">
+      <div className="mb-3 hidden justify-end gap-2 sm:flex">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 border-neutral-200"
+          onClick={() => scrollByDir(-1)}
+          aria-label="Previous featured picks"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 border-neutral-200"
+          onClick={() => scrollByDir(1)}
+          aria-label="Next featured picks"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div
+        ref={scrollerRef}
+        className="flex gap-3 overflow-x-auto pb-2 scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {rows.map((row) => {
+          const avail = availabilityMeta(row.availability);
+          const img = getListingImage(row);
+          return (
+            <PremiumCard
+              key={row.id}
+              hover
+              className="w-[min(100%,280px)] shrink-0 snap-start cursor-pointer bg-white p-0 sm:w-[240px] lg:w-[calc(25%-0.75rem)]"
+              onClick={() => navigate("product-detail", undefined, { id: row.id })}
+            >
+              <div className="relative h-28 w-full overflow-hidden border-b border-neutral-100 bg-neutral-50">
+                <SmartImage src={img} alt={row.title} fill imgClassName="object-cover" />
+                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-teal-700 shadow-sm">
+                  <Sparkles className="h-3 w-3" /> Featured
+                </span>
+              </div>
+              <div className="space-y-2 p-3.5">
+                <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{row.title}</h3>
+                <div className="flex flex-wrap gap-1">
+                  <StatusPill tone="muted">{row.category}</StatusPill>
+                  <StatusPill tone={avail.tone}>{avail.label}</StatusPill>
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <p className="truncate text-xs font-bold text-foreground">
+                    {row.featured.guidePrice || row.priceNote || "Request quote"}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 shrink-0 border-neutral-200 px-2 text-[10px] font-bold"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("product-detail", undefined, { id: row.id });
+                    }}
+                  >
+                    View details
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  className="h-8 w-full bg-teal-600 text-[11px] font-bold text-white hover:bg-teal-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onQuote(row);
+                  }}
+                >
+                  Request quote
+                </Button>
+              </div>
+            </PremiumCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Side Filters Panel
 function FiltersPanel({
-  query,
-  setQuery,
   category,
   setCategory,
   procurementType,
@@ -959,8 +1096,6 @@ function FiltersPanel({
   uniqueVendors,
   onReset,
 }: {
-  query: string;
-  setQuery: (v: string) => void;
   category: string;
   setCategory: (v: string) => void;
   procurementType: string;
@@ -981,21 +1116,6 @@ function FiltersPanel({
         <button onClick={onReset} className="text-xs font-bold text-muted-foreground hover:text-rose-600">
           Reset All
         </button>
-      </div>
-
-      {/* Query Search */}
-      <div className="space-y-2">
-        <Label htmlFor="search" className="text-xs font-bold text-muted-foreground">Search</Label>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search items..."
-            className="pl-9 h-9 text-xs border-neutral-200 bg-white"
-          />
-        </div>
       </div>
 
       {/* Category selection inside the filters */}
@@ -1099,9 +1219,11 @@ function ListingCard({
   const c = colorClasses(listing.imageColor);
   const avail = availabilityMeta(listing.availability);
   const productImg = getListingImage(listing);
+  const featured = getFeaturedSku(listing.slug);
 
-  // Derive direct purchase capability
-  const isDirectPurchase = listing.listingType === "product" && listing.pricingModel !== "quote";
+  // Featured SKUs are always quote-first; other products keep optional cart.
+  const isDirectPurchase =
+    !featured && listing.listingType === "product" && listing.pricingModel !== "quote";
 
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1181,8 +1303,10 @@ function ListingCard({
 
         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t border-neutral-50 sm:border-0 pt-3 sm:pt-0 mt-3 sm:mt-0">
           <div className="text-left sm:text-right">
-            <p className="text-sm font-bold text-foreground">{listing.priceNote || "Request quote"}</p>
-            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">{listing.pricingModel || "Quote"}</span>
+            <p className="text-sm font-bold text-foreground">{featured?.guidePrice || listing.priceNote || "Request quote"}</p>
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              {featured ? "Quote first" : listing.pricingModel || "Quote"}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -1196,7 +1320,7 @@ function ListingCard({
               <Eye className="h-4 w-4" />
             </Button>
             <Button size="sm" className="font-bold text-xs h-8 bg-teal-600 text-white" onClick={handleAction}>
-              {isDirectPurchase ? "Buy Now" : "Request Quote"}
+              {isDirectPurchase ? "Add to cart" : "Request Quote"}
             </Button>
             <Button
               variant="outline"
@@ -1225,6 +1349,11 @@ function ListingCard({
           fill
           imgClassName="object-cover"
         />
+        {featured && (
+          <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-teal-700 shadow-sm">
+            <Sparkles className="h-3 w-3" /> Featured
+          </span>
+        )}
         <div className="absolute right-2 top-2 z-10">
           <SaveButton saved={isSaved} onToggle={() => toggleSaved("product", listing.id)} size="sm" />
         </div>
@@ -1234,6 +1363,9 @@ function ListingCard({
         <h3 className="font-bold text-sm leading-snug text-foreground hover:text-teal-700 transition-colors line-clamp-1">
           {listing.title}
         </h3>
+        <p className="mt-1 truncate text-[11px] text-muted-foreground">
+          {listing.vendorName}
+        </p>
         
         <div className="mt-2 flex flex-wrap gap-1">
           <StatusPill tone="muted">{listing.category}</StatusPill>
@@ -1246,8 +1378,10 @@ function ListingCard({
 
         <div className="mt-4 flex items-end justify-between border-t border-neutral-100 pt-3">
           <div>
-            <p className="text-xs font-bold text-foreground">{listing.priceNote || "Request quote"}</p>
-            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">{listing.pricingModel || "Quote"}</span>
+            <p className="text-xs font-bold text-foreground">{featured?.guidePrice || listing.priceNote || "Request quote"}</p>
+            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">
+              {featured ? "Quote first" : listing.pricingModel || "Quote"}
+            </span>
           </div>
 
           <div className="flex items-center gap-1">
@@ -1261,7 +1395,7 @@ function ListingCard({
               <Eye className="h-3.5 w-3.5" />
             </Button>
             <Button size="sm" className="font-bold text-[10px] h-7 px-2.5 bg-teal-600 text-white" onClick={handleAction}>
-              {isDirectPurchase ? "Buy Now" : "Request Quote"}
+              {isDirectPurchase ? "Add to cart" : "Request Quote"}
             </Button>
             <Button
               variant="outline"
