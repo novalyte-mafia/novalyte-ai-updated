@@ -9,12 +9,14 @@ import { CookieConsent } from "@/components/site/cookie-consent";
 import { useCookieConsent } from "@/lib/cookie-consent-store";
 import { tryGetSupabaseClient } from "@/lib/supabase/client";
 import {
+  captureLandingAttribution,
   captureSafeEvent,
   ensurePostHogInitialized,
   identifyAnalyticsUser,
   isPostHogInitialized,
-  persistAttribution,
+  registerInternalSuperProperties,
 } from "@/lib/analytics-client";
+import { isInternalBrowser } from "@/lib/analytics-classification";
 
 declare global {
   interface Window {
@@ -106,36 +108,62 @@ export function AnalyticsManager() {
   }, [analyticsEnabled]);
 
   useEffect(() => {
+    if (!analyticsEnabled || !posthogEnabled) return;
+    if (!ensurePostHogInitialized()) return;
+    registerInternalSuperProperties();
+  }, [analyticsEnabled]);
+
+  // First-party attribution always — needed for outreach decisions even if analytics consent is declined.
+  useEffect(() => {
+    captureLandingAttribution();
+  }, [pathname]);
+
+  useEffect(() => {
     if (!analyticsEnabled) return;
 
     const url = new URL(window.location.href);
-    const deviceType =
-      window.matchMedia("(max-width: 767px)").matches
-        ? "mobile"
-        : window.matchMedia("(max-width: 1023px)").matches
-          ? "tablet"
-          : "desktop";
-    const referrerDomain = (() => {
-      if (!document.referrer) return null;
-      try {
-        return new URL(document.referrer).hostname;
-      } catch {
-        return null;
+    const attribution = captureLandingAttribution();
+    const deviceType = attribution.device_type || "desktop";
+    const referrerDomain = attribution.referrer_domain ?? null;
+    registerInternalSuperProperties();
+
+    // Enrich automatic $pageview via register — do NOT emit a second PostHog page_view.
+    const campaignProps = (() => {
+      const parts = url.pathname.replace(/^\/ads\/?/, "/").split("/").filter(Boolean);
+      if (parts.length >= 2) {
+        return {
+          campaign_treatment: parts[0],
+          campaign_location: parts[1],
+          campaign_slug: `${parts[0]}/${parts[1]}`,
+          ad_platform: url.searchParams.get("utm_source"),
+        };
       }
+      if (parts.length === 1 && parts[0] !== "") {
+        return { campaign_slug: parts[0] };
+      }
+      return {};
     })();
 
-    persistAttribution({
-      landing_path: window.sessionStorage.getItem("novalyte-session-started")
-        ? undefined
-        : url.pathname,
-      referrer_domain: referrerDomain,
-      utm_source: url.searchParams.get("utm_source"),
-      utm_medium: url.searchParams.get("utm_medium"),
-      utm_campaign: url.searchParams.get("utm_campaign"),
-      utm_content: url.searchParams.get("utm_content"),
-      utm_term: url.searchParams.get("utm_term"),
-    });
+    try {
+      if (isPostHogInitialized()) {
+        posthog.register({
+          path: url.pathname,
+          referrer_domain: referrerDomain,
+          device_type: deviceType,
+          utm_source: url.searchParams.get("utm_source"),
+          utm_medium: url.searchParams.get("utm_medium"),
+          utm_campaign: url.searchParams.get("utm_campaign"),
+          utm_content: url.searchParams.get("utm_content"),
+          utm_term: url.searchParams.get("utm_term"),
+          is_internal: isInternalBrowser(),
+          ...campaignProps,
+        });
+      }
+    } catch {
+      /* optional */
+    }
 
+    // GA/dataLayer page context only (PostHog page_view suppressed in captureAnalyticsEvent).
     captureSafeEvent("page_view", {
       path: url.pathname,
       page_title: document.title,
@@ -146,22 +174,7 @@ export function AnalyticsManager() {
       utm_campaign: url.searchParams.get("utm_campaign"),
       utm_content: url.searchParams.get("utm_content"),
       utm_term: url.searchParams.get("utm_term"),
-      ...(() => {
-        // ads.novalyte.io/{treatment}/{location} or /ads/{treatment}/{location}
-        const parts = url.pathname.replace(/^\/ads\/?/, "/").split("/").filter(Boolean);
-        if (parts.length >= 2) {
-          return {
-            campaign_treatment: parts[0],
-            campaign_location: parts[1],
-            campaign_slug: `${parts[0]}/${parts[1]}`,
-            ad_platform: url.searchParams.get("utm_source"),
-          };
-        }
-        if (parts.length === 1 && parts[0] !== "") {
-          return { campaign_slug: parts[0] };
-        }
-        return {};
-      })(),
+      ...campaignProps,
     });
     if (
       window.location.hostname.startsWith("ads.") ||
@@ -177,17 +190,6 @@ export function AnalyticsManager() {
           utm_source: url.searchParams.get("utm_source"),
           utm_campaign: url.searchParams.get("utm_campaign"),
         });
-        try {
-          if (isPostHogInitialized()) {
-            posthog.register({
-              campaign_treatment: parts[0],
-              campaign_location: parts[1],
-              campaign_slug: `${parts[0]}/${parts[1]}`,
-            });
-          }
-        } catch {
-          /* posthog optional */
-        }
       }
     }
     if (
@@ -197,17 +199,20 @@ export function AnalyticsManager() {
       captureSafeEvent("investor_page_viewed", { path: url.pathname });
     }
 
+    // SPA GA4 page_view once per path change (gtag config already sends initial).
     if (previousGaPath.current && previousGaPath.current !== url.pathname) {
       window.gtag?.("event", "page_view", {
         page_title: document.title,
         page_location: url.href,
         page_path: url.pathname,
+        traffic_type: isInternalBrowser() ? "internal" : "external",
+        is_internal: isInternalBrowser() ? "true" : "false",
       });
     }
     previousGaPath.current = url.pathname;
 
-    if (!window.sessionStorage.getItem("novalyte-session-started")) {
-      window.sessionStorage.setItem("novalyte-session-started", "1");
+    if (!window.sessionStorage.getItem("novalyte-analytics-session-event")) {
+      window.sessionStorage.setItem("novalyte-analytics-session-event", "1");
       captureSafeEvent("session_started", {
         landing_path: url.pathname,
         referrer_domain: referrerDomain,

@@ -159,18 +159,23 @@ export async function POST(req: Request) {
       );
     }
     const d = parsed.data;
+    const treatmentInterest =
+      d.treatmentInterest?.trim() ||
+      d.treatmentType?.trim() ||
+      null;
+    const treatmentType = d.treatmentType?.trim() || treatmentInterest;
     const sourcePage = buildSourcePage(d);
     const attributionJson = buildAttributionJson(d);
 
     const record = await db.assessmentSubmission.create({
       data: {
-        treatmentType: d.treatmentType ?? null,
+        treatmentType: treatmentType ?? null,
         ageRange: d.ageRange ?? null,
         locationState: d.locationState ?? null,
         zip: d.zip ?? null,
         concerns: (d.concerns ?? []).join(","),
         symptoms: (d.symptoms ?? []).join(","),
-        treatmentInterest: d.treatmentInterest ?? null,
+        treatmentInterest: treatmentInterest ?? null,
         careFormat: d.careFormat ?? null,
         telehealthPref: d.telehealthPref ?? false,
         timeline: d.timeline ?? null,
@@ -226,16 +231,36 @@ export async function POST(req: Request) {
         cs_campaign_id: d.csCampaignId,
         assessment_mode: d.assessmentMode,
         consent_contact: d.consentContact ?? d.consent ?? false,
+        treatment_interest: treatmentInterest,
+        treatment_type: treatmentType,
+        location_state: d.locationState ?? null,
+        utm_source: d.utmSource ?? null,
+        utm_medium: d.utmMedium ?? null,
+        utm_campaign: d.utmCampaign ?? null,
+        utm_content: d.utmContent ?? null,
+        utm_term: d.utmTerm ?? null,
+        device_type: d.deviceType ?? null,
       },
       containsSensitiveHealthData: true,
       sourcePage,
+      attributionBody: {
+        source_page: sourcePage,
+        utm_source: d.utmSource ?? null,
+        utm_medium: d.utmMedium ?? null,
+        utm_campaign: d.utmCampaign ?? null,
+        utm_content: d.utmContent ?? null,
+        utm_term: d.utmTerm ?? null,
+        device_type: d.deviceType ?? null,
+        referrer: d.trafficSource ?? null,
+        landing_path: d.pagePath ?? null,
+      },
     }).catch((error) => console.error("assessment notification failed", error));
 
     await captureServerEvent({
       distinctId: record.id,
       event: isCampaign ? "campaign_assessment_completed" : "assessment_submitted",
       properties: {
-        treatment_type: d.treatmentType ?? null,
+        treatment_type: treatmentType ?? null,
         care_format: d.careFormat ?? null,
         telehealth_pref: d.telehealthPref ?? false,
         location_state: d.locationState ?? null,
@@ -243,8 +268,13 @@ export async function POST(req: Request) {
         source_page: sourcePage,
         page_id: d.csPageId ?? null,
         campaign_id: d.csCampaignId ?? null,
-        assessment_type: d.treatmentType ?? null,
+        assessment_type: treatmentType ?? null,
         host: d.host ?? null,
+        utm_source: d.utmSource ?? null,
+        utm_medium: d.utmMedium ?? null,
+        utm_campaign: d.utmCampaign ?? null,
+        device_type: d.deviceType ?? null,
+        $current_url: sourcePage,
       },
     });
 

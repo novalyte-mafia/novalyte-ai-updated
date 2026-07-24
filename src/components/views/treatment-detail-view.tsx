@@ -7,7 +7,6 @@ import {
 import { StickyTabNav } from "@/components/shared/sticky-tab-nav";
 import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner, MedicalDisclaimer } from "@/components/shared/disclaimer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -191,8 +190,6 @@ export function TreatmentDetailView({
             </PremiumCard>
           </aside>
         </div>
-
-        <MedicalDisclaimer className="mt-10" />
       </div>
     </div>
   );
@@ -229,10 +226,6 @@ function OverviewTab({ content }: { content: TreatmentContent }) {
           </ul>
         </PremiumCard>
       </div>
-
-      <DisclaimerBanner tone="amber">
-        This information is educational and does not constitute medical advice. Treatment eligibility is determined by a licensed healthcare provider based on individual health factors.
-      </DisclaimerBanner>
     </div>
   );
 }
@@ -306,10 +299,6 @@ function ConsiderationsTab({ content }: { content: TreatmentContent }) {
           ))}
         </ul>
       </PremiumCard>
-
-      <DisclaimerBanner tone="amber">
-        No treatment is guaranteed. A licensed provider determines whether any treatment is appropriate based on your individual health factors, lab results, and medical history.
-      </DisclaimerBanner>
     </div>
   );
 }

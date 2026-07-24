@@ -6,7 +6,6 @@ import {
 } from "@/components/shared/enterprise";
 import { SmartImage } from "@/components/shared/smart-image";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -307,10 +306,6 @@ export function ProviderProfileView({
                 </div>
               </PremiumCard>
             </div>
-
-            <DisclaimerBanner tone="muted">
-              Dr. {provider.name} is affiliated with {clinic.name}, which is independently owned and operated. Verification reflects reviews of credentials at onboarding. Patient agreements are directly with the clinical practice.
-            </DisclaimerBanner>
           </div>
 
         </div>

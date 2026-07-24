@@ -8,7 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { VerificationBadge } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
@@ -548,9 +547,6 @@ function AssessmentResults({
         <div className="p-6">
           <h3 className="text-xl font-semibold text-foreground">{title}</h3>
           <p className="mt-2 text-sm text-muted-foreground">{desc}</p>
-          <DisclaimerBanner tone="amber" className="mt-4">
-            Based on the goals you selected, these treatment categories may be worth discussing with a licensed healthcare professional. <strong className="font-semibold">This assessment is informational and does not provide a medical diagnosis, medical eligibility, or guarantee treatment approval.</strong>
-          </DisclaimerBanner>
         </div>
       </div>
 

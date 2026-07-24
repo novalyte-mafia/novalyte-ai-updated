@@ -30,6 +30,14 @@ const schema = z.object({
   utm_source: z.string().max(100).nullable().optional(),
   utm_medium: z.string().max(100).nullable().optional(),
   utm_campaign: z.string().max(100).nullable().optional(),
+  utm_content: z.string().max(100).nullable().optional(),
+  utm_term: z.string().max(100).nullable().optional(),
+  referrer: z.string().max(500).nullable().optional(),
+  referrer_domain: z.string().max(200).nullable().optional(),
+  device_type: z.string().max(40).nullable().optional(),
+  landing_path: z.string().max(500).nullable().optional(),
+  landing_at: z.string().max(80).nullable().optional(),
+  anonymous_id: z.string().max(200).nullable().optional(),
 });
 
 interface RoutingInfo {
@@ -245,8 +253,29 @@ export async function POST(req: Request) {
         utm_source: val.utm_source,
         utm_medium: val.utm_medium,
         utm_campaign: val.utm_campaign,
+        utm_content: val.utm_content,
+        utm_term: val.utm_term,
+        referrer: val.referrer,
+        referrer_domain: val.referrer_domain,
+        device_type: val.device_type,
+        landing_path: val.landing_path,
+        landing_at: val.landing_at,
       },
       sourcePage: val.sourcePage ?? null,
+      attributionBody: {
+        source_page: val.sourcePage ?? null,
+        utm_source: val.utm_source,
+        utm_medium: val.utm_medium,
+        utm_campaign: val.utm_campaign,
+        utm_content: val.utm_content,
+        utm_term: val.utm_term,
+        referrer: val.referrer,
+        referrer_domain: val.referrer_domain,
+        device_type: val.device_type,
+        landing_path: val.landing_path,
+        landing_at: val.landing_at,
+        anonymous_id: val.anonymous_id,
+      },
     }).catch((error) => console.error("Contact admin notification failed", error));
 
     // Preserve the sender confirmation without duplicating admin Slack/email delivery.
@@ -330,7 +359,7 @@ export async function POST(req: Request) {
     }
 
     await captureServerEvent({
-      distinctId: submission.id,
+      distinctId: val.anonymous_id || submission.id,
       event: "contact_submitted",
       properties: {
         sender_type: val.senderType,
@@ -340,6 +369,18 @@ export async function POST(req: Request) {
         utm_source: val.utm_source ?? null,
         utm_medium: val.utm_medium ?? null,
         utm_campaign: val.utm_campaign ?? null,
+        referrer_domain: val.referrer_domain ?? null,
+        device_type: val.device_type ?? null,
+        source_page: val.sourcePage ?? null,
+        $current_url: val.sourcePage ?? null,
+        form_submission_id: submission.id,
+        anonymous_id: val.anonymous_id ?? null,
+        is_test: Boolean(
+          val.utm_campaign === "pipeline_audit" ||
+            val.utm_medium === "pipeline_audit" ||
+            /do-?not-?contact/i.test(`${val.firstName} ${val.lastName}`) ||
+            /test|attribution-qa/i.test(val.email),
+        ),
       },
     });
     return NextResponse.json({ ok: true, referenceNumber, submissionId: submission.id });

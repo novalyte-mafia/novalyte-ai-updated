@@ -3,7 +3,6 @@
 import { useEffect, useTransition, useMemo, useState } from "react";
 import { SectionShell, SectionHeading } from "@/components/shared/section";
 import { StatusPill, CheckItem } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { SmartImage } from "@/components/shared/smart-image";
 import { IMAGES } from "@/lib/images";
 import {
@@ -1547,12 +1546,6 @@ function FlexibleTalentSection() {
           </div>
         ))}
       </div>
-
-      <DisclaimerBanner tone="muted" className="mt-8">
-        Flexible-assignment matching, scheduling, and shift-coordination features are planned and
-        designed to support contract, per-diem, and locum workflows. Availability fields are
-        captured today so your preferences are ready as these capabilities ship.
-      </DisclaimerBanner>
     </SectionShell>
   );
 }
@@ -1711,12 +1704,6 @@ function ProfessionalProfilePreview() {
           </div>
         </div>
       </PremiumCard>
-
-      <DisclaimerBanner tone="muted" className="mt-4">
-        Demonstration preview. Verification layers reflect the structured information Novalyte is
-        designed to capture. Novalyte AI does not independently verify credentials on behalf of
-        employers — confirm licensure and background directly during hiring.
-      </DisclaimerBanner>
     </SectionShell>
   );
 }
@@ -1827,12 +1814,6 @@ function ApplicationTrackingPreview() {
           />
         </div>
       </div>
-
-      <DisclaimerBanner tone="muted" className="mt-4">
-        Demonstration data only. Application-tracking views, profile-view analytics, and employer
-        messaging are planned and designed to support a structured candidate experience.
-      </DisclaimerBanner>
-
       <span className="sr-only">{pro.name} demonstration profile</span>
     </SectionShell>
   );
@@ -1936,11 +1917,6 @@ function PartnerClinicSection() {
           );
         })}
       </div>
-
-      <DisclaimerBanner tone="teal" className="mt-8">
-        Connected clinic-to-workforce workflows are planned. Partner clinics will be able to publish
-        roles and review applicants from a connected dashboard as these capabilities ship.
-      </DisclaimerBanner>
     </SectionShell>
   );
 }
@@ -2083,12 +2059,6 @@ function EmployerDashboardPreview() {
           </PremiumCard>
         </div>
       </div>
-
-      <DisclaimerBanner tone="muted" className="mt-4">
-        Demonstration data only. The employer dashboard, pipeline analytics, candidate
-        recommendations, and listing-performance views are planned and designed to support
-        healthcare hiring workflows.
-      </DisclaimerBanner>
     </SectionShell>
   );
 }
@@ -2122,12 +2092,6 @@ function MatchingMethodologySection() {
           );
         })}
       </div>
-
-      <DisclaimerBanner tone="amber" className="mt-8">
-        Novalyte AI facilitates discovery and communication. Employers remain responsible for
-        background checks, license confirmation, credential verification, employment eligibility,
-        clinical supervision, compliance, and final hiring decisions.
-      </DisclaimerBanner>
     </SectionShell>
   );
 }
@@ -2159,13 +2123,6 @@ function TrustResponsibilitySection() {
           );
         })}
       </div>
-
-      <DisclaimerBanner tone="muted" className="mt-6">
-        Novalyte AI does not represent that any organization, professional, license, or credential
-        has been independently verified beyond review of submitted information. Confirm licensure,
-        credentials, and background directly during hiring. Novalyte does not guarantee employment
-        outcomes, candidate quality, or hiring timelines.
-      </DisclaimerBanner>
     </SectionShell>
   );
 }

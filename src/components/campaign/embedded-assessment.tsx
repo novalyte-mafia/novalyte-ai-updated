@@ -6,6 +6,7 @@ import {
   AssessmentExperience,
   type AssessmentAttribution,
 } from "@/components/views/assessment-experience";
+import { getStoredAttribution } from "@/lib/analytics-client";
 import { getAssessment } from "@/lib/assessment-config";
 import { applyDeclarativeQuestions } from "@/lib/campaigns/assessment-overrides";
 import type { ClinicT } from "@/lib/types";
@@ -43,10 +44,12 @@ function EmbeddedAssessmentInner(props: EmbeddedAssessmentProps) {
   const config = applyDeclarativeQuestions(base, props.assessmentQuestions);
 
   const attribution = useMemo<AssessmentAttribution>(() => {
+    const stored = getStoredAttribution();
     const deviceType =
-      typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
+      stored.device_type ||
+      (typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
         ? "mobile"
-        : "desktop";
+        : "desktop");
 
     return {
       csPageId: props.pageId,
@@ -54,18 +57,22 @@ function EmbeddedAssessmentInner(props: EmbeddedAssessmentProps) {
       assessmentTemplateId: props.assessmentTemplateId ?? undefined,
       assessmentVersion: props.assessmentVersion ?? undefined,
       pageVersion: props.pageVersion,
-      pagePath: props.pagePath,
+      pagePath: props.pagePath || stored.landing_path || undefined,
       host: props.host,
-      trafficSource: searchParams.get("utm_source") ?? searchParams.get("ref") ?? undefined,
+      trafficSource:
+        stored.referrer_domain ||
+        searchParams.get("utm_source") ||
+        searchParams.get("ref") ||
+        undefined,
       deviceType,
       consentVersion: "v1",
-      startTime: startTimeRef.current,
+      startTime: stored.landing_at || startTimeRef.current,
       assessmentMode: props.mode ?? "full",
-      utmSource: searchParams.get("utm_source") ?? undefined,
-      utmMedium: searchParams.get("utm_medium") ?? undefined,
-      utmCampaign: searchParams.get("utm_campaign") ?? undefined,
-      utmContent: searchParams.get("utm_content") ?? undefined,
-      utmTerm: searchParams.get("utm_term") ?? undefined,
+      utmSource: stored.utm_source || searchParams.get("utm_source") || undefined,
+      utmMedium: stored.utm_medium || searchParams.get("utm_medium") || undefined,
+      utmCampaign: stored.utm_campaign || searchParams.get("utm_campaign") || undefined,
+      utmContent: stored.utm_content || searchParams.get("utm_content") || undefined,
+      utmTerm: stored.utm_term || searchParams.get("utm_term") || undefined,
     };
   }, [props, searchParams]);
 

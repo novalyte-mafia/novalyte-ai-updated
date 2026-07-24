@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { classifyTestSubmission } from "@/lib/test-classification";
 
 export type FormType =
   | "patient_assessment"
@@ -39,6 +40,9 @@ export type FormSubmissionInput = {
   userId?: string | null;
   sourcePage?: string | null;
   idempotencyKey?: string | null;
+  /** Explicit client attribution fields (preferred over Referer header). */
+  attributionBody?: Record<string, string | null | undefined> | null;
+  isTest?: boolean | null;
 };
 
 type SubmissionRow = {
@@ -135,19 +139,69 @@ function healthSafeMetadata(
     "consent_contact",
     "clinic_id",
     "routing_status",
+    "treatment_interest",
+    "treatment_type",
+    "location_state",
     "utm_source",
     "utm_medium",
     "utm_campaign",
     "utm_content",
     "utm_term",
+    "referrer",
+    "referrer_domain",
+    "device_type",
+    "landing_path",
+    "landing_at",
+    "geo_city",
+    "geo_region",
+    "geo_country",
+    "browser",
+    "os",
   ]);
   return Object.fromEntries(Object.entries(input).filter(([key]) => allowed.has(key)));
 }
 
-function requestAttribution(request: Request) {
+function parseUserAgent(ua: string | null): { browser: string | null; os: string | null } {
+  if (!ua) return { browser: null, os: null };
+  const os = /iPhone|iPad|iPod/i.test(ua)
+    ? "iOS"
+    : /Android/i.test(ua)
+      ? "Android"
+      : /Mac OS X/i.test(ua)
+        ? "macOS"
+        : /Windows/i.test(ua)
+          ? "Windows"
+          : /Linux/i.test(ua)
+            ? "Linux"
+            : null;
+  const browser = /Edg\//i.test(ua)
+    ? "Edge"
+    : /Chrome\//i.test(ua)
+      ? "Chrome"
+      : /Safari\//i.test(ua) && !/Chrome\//i.test(ua)
+        ? "Safari"
+        : /Firefox\//i.test(ua)
+          ? "Firefox"
+          : null;
+  return { browser, os };
+}
+
+function isSameSiteUrl(value: string | null): boolean {
+  if (!value) return false;
+  try {
+    const host = new URL(value).hostname;
+    return /(^|\.)novalyte\.io$/i.test(host);
+  } catch {
+    return /novalyte\.io/i.test(value);
+  }
+}
+
+function requestAttribution(
+  request: Request,
+  body?: Record<string, string | null | undefined> | null,
+) {
   const url = new URL(request.url);
-  const headerPage = request.headers.get("x-source-page");
-  const referrer = request.headers.get("referer");
+  const headerReferrer = request.headers.get("referer");
   const cookieAttribution = (() => {
     const raw = request.headers
       .get("cookie")
@@ -165,30 +219,97 @@ function requestAttribution(request: Request) {
       return {};
     }
   })();
-  const get = (name: string) => clean(
-    request.headers.get(`x-${name.replace("_", "-")}`) ||
-      url.searchParams.get(name) ||
-      (typeof cookieAttribution[name] === "string"
+
+  const fromBody = (name: string) => clean(body?.[name] ?? null, 500);
+  const fromCookie = (name: string) =>
+    clean(
+      typeof cookieAttribution[name] === "string"
         ? (cookieAttribution[name] as string)
-        : null),
-    200,
-  );
+        : null,
+      500,
+    );
+  const fromHeader = (name: string) =>
+    clean(request.headers.get(`x-${name.replace(/_/g, "-")}`), 500);
+
+  const get = (name: string) =>
+    fromBody(name) ||
+    fromHeader(name) ||
+    clean(url.searchParams.get(name), 200) ||
+    fromCookie(name);
+
+  const cookieReferrer =
+    fromCookie("referrer") || fromCookie("referrer_domain");
+  const bodyReferrer = fromBody("referrer") || fromBody("referrer_domain");
+  const headerReferrerUsable =
+    headerReferrer && !isSameSiteUrl(headerReferrer) ? headerReferrer : null;
+  const referrer =
+    bodyReferrer ||
+    fromHeader("referrer-domain") ||
+    cookieReferrer ||
+    clean(headerReferrerUsable, 500);
+  const referrerDomain = (() => {
+    const explicit =
+      fromBody("referrer_domain") ||
+      fromHeader("referrer-domain") ||
+      fromCookie("referrer_domain");
+    if (explicit) return explicit;
+    if (!referrer) return null;
+    try {
+      return new URL(referrer).hostname;
+    } catch {
+      return referrer.includes(".") ? referrer : null;
+    }
+  })();
+
+  const ua = request.headers.get("user-agent");
+  const { browser, os } = parseUserAgent(ua);
+  const deviceType =
+    get("device_type") ||
+    (/Mobile|Android|iPhone/i.test(ua || "")
+      ? "mobile"
+      : /iPad|Tablet/i.test(ua || "")
+        ? "tablet"
+        : "desktop");
+
   return {
     sourcePage: clean(
-      headerPage ||
-        (typeof cookieAttribution.landing_path === "string"
-          ? cookieAttribution.landing_path
-          : null) ||
+      fromBody("source_page") ||
+        request.headers.get("x-source-page") ||
+        fromCookie("landing_url") ||
+        fromCookie("landing_path") ||
         url.pathname,
       500,
     ),
-    referrer: clean(referrer, 500),
+    referrer,
+    referrerDomain: clean(referrerDomain, 200),
     utmSource: get("utm_source"),
     utmMedium: get("utm_medium"),
     utmCampaign: get("utm_campaign"),
     utmContent: get("utm_content"),
     utmTerm: get("utm_term"),
-    anonymousId: clean(request.headers.get("x-anonymous-id"), 200),
+    anonymousId: clean(
+      fromBody("anonymous_id") || request.headers.get("x-anonymous-id"),
+      200,
+    ),
+    deviceType: clean(deviceType, 40),
+    browser,
+    os,
+    landingPath: get("landing_path") || fromCookie("landing_path"),
+    landingAt: get("landing_at") || fromCookie("landing_at"),
+    geoCity: clean(
+      (() => {
+        const raw = request.headers.get("x-vercel-ip-city");
+        if (!raw) return null;
+        try {
+          return decodeURIComponent(raw);
+        } catch {
+          return raw;
+        }
+      })(),
+      120,
+    ),
+    geoRegion: clean(request.headers.get("x-vercel-ip-country-region"), 120),
+    geoCountry: clean(request.headers.get("x-vercel-ip-country"), 80),
   };
 }
 
@@ -254,6 +375,11 @@ function safeFields(submission: SubmissionRow): Array<[string, string]> {
     ["UTM source", submission.utm_source],
     ["UTM medium", submission.utm_medium],
     ["UTM campaign", submission.utm_campaign],
+    ["Device", typeof submission.safe_metadata?.device_type === "string" ? submission.safe_metadata.device_type : null],
+    ["Location",
+      [submission.safe_metadata?.geo_city, submission.safe_metadata?.geo_region, submission.safe_metadata?.geo_country]
+        .filter((v) => typeof v === "string" && v)
+        .join(", ") || null],
     ["UTM content", submission.utm_content],
     ["UTM term", submission.utm_term],
   ];
@@ -507,8 +633,47 @@ export async function processPendingFormNotifications(limit = 25) {
 
 export async function recordFormSubmissionAndNotify(input: FormSubmissionInput) {
   const admin = getSupabaseAdmin();
-  const attribution = requestAttribution(input.request);
-  const sanitizedMetadata = safeMetadata(input.safeMetadata);
+  const attribution = requestAttribution(input.request, input.attributionBody);
+  const env = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
+  const isTest = classifyTestSubmission({
+    contactName: input.contactName,
+    contactEmail: input.contactEmail,
+    utmSource: attribution.utmSource,
+    utmMedium: attribution.utmMedium,
+    utmCampaign: attribution.utmCampaign,
+    isTestFlag: input.isTest,
+    metadata: input.safeMetadata as Record<string, unknown> | null,
+    environment: env,
+  });
+  const cookieHeader = input.request.headers.get("cookie") || "";
+  const isInternalDevice = /(?:^|;\s*)novalyte_internal_device_id=/.test(cookieHeader);
+  const trafficClassification = isTest
+    ? "test"
+    : isInternalDevice
+      ? "internal"
+      : "external";
+  const conversionClassification = isTest
+    ? "test"
+    : isInternalDevice
+      ? "internal"
+      : "real";
+
+  const sanitizedMetadata = safeMetadata({
+    ...input.safeMetadata,
+    referrer: attribution.referrer,
+    referrer_domain: attribution.referrerDomain,
+    device_type: attribution.deviceType,
+    browser: attribution.browser,
+    os: attribution.os,
+    landing_path: attribution.landingPath,
+    landing_at: attribution.landingAt,
+    geo_city: attribution.geoCity,
+    geo_region: attribution.geoRegion,
+    geo_country: attribution.geoCountry,
+    is_test: isTest,
+    traffic_classification: trafficClassification,
+    conversion_classification: conversionClassification,
+  });
   const safe = input.containsSensitiveHealthData
     ? healthSafeMetadata(sanitizedMetadata)
     : sanitizedMetadata;
@@ -525,12 +690,21 @@ export async function recordFormSubmissionAndNotify(input: FormSubmissionInput) 
         source_record_id: input.sourceRecordId,
         source_page: clean(input.sourcePage, 500) || attribution.sourcePage,
         referrer: attribution.referrer,
+        referrer_domain: attribution.referrerDomain,
         utm_source: clean(String(safe.utm_source ?? ""), 200) || attribution.utmSource,
         utm_medium: clean(String(safe.utm_medium ?? ""), 200) || attribution.utmMedium,
         utm_campaign: clean(String(safe.utm_campaign ?? ""), 200) || attribution.utmCampaign,
         utm_content: clean(String(safe.utm_content ?? ""), 200) || attribution.utmContent,
         utm_term: clean(String(safe.utm_term ?? ""), 200) || attribution.utmTerm,
         anonymous_id: attribution.anonymousId,
+        device_type: attribution.deviceType,
+        browser: attribution.browser,
+        os: attribution.os,
+        landing_path: attribution.landingPath,
+        landing_at: attribution.landingAt,
+        geo_city: attribution.geoCity,
+        geo_region: attribution.geoRegion,
+        geo_country: attribution.geoCountry,
         user_id: input.userId ?? null,
         contact_name: clean(input.contactName, 200),
         contact_email: clean(input.contactEmail, 320),
@@ -539,7 +713,10 @@ export async function recordFormSubmissionAndNotify(input: FormSubmissionInput) 
         safe_message: input.containsSensitiveHealthData ? null : clean(input.safeMessage, 2_000),
         safe_metadata: safe,
         contains_sensitive_health_data: input.containsSensitiveHealthData ?? false,
-        environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+        is_test: isTest,
+        traffic_classification: trafficClassification,
+        conversion_classification: conversionClassification,
+        environment: env,
         submitted_at: now,
         updated_at: now,
       },

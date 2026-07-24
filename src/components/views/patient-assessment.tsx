@@ -8,7 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { VerificationBadge, StatusPill } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import { splitCsv, colorClasses, initials, US_STATES } from "@/lib/constants";
 import type { ClinicT } from "@/lib/types";
 import { navigate } from "@/lib/nav";
@@ -193,12 +192,6 @@ export function PatientAssessment({ clinics, onMatched }: { clinics: ClinicT[]; 
         <h3 className="mt-3 text-2xl font-semibold text-foreground">
           Care categories worth discussing with a licensed provider
         </h3>
-        <DisclaimerBanner tone="amber" className="mt-4">
-          Your responses may help identify care categories worth discussing with a licensed healthcare
-          professional. <strong className="font-semibold">This assessment is informational and does not provide a medical diagnosis.</strong>{" "}
-          Novalyte AI does not diagnose conditions, prescribe treatment, or provide medical advice.
-        </DisclaimerBanner>
-
         <div className="mt-6 rounded-xl border border-border bg-background p-4">
           <p className="text-sm font-semibold text-foreground">Based on your responses, you indicated interest in:</p>
           <div className="mt-2 flex flex-wrap gap-1.5">

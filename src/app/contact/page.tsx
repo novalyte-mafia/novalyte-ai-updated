@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { captureSafeEvent } from "@/lib/analytics-client";
+import { captureSafeEvent, getFormAttributionPayload, identifyFormSubmitter } from "@/lib/analytics-client";
+import { isInternalBrowser } from "@/lib/analytics-classification";
 import { 
   Loader2, CheckCircle2, User, Building2, Stethoscope, 
   Briefcase, ShoppingBag, ShieldAlert, Globe, FileText, 
@@ -292,21 +293,15 @@ export default function ContactPage() {
     captureSafeEvent("contact_form_started", { form_type: "contact" });
 
     try {
-      // Extract query parameters for UTM tracking
-      const urlParams = new URLSearchParams(window.location.search);
-      const utm_source = urlParams.get("utm_source") || null;
-      const utm_medium = urlParams.get("utm_medium") || null;
-      const utm_campaign = urlParams.get("utm_campaign") || null;
+      const { headers, fields: attribution } = getFormAttributionPayload();
 
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           ...fields,
-          utm_source,
-          utm_medium,
-          utm_campaign,
-          sourcePage: window.location.href,
+          ...attribution,
+          sourcePage: attribution.source_page || window.location.href,
         }),
       });
 
@@ -316,9 +311,26 @@ export default function ContactPage() {
         toast.success("Inquiry submitted successfully!");
         setRefNum(data.referenceNumber);
         setSuccess(true);
+        if (data.submissionId) {
+          identifyFormSubmitter({
+            contactId: data.submissionId,
+            email: fields.email,
+            name: `${fields.firstName} ${fields.lastName}`.trim(),
+            organization: fields.organizationName || null,
+            formType: "contact_inquiry",
+            isTest:
+              /do-?not-?contact/i.test(`${fields.firstName} ${fields.lastName}`) ||
+              /test|attribution-qa/i.test(fields.email) ||
+              isInternalBrowser(),
+          });
+        }
         captureSafeEvent("contact_form_submitted", {
           form_type: "contact",
           sender_type: fields.senderType,
+          form_submission_id: data.submissionId ?? null,
+          is_test:
+            /do-?not-?contact/i.test(`${fields.firstName} ${fields.lastName}`) ||
+            /test|attribution-qa/i.test(fields.email),
         });
       } else {
         captureSafeEvent("form_submission_error", { form_type: "contact" });

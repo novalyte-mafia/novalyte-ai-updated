@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SectionShell } from "@/components/shared/section";
 import { VerificationBadge, StatusPill, CheckItem } from "@/components/shared/badges";
-import { DisclaimerBanner } from "@/components/shared/disclaimer";
 import {
   PremiumCard,
   MetaRow,
@@ -359,19 +358,6 @@ export function JobDetailView({
           </div>
         </SectionShell>
       )}
-
-      {/* Disclaimer */}
-      <SectionShell tone="default" className="!pt-0 !pb-12">
-        <div className="mx-auto w-full max-w-7xl">
-          <DisclaimerBanner tone="amber">
-            Novalyte AI facilitates discovery and communication. Clinics remain
-            responsible for background checks, credential verification, licensing
-            confirmation, employment compliance, clinical supervision, and hiring
-            decisions. Applications submitted through Novalyte AI are routed to
-            the hiring clinic and do not constitute an offer of employment.
-          </DisclaimerBanner>
-        </div>
-      </SectionShell>
     </>
   );
 }
@@ -614,13 +600,6 @@ function CompensationTab({
             icon={ArrowRight}
           />
         </div>
-
-        <DisclaimerBanner tone="teal" className="mt-4">
-          <strong className="font-semibold">{compShort}</strong> reflects the range
-          disclosed by the hiring clinic. Final compensation depends on
-          experience, licensure, scope of practice, and negotiated terms. Novalyte
-          AI does not set or guarantee compensation.
-        </DisclaimerBanner>
       </div>
 
       <div>
@@ -910,13 +889,6 @@ function ApplyTab({ job, comp }: { job: JobPostingT; comp: string | null }) {
           </div>
         )}
       </PremiumCard>
-
-      <DisclaimerBanner tone="muted">
-        Applications are routed to the hiring clinic. Novalyte AI does not verify
-        candidate credentials on behalf of clinics and does not guarantee a
-        response. Never share sensitive medical or financial information in your
-        cover note.
-      </DisclaimerBanner>
     </div>
   );
 }
