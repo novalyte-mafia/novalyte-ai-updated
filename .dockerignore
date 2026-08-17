@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.vercel
+.env*
+!.env.example
+*.log
+.playwright-cli
+.posthog
+.DS_Store
+coverage
+.cursor
+.claude
+.agents
+docs
+**/*.md
+!README.md

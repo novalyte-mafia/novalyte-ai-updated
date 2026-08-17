@@ -1,0 +1,66 @@
+# Temporary hosting while Vercel billing is fixed.
+# Blueprint: https://dashboard.render.com/blueprints
+services:
+  - type: web
+    name: novalyte-homepage
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: node .next/standalone/server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: HOSTNAME
+        value: "0.0.0.0"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JOURNAL_PREVIEW_SECRET
+        sync: false
+      - key: JOURNAL_REVALIDATE_SECRET
+        sync: false
+      - key: JOURNAL_SOURCE
+        value: merge
+      - key: NEXT_PUBLIC_SHOW_DIRECTORY_DEMOS
+        value: "false"
+      - key: NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+        sync: false
+      - key: NEXT_PUBLIC_POSTHOG_HOST
+        value: https://us.i.posthog.com
+      - key: NEXT_PUBLIC_POSTHOG_UI_HOST
+        value: https://us.posthog.com
+      - key: NEXT_PUBLIC_POSTHOG_ASSETS_HOST
+        value: https://us-assets.i.posthog.com
+      - key: NEXT_PUBLIC_GA_MEASUREMENT_ID
+        sync: false
+      - key: NEXT_PUBLIC_GTM_CONTAINER_ID
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ADMIN_NOTIFICATION_EMAIL
+        value: admin@novalyte.io
+      - key: ADMIN_NOTIFICATION_BCC_EMAIL
+        value: jamil@novalyte.io
+      - key: NOTIFICATION_FROM_EMAIL
+        value: Novalyte AI <notifications@novalyte.io>
+      - key: SLACK_FORM_WEBHOOK_URL
+        sync: false
+      - key: ADMIN_DASHBOARD_URL
+        value: https://admin.novalyte.io
+      - key: FORM_NOTIFICATION_CRON_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_INVESTOR_SITE_URL
+        value: https://investor.novalyte.io
+      - key: INVESTOR_ACCESS_CODE
+        sync: false
+      - key: INVESTOR_GATE_SECRET
+        sync: false
+      - key: INVESTOR_NOTIFY_EMAIL
+        value: admin@novalyte.io
