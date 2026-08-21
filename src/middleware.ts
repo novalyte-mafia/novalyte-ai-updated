@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { CLINIC_PUBLIC_AUTH_PATHS } from "@/lib/clinic-portal";
 
 const PORTAL_HOSTS = new Set(["portal.novalyte.io", "portal.localhost", "portal.local"]);
 const ADS_HOSTS = new Set(["ads.novalyte.io", "ads.localhost", "ads.local"]);
@@ -21,21 +22,35 @@ function shouldBypass(pathname: string): boolean {
   );
 }
 
+function isClinicProtectedPath(pathname: string): boolean {
+  if (!pathname.startsWith("/clinic")) return false;
+  if (CLINIC_PUBLIC_AUTH_PATHS.has(pathname)) return false;
+  return true;
+}
+
 /**
  * portal.novalyte.io → /clinic/* (redirect)
- * ads.novalyte.io → rewrite to /ads/* so public URLs stay clean:
- *   ads.novalyte.io/trt/phoenix-az  →  /ads/trt/phoenix-az
+ * ads.novalyte.io → rewrite to /ads/*
  * investor.novalyte.io → rewrite to /investor/*
+ * /clinic/* (except auth pages) requires a Supabase session at the edge.
  */
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
   const { pathname } = request.nextUrl;
 
-  // Keep Supabase auth cookies fresh on investor routes.
   let response = NextResponse.next({ request });
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  if (supabaseUrl && anonKey && (INVESTOR_HOSTS.has(host) || pathname.startsWith("/investor"))) {
+
+  const needsAuthRefresh =
+    INVESTOR_HOSTS.has(host) ||
+    pathname.startsWith("/investor") ||
+    PORTAL_HOSTS.has(host) ||
+    pathname.startsWith("/clinic");
+
+  let user: { id: string } | null = null;
+
+  if (supabaseUrl && anonKey && needsAuthRefresh) {
     const supabase = createServerClient(supabaseUrl, anonKey, {
       cookies: {
         getAll() {
@@ -52,7 +67,16 @@ export async function middleware(request: NextRequest) {
         },
       },
     });
-    await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  }
+
+  // Server-side protect clinic portal pages (client gate remains as UX fallback).
+  if (isClinicProtectedPath(pathname) && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/clinic/sign-in";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
   }
 
   if (ADS_HOSTS.has(host)) {
@@ -60,7 +84,6 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Already under /ads — continue (legacy + App Router paths)
     if (pathname === "/ads" || pathname.startsWith("/ads/")) {
       return response;
     }
@@ -71,14 +94,12 @@ export async function middleware(request: NextRequest) {
     } else {
       url.pathname = `/ads${pathname.startsWith("/") ? pathname : `/${pathname}`}`;
     }
-    // Rewrite (not redirect) so the browser keeps ads.novalyte.io/trt/phoenix-az
     return NextResponse.rewrite(url);
   }
 
   if (INVESTOR_HOSTS.has(host)) {
     if (shouldBypass(pathname)) return response;
 
-    // Already under /investor — continue
     if (pathname === "/investor" || pathname.startsWith("/investor/")) {
       return response;
     }
@@ -92,7 +113,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // Canonicalize marketing-host /investor paths to investor host in production.
   if (
     (host === "novalyte.io" || host === "www.novalyte.io") &&
     (pathname === "/investor" || pathname.startsWith("/investor/"))

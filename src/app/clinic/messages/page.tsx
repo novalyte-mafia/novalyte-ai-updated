@@ -5,6 +5,7 @@ import { ClinicPortalShell } from "@/components/clinic/clinic-portal-shell";
 import { useClinicPortalSession } from "@/hooks/use-clinic-portal";
 import { toast } from "sonner";
 import { Bell, Loader2 } from "lucide-react";
+import { MESSAGING_ARCHITECTURE } from "@/lib/clinic/messaging-architecture";
 
 type Notification = {
   id: string;
@@ -16,7 +17,9 @@ type Notification = {
 };
 
 export default function ClinicMessagesPage() {
-  const { loading, status, authHeaders, contextLabel } = useClinicPortalSession({ requireActive: true });
+  const { loading, status, authHeaders, contextLabel, allowedNavKeys } = useClinicPortalSession({
+    requireActive: true,
+  });
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
 
@@ -40,16 +43,28 @@ export default function ClinicMessagesPage() {
   }, [authHeaders, status?.organization?.id]);
 
   return (
-    <ClinicPortalShell active="messages" contextLabel={contextLabel}>
+    <ClinicPortalShell active="messages" contextLabel={contextLabel} allowedNavKeys={allowedNavKeys}>
       <div className="mx-auto max-w-3xl space-y-8 px-4 py-10 sm:px-6">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
-            <Bell className="h-5 w-5 text-teal-700" /> Messages
+            <Bell className="h-5 w-5 text-teal-700" /> Notifications
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Portal notifications for your clinic organization.
+            In-app alerts for your clinic. Full SMS/email inbox is architecture-only for now.
           </p>
         </div>
+
+        <section className="rounded-2xl border p-4 text-xs text-muted-foreground">
+          <p className="font-semibold text-foreground">Messaging channels (v{MESSAGING_ARCHITECTURE.version})</p>
+          <ul className="mt-2 space-y-1">
+            <li>In-app: {MESSAGING_ARCHITECTURE.channels.in_app.status}</li>
+            <li>
+              Email: {MESSAGING_ARCHITECTURE.channels.email.status} via{" "}
+              {MESSAGING_ARCHITECTURE.channels.email.provider}
+            </li>
+            <li>SMS: {MESSAGING_ARCHITECTURE.channels.sms.status}</li>
+          </ul>
+        </section>
 
         {loading || messagesLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -57,24 +72,23 @@ export default function ClinicMessagesPage() {
           </div>
         ) : !notifications.length ? (
           <div className="rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-            No messages yet.
+            No messages yet. New lead deliveries will notify here and by email when Resend is configured.
           </div>
         ) : (
-          <div className="space-y-2">
+          <ul className="space-y-2">
             {notifications.map((n) => (
-              <div
+              <li
                 key={n.id}
-                className={`rounded-2xl border p-4 ${n.read_at ? "opacity-80" : "border-teal-100 bg-teal-50/30"}`}
+                className={`rounded-2xl border px-4 py-3 text-sm ${n.read_at ? "opacity-70" : "border-teal-100 bg-teal-50/30"}`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold">{n.title}</p>
-                  <span className="text-[10px] uppercase text-muted-foreground">{n.type}</span>
-                </div>
-                {n.body ? <p className="mt-1 text-sm text-muted-foreground">{n.body}</p> : null}
-                <p className="mt-2 text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString()}</p>
-              </div>
+                <p className="font-medium">{n.title}</p>
+                {n.body ? <p className="mt-1 text-muted-foreground">{n.body}</p> : null}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {new Date(n.created_at).toLocaleString()}
+                </p>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </ClinicPortalShell>

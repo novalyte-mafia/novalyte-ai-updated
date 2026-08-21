@@ -18,15 +18,21 @@ async function assertAssignmentAccess(userId: string, assignmentId: string) {
   if (!orgIds.length) return null;
 
   const admin = getSupabaseAdmin();
-  const { data, error } = await admin
-    .from("lead_assignments")
-    .select("id, clinic_id, organization_id, status, lead_id")
-    .eq("id", assignmentId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  if (!data.organization_id || !orgIds.includes(data.organization_id)) return null;
-  return data;
+    const { data, error } = await admin
+      .from("lead_assignments")
+      .select("id, clinic_id, organization_id, status, lead_id")
+      .eq("id", assignmentId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    if (!data.organization_id || !orgIds.includes(data.organization_id)) return null;
+    return data as {
+      id: string;
+      clinic_id: string;
+      organization_id: string;
+      status: string;
+      lead_id: string;
+    };
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -142,6 +148,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       action: parsed.data.status ? `status_${parsed.data.status}` : "notes_updated",
       payload: parsed.data,
     });
+
+    if (parsed.data.status && assignment.organization_id) {
+      await admin.from("clinic_lead_stage_history").insert({
+        organization_id: assignment.organization_id,
+        clinic_id: assignment.clinic_id,
+        assignment_id: id,
+        lead_id: assignment.lead_id,
+        from_status: assignment.status,
+        to_status: parsed.data.status,
+        changed_by_user_id: user.id,
+      });
+    }
 
     if (parsed.data.status === "booked") {
       await admin

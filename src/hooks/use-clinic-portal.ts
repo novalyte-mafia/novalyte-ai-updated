@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabase/client";
+import { navKeysForMembership, type PortalRole } from "@/lib/clinic/capabilities";
+import type { ClinicPortalNavKey } from "@/lib/clinic-portal";
 
 const SELECTED_ORG_KEY = "clinic-portal:organizationId";
 const SELECTED_CLINIC_KEY = "clinic-portal:clinicId";
@@ -15,6 +17,7 @@ export type ClinicPortalStatus = {
     user_id: string;
     role: string;
     status: string;
+    portal_capabilities?: Record<string, unknown>;
   }>;
   organization: {
     id: string;
@@ -37,6 +40,7 @@ export type ClinicPortalStatus = {
     organization_id: string | null;
   }>;
   unreadLeadCount: number;
+  allowedNavKeys?: ClinicPortalNavKey[];
   redirectTo?: string;
 };
 
@@ -148,6 +152,26 @@ export function useClinicPortalSession(options: UseClinicPortalOptions = {}) {
     status?.organization?.legal_name ||
     undefined;
 
+  const activeMembership = useMemo(() => {
+    const orgId = selectedOrganizationId || status?.organization?.id;
+    return (
+      status?.memberships.find((m) => m.organization_id === orgId) ??
+      status?.memberships[0] ??
+      null
+    );
+  }, [selectedOrganizationId, status?.memberships, status?.organization?.id]);
+
+  const allowedNavKeys = useMemo((): ClinicPortalNavKey[] => {
+    if (status?.allowedNavKeys?.length) return status.allowedNavKeys;
+    if (!activeMembership) {
+      return ["dashboard", "leads", "messages", "settings"];
+    }
+    return navKeysForMembership({
+      role: activeMembership.role as PortalRole,
+      portal_capabilities: activeMembership.portal_capabilities,
+    });
+  }, [activeMembership, status?.allowedNavKeys]);
+
   return {
     token,
     status,
@@ -158,6 +182,8 @@ export function useClinicPortalSession(options: UseClinicPortalOptions = {}) {
     selectedOrganizationId,
     selectedClinic,
     contextLabel,
+    allowedNavKeys,
+    activeMembership,
     authHeaders: token
       ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
       : null,

@@ -19,16 +19,18 @@ admin dashboard ──approve claims / push leads──► Supabase
 | `/` → `/clinic` | Gateway |
 | `/clinic/sign-in`, `/forgot-password`, `/reset-password` | Auth |
 | `/clinic/onboarding` | Org create + claim |
-| `/clinic/dashboard` | Overview |
+| `/clinic/dashboard` | Home KPIs, activity, quick actions |
 | `/clinic/profile` | Operational profile editor |
 | `/clinic/directory` | Listing status, preview, submit-for-review |
-| `/clinic/leads`, `/clinic/leads/[id]` | Lead inbox |
+| `/clinic/leads`, `/clinic/leads/[id]` | Lead pipeline + notes/tasks |
+| `/clinic/patients` | Patient Center (assessment summaries) |
+| `/clinic/calendar` | Appointments + follow-ups |
 | `/clinic/workforce` | Jobs + applicants |
-| `/clinic/marketplace` | Catalog deep-link under portal chrome |
-| `/clinic/analytics` | Real metrics only |
+| `/clinic/marketplace` | Embedded catalog + quote requests |
+| `/clinic/analytics` | Real lead metrics + CSV export |
 | `/clinic/team` | Invites + roles |
-| `/clinic/messages` | Notifications |
-| `/clinic/billing` | Free / future plans shell |
+| `/clinic/messages` | Notifications (+ messaging architecture) |
+| `/clinic/billing` | Plan shell + Stripe-ready subscriptions |
 | `/clinic/settings` | Account, password, prefs |
 
 ## Auth & tenant isolation
@@ -39,6 +41,9 @@ admin dashboard ──approve claims / push leads──► Supabase
 4. Never expose: prospect notes, calls, recordings, internal scores, admin audit.
 
 Roles map to `organization_memberships.role` (`owner` | `admin` | `recruiter` | `viewer`) plus optional `portal_capabilities` jsonb.
+Middleware enforces a Supabase session on `/clinic/*` (except sign-in / password pages); APIs remain Bearer + membership scoped.
+
+See also `docs/CLINIC_PORTAL_OPS.md` for claim → assign runbook and admin view-as gate.
 
 ## Key tables
 

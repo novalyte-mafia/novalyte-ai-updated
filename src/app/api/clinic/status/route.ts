@@ -6,6 +6,7 @@ import {
   requireVerifiedUser,
   workforceAuthErrorResponse,
 } from "@/lib/workforce/auth";
+import { navKeysForMembership } from "@/lib/clinic/capabilities";
 
 export async function GET(request: Request) {
   try {
@@ -19,6 +20,10 @@ export async function GET(request: Request) {
       requestedOrgId && memberships.some((m) => m.organization_id === requestedOrgId)
         ? requestedOrgId
         : memberships[0]?.organization_id ?? null;
+
+    const activeMembership =
+      memberships.find((m) => m.organization_id === activeOrgId) ?? memberships[0] ?? null;
+    const allowedNavKeys = activeMembership ? navKeysForMembership(activeMembership) : [];
 
     let organization: {
       id: string;
@@ -144,6 +149,7 @@ export async function GET(request: Request) {
       organization,
       clinics,
       unreadLeadCount: unreadRes.count ?? 0,
+      allowedNavKeys,
       redirectTo:
         status === "onboarding_required"
           ? "/clinic/onboarding"
